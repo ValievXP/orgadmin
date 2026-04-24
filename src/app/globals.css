@@ -2,20 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Neutrals */
+    --color-white: #FFFFFF;
+    --color-neutral-50: #F0F0F0;
+    --color-neutral-100: #E1E1E1;
+    --color-neutral-200: #D2D2D2;
+    --color-neutral-300: #C3C3C3;
+    --color-neutral-400: #B4B4B4;
+    --color-neutral-500: #A5A5A5;
+    --color-neutral-600: #878787;
+    --color-neutral-700: #696969;
+    --color-neutral-800: #4B4B4B;
+    --color-neutral-900: #2D2D2D;
+    --color-neutral-950: #1E1E1E;
+
+    /* Admin Primary */
+    --color-admin-primary-50: #F4F4F4;
+    --color-admin-primary-100: #E8E8E8;
+    --color-admin-primary-200: #CDCDCD;
+    --color-admin-primary-300: #B2B2B2;
+    --color-admin-primary-400: #989898;
+    --color-admin-primary-500: #7D7D7D;
+    --color-admin-primary-600: #626262;
+    --color-admin-primary-700: #484848;
+    --color-admin-primary-800: #2D2D2D;
+    --color-admin-primary-900: #1E1E1E;
+    --color-admin-primary-950: #0F0F0F;
+
+    /* Status colors */
+    --color-success-50: #F0FDF4;
+    --color-success-500: #22C55E;
+    --color-success-600: #16A34A;
+    --color-error-50: #FEF2F2;
+    --color-error-500: #EF4444;
+    --color-error-600: #DC2626;
+
+    /* Semantic mappings */
+    --bg-app: var(--color-neutral-50);
+    --bg-surface: var(--color-white);
+    --bg-surface-hover: var(--color-neutral-50);
+    --text-strong: var(--color-neutral-950);
+    --text-default: var(--color-neutral-700);
+    --text-subtle: var(--color-neutral-500);
+    --text-disabled: var(--color-neutral-400);
+    --border-default: var(--color-neutral-200);
+    --border-subtle: var(--color-neutral-100);
+    --border-strong: var(--color-neutral-300);
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-default);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .animate-slide-up {
+    animation: slide-up 0.2s cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
+  }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
