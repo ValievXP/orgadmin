@@ -524,11 +524,11 @@ export default function TestingPage() {
   };
 
   const saveCourse = () => {
-    if (!courseForm.title.trim() || !courseForm.courseId.trim()) return;
+    if (!courseForm.title.trim()) return;
     
     if (courseEditor?.mode === 'create') {
       const newCourse = {
-        id: courseForm.courseId,
+        id: `TST-${Math.floor(Math.random() * 10000)}`,
         title: courseForm.title,
         lang: courseForm.lang,
         status: 'Draft',
@@ -891,47 +891,12 @@ export default function TestingPage() {
                      placeholder="Введите название"
                    />
                 </div>
-                <div>
-                  <label className="block text-[14px] font-semibold text-neutral-800 mb-2">Новый ID курса</label>
-                  <div className="relative w-full group/tooltip">
-                    <input 
-                       type="text" 
-                       className="w-full h-11 px-4 pr-12 border border-neutral-200 rounded-xl focus:ring-4 focus:ring-[var(--color-admin-primary-500)]/10 focus:border-[var(--color-admin-primary-500)] outline-none uppercase font-mono shadow-sm transition-all text-sm" 
-                       value={duplicateCourseForm.courseId} 
-                       onChange={e => setDuplicateCourseForm(prev => ({ ...prev, courseId: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '') }))} 
-                       placeholder="HR013RUS"
-                     />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-[var(--color-admin-primary-600)] cursor-help transition-colors">
-                      <div className="w-[18px] h-[18px] rounded-full border-2 border-current flex items-center justify-center">
-                        <span className="text-[12px] font-bold font-sans">?</span>
-                      </div>
-                    </div>
-                    
-                    <div className="absolute bottom-full right-0 mb-3 w-[280px] p-4 bg-neutral-900 shadow-2xl rounded-2xl opacity-0 scale-95 group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100 pointer-events-none transition-all duration-200 z-50 transform origin-bottom-right">
-                      <p className="text-white text-xs font-medium leading-loose font-sans text-left">
-                        Аббревиатура направления курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">MR/HR/MN</span><br/>
-                        Порядковый номер курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">от 001 до 999</span><br/>
-                        Аббревиатура языка курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">UZB/RUS</span><br/>
-                        <span className="text-neutral-400 mt-2 block border-t border-neutral-700 pt-2 font-mono text-[10px] leading-relaxed">
-                          Допускаются только латинские буквы и символ тире (-)
-                        </span>
-                        <span className="text-neutral-400 block pt-1">
-                          Пример: <span className="font-mono text-white">MR001UZB</span>
-                        </span>
-                      </p>
-                      <div className="absolute top-full right-4 border-4 border-transparent border-t-neutral-900" />
-                    </div>
-                  </div>
-                  {courses.some(c => c.id === duplicateCourseForm.courseId) && (
-                    <p className="text-[12px] text-rose-500 mt-2 font-medium">Курс с таким ID уже существует, замените ID</p>
-                  )}
-                </div>
                 <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-neutral-100">
                    <Button variant="outline" className="font-semibold" onClick={() => setDuplicateCourseId(null)}>Отмена</Button>
-                   <Button variant="primary" className="font-semibold" disabled={!duplicateCourseForm.title.trim() || !duplicateCourseForm.courseId.trim() || courses.some(c => c.id === duplicateCourseForm.courseId)} onClick={() => {
+                   <Button variant="primary" className="font-semibold" disabled={!duplicateCourseForm.title.trim()} onClick={() => {
                         const originalInfo = courses.find(c => c.id === duplicateCourseId);
                         if(originalInfo) {
-                           setCourses(prev => [{ ...originalInfo, id: duplicateCourseForm.courseId, title: duplicateCourseForm.title, status: 'Draft' }, ...prev]);
+                           setCourses(prev => [{ ...originalInfo, id: `TST-${Math.floor(Math.random() * 10000)}`, title: duplicateCourseForm.title, status: 'Draft' }, ...prev]);
                         }
                         setDuplicateCourseId(null);
                    }}>Дублировать</Button>
@@ -979,41 +944,6 @@ export default function TestingPage() {
                         placeholder="Кратко опишите о чем курс и чему научится студент"
                         className="w-full h-24 p-4 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-[var(--color-admin-primary-500)]/10 focus:border-[var(--color-admin-primary-500)] hover:border-neutral-300 outline-none resize-none text-sm shadow-sm transition-all leading-relaxed" 
                       />
-                   </div>
-
-                   <div className="h-px bg-neutral-100 w-full" />
-
-                   <div className="grid grid-cols-[180px_1fr] items-center gap-6">
-                     <label className="text-[14px] font-semibold text-neutral-800">ID курса</label>
-                     <div className="relative w-full group/tooltip">
-                       <input 
-                          type="text" 
-                          value={courseForm.courseId} 
-                          onChange={e => setCourseForm(prev => ({ ...prev, courseId: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '') }))} 
-                          placeholder="Введите ID курса"
-                          className="w-full h-11 px-4 pr-12 bg-white border border-neutral-200 rounded-xl focus:ring-4 focus:ring-[var(--color-admin-primary-500)]/10 focus:border-[var(--color-admin-primary-500)] hover:border-neutral-300 outline-none font-mono text-sm shadow-sm transition-all uppercase" 
-                        />
-                       <div className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-[var(--color-admin-primary-600)] cursor-help transition-colors">
-                         <div className="w-[18px] h-[18px] rounded-full border-2 border-current flex items-center justify-center">
-                           <span className="text-[12px] font-bold font-sans">?</span>
-                         </div>
-                       </div>
-                       
-                       <div className="absolute bottom-full right-0 mb-3 w-[280px] p-4 bg-neutral-900 shadow-2xl rounded-2xl opacity-0 scale-95 group-hover/tooltip:opacity-100 group-hover/tooltip:scale-100 pointer-events-none transition-all duration-200 z-50 transform origin-bottom-right">
-                         <p className="text-white text-xs font-medium leading-loose font-sans">
-                           Аббревиатура направления курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">MR/HR/MN</span><br/>
-                           Порядковый номер курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">от 001 до 999</span><br/>
-                           Аббревиатура языка курса: <span className="font-mono text-[10px] bg-neutral-800 px-1 py-0.5 rounded">UZB/RUS</span><br/>
-                           <span className="text-neutral-400 mt-2 block border-t border-neutral-700 pt-2 font-mono text-[10px] leading-relaxed">
-                             Допускаются только латинские буквы и символ тире (-)
-                           </span>
-                           <span className="text-neutral-400 block pt-1">
-                             Пример: <span className="font-mono text-white">MR001UZB</span>
-                           </span>
-                         </p>
-                         <div className="absolute top-full right-4 border-4 border-transparent border-t-neutral-900" />
-                       </div>
-                     </div>
                    </div>
 
                    <div className="h-px bg-neutral-100 w-full" />
@@ -1136,7 +1066,7 @@ export default function TestingPage() {
              
              <div className="p-6 sm:px-8 bg-white border-t border-neutral-100 flex justify-end gap-3 shrink-0">
                 <Button variant="outline" className="font-semibold px-6 h-11 min-w-[120px] rounded-xl text-neutral-600 border-neutral-200 hover:bg-neutral-50" onClick={() => setCourseEditor(null)}>Отмена</Button>
-                <Button variant="primary" className="font-semibold shadow-md px-6 h-11 rounded-xl min-w-[140px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100" disabled={!courseForm.title.trim() || !courseForm.courseId.trim()} onClick={saveCourse}>
+                <Button variant="primary" className="font-semibold shadow-md px-6 h-11 rounded-xl min-w-[140px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100" disabled={!courseForm.title.trim()} onClick={saveCourse}>
                   {courseEditor.mode === 'create' ? 'Создать курс' : 'Сохранить'}
                 </Button>
              </div>

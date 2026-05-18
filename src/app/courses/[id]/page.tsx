@@ -3,13 +3,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { AddElementModal } from '@/components/modals/AddElementModal';
+import { TestResultsModal } from '@/components/modals/TestResultsModal';
 import { 
-  BookOpen, Users, Clock, Plus, MoreVertical, X,
+  BookOpen, Users, Clock, Plus, MoreVertical, X, PlusCircle,
   Edit3, Trash2, ChevronDown, ChevronRight, 
   FileText, HelpCircle, Copy, Settings, Globe,
   Unlock, Lock, CalendarClock, Timer, ClipboardCheck, Layers,
   Search, AlertTriangle, UserPlus, ArrowUpDown, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
-  Image, Link, Eye, EyeOff, Check, Upload, ExternalLink, Languages, Star
+  Image, Link, Eye, EyeOff, Check, Upload, ExternalLink, Languages, Star, Download,
+  ClipboardList, Calendar, GripVertical
 } from 'lucide-react';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, KeyboardSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -18,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type AccessStatus = 'open' | 'closed' | 'scheduled' | 'limited';
-type ItemType = 'lesson' | 'test' | 'homework';
+type ItemType = 'lesson' | 'test' | 'homework' | 'survey' | 'event';
 
 const ACCESS_OPTIONS: { id: AccessStatus, label: string, desc: string }[] = [
   { id: 'open', label: 'Открытый', desc: 'Доступен сразу после публикации' },
@@ -60,6 +63,8 @@ function ItemTypeIcon({ type }: { type: ItemType }) {
     lesson: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200/60', label: 'Урок' },
     test: { icon: HelpCircle, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200/60', label: 'Тест' },
     homework: { icon: ClipboardCheck, color: 'text-violet-500', bg: 'bg-violet-50', border: 'border-violet-200/60', label: 'Урок с домашним заданием' },
+    survey: { icon: ClipboardList, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-200/60', label: 'Опрос' },
+    event: { icon: Calendar, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-200/60', label: 'Мероприятие' },
   };
   const cfg = configs[type];
   const Icon = cfg.icon;
@@ -203,7 +208,7 @@ function DeleteConfirmModal({ open, onClose, onConfirm, title, itemName }: {
 
 // ─── Sortable Lesson Item ────────────────────────────────────────────────────
 
-function SortableItem({ item, index, moduleId, openMenuId, setOpenMenuId, onDelete, onEdit }: { item: any, index: number, moduleId: string, openMenuId: string | null, setOpenMenuId: (id: string | null) => void, onDelete: () => void, onEdit: () => void }) {
+function SortableItem({ item, index, moduleId, openMenuId, setOpenMenuId, onDelete, onEdit, onPreview }: { item: any, index: number, moduleId: string, openMenuId: string | null, setOpenMenuId: (id: string | null) => void, onDelete: () => void, onEdit: () => void, onPreview: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     data: { type: 'item', moduleId, item }
@@ -225,16 +230,16 @@ function SortableItem({ item, index, moduleId, openMenuId, setOpenMenuId, onDele
   return (
     <div 
       ref={setNodeRef} style={style}
-      {...attributes} {...listeners}
-      className={`group/item flex items-center gap-3 py-3 px-4 mx-3 rounded-xl transition-all cursor-grab active:cursor-grabbing ${
+      {...attributes}
+      className={`group/item flex items-center gap-3 py-3 px-4 mx-3 rounded-xl transition-all ${
         isDragging ? 'opacity-20 scale-[0.98]' : 'hover:bg-neutral-50/80'
       }`}
     >
-      <ItemTypeIcon type={item.type} />
-
-      <span className="text-[11px] font-medium text-neutral-300 tabular-nums shrink-0 w-5 text-right">{String(index + 1).padStart(2, '0')}</span>
-      
-      <p className="text-[13px] font-medium text-neutral-700 truncate flex-1 min-w-0">{item.title}</p>
+      <div onClick={() => onPreview()} className="flex-1 min-w-0 flex items-center gap-3 text-left hover:opacity-80 transition-opacity cursor-pointer">
+        <ItemTypeIcon type={item.type} />
+        <span className="text-[11px] font-medium text-neutral-300 tabular-nums shrink-0 w-5 text-right">{String(index + 1).padStart(2, '0')}</span>
+        <p className="text-[13px] font-medium text-neutral-700 truncate flex-1 min-w-0">{item.title}</p>
+      </div>
 
       <StatusIcon status={item.status || 'open'} scheduledDate={item.scheduledDate} startDate={item.startDate} endDate={item.endDate} />
 
@@ -242,8 +247,9 @@ function SortableItem({ item, index, moduleId, openMenuId, setOpenMenuId, onDele
         {menuOpen && <div className="fixed inset-0 z-[90]" onClick={() => setMenuOpen(false)} />}
         <button 
           ref={btnRef}
+          {...listeners}
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-          className={`p-1.5 rounded-lg transition-all ${menuOpen ? 'bg-neutral-100 text-neutral-700 opacity-100' : 'text-neutral-300 hover:text-neutral-600 opacity-0 group-hover/item:opacity-100 hover:bg-neutral-100'}`}
+          className={`p-1.5 rounded-lg transition-all cursor-grab active:cursor-grabbing ${menuOpen ? 'bg-neutral-100 text-neutral-700 opacity-100' : 'text-neutral-300 hover:text-neutral-600 opacity-0 group-hover/item:opacity-100 hover:bg-neutral-100'}`}
         >
           <MoreVertical className="w-4 h-4" />
         </button>
@@ -262,13 +268,13 @@ function SortableItem({ item, index, moduleId, openMenuId, setOpenMenuId, onDele
 
 // ─── Droppable Module ────────────────────────────────────────────────────────
 
-function DroppableModule({ module, moduleIndex, onToggle, openMenuId, setOpenMenuId, onReorderItems, onEdit, onAddLesson, onAddTest, onDelete, onDeleteItem, onEditItem }: {
+function DroppableModule({ module, moduleIndex, onToggle, openMenuId, setOpenMenuId, onReorderItems, onEdit, onAddLesson, onAddTest, onAddElement, onDelete, onDeleteItem, onEditItem, onPreviewItem }: {
   module: any, moduleIndex: number,
   onToggle: () => void, openMenuId: string | null, setOpenMenuId: (id: string | null) => void,
   onReorderItems: (moduleId: string, items: any[]) => void,
-  onEdit: () => void, onAddLesson: () => void, onAddTest: () => void,
+  onEdit: () => void, onAddLesson: () => void, onAddTest: () => void, onAddElement: () => void,
   onDelete: () => void, onDeleteItem: (itemId: string, itemTitle: string) => void,
-  onEditItem: (itemId: string, itemType: string) => void
+  onEditItem: (itemId: string, itemType: string) => void, onPreviewItem: (itemId: string, itemType: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: module.id,
@@ -323,6 +329,7 @@ function DroppableModule({ module, moduleIndex, onToggle, openMenuId, setOpenMen
               <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2.5 font-medium" onClick={() => { setMenuOpen(false); onEdit(); }}><Edit3 className="w-3.5 h-3.5 text-neutral-400" />Редактировать</button>
               <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2.5 font-medium" onClick={() => { setMenuOpen(false); onAddLesson(); }}><FileText className="w-3.5 h-3.5 text-neutral-400" />Добавить урок</button>
               <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2.5 font-medium" onClick={() => { setMenuOpen(false); onAddTest(); }}><HelpCircle className="w-3.5 h-3.5 text-neutral-400" />Добавить тест</button>
+              <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2.5 font-medium" onClick={() => { setMenuOpen(false); onAddElement(); }}><PlusCircle className="w-3.5 h-3.5 text-neutral-400" />Добавить элемент</button>
               <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2.5 font-medium" onClick={() => setMenuOpen(false)}><Copy className="w-3.5 h-3.5 text-neutral-400" />Дублировать</button>
               <div className="h-px bg-neutral-100 my-1.5 mx-2" />
               <button className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 font-medium" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 className="w-3.5 h-3.5 text-rose-400" />Удалить модуль</button>
@@ -342,7 +349,7 @@ function DroppableModule({ module, moduleIndex, onToggle, openMenuId, setOpenMen
             ) : (
               <div className="flex flex-col pt-1">
                 {module.items.map((item: any, idx: number) => (
-                  <SortableItem key={item.id} item={item} index={idx} moduleId={module.id} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} onDelete={() => onDeleteItem(item.id, item.title)} onEdit={() => onEditItem(item.id, item.type)} />
+                  <SortableItem key={item.id} item={item} index={idx} moduleId={module.id} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} onDelete={() => onDeleteItem(item.id, item.title)} onEdit={() => onEditItem(item.id, item.type)} onPreview={() => onPreviewItem(item.id, item.type)} />
                 ))}
               </div>
             )}
@@ -882,6 +889,7 @@ function StudentDetailsModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const [testResultsOpen, setTestResultsOpen] = useState<string | null>(null);
 
   if (!open || !student) return null;
 
@@ -895,6 +903,11 @@ function StudentDetailsModal({
             <p className="text-[13px] text-neutral-500 mt-0.5">Информация по курсу {courseId}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Результаты
+            </button>
             <button
               onClick={() => router.push(`/users/${student.id}`)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 transition-colors"
@@ -959,8 +972,14 @@ function StudentDetailsModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-[13px] text-neutral-700 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 1.2 Тест: Основные понятия</span>
-                      <span className="text-[11px] text-emerald-600 ml-3.5 mt-0.5">Оценка: 100/100 (Сдан)</span>
+                      <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 
+                        1.2 Тест: Основные понятия
+                        <button title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1" onClick={() => setTestResultsOpen('test-basics')}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                      <span className="text-[11px] text-emerald-600 ml-3.5 mt-0.5">Оценка: 5/5 (Сдан)</span>
                     </div>
                     <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md" title="Пройден: 15.03.2026 10:00">Пройден (15.03.2026 10:00)</span>
                   </div>
@@ -988,10 +1007,40 @@ function StudentDetailsModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-[13px] text-neutral-700 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> 2.3 Тест: Защита данных</span>
-                      <span className="text-[11px] text-rose-600 ml-3.5 mt-0.5">Оценка: 40/100 (Провален)</span>
+                      <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> 
+                        2.3 Тест: Защита данных
+                        <button title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1" onClick={() => setTestResultsOpen('test-data-protection')}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                      <span className="text-[11px] text-rose-600 ml-3.5 mt-0.5">Оценка: 1/5 (Не сдан)</span>
                     </div>
                     <span className="text-[11px] text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-md" title="Последняя попытка: 17.03.2026 14:15">Не сдан (17.03.2026 14:15)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 hover:bg-neutral-50 transition-colors">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-medium text-neutral-900">3. Итоговая аттестация</span>
+                  </div>
+                  <span className="text-xs text-neutral-500">18.03.2026</span>
+                </div>
+                <div className="ml-6 space-y-2 mt-2 border-l-2 border-emerald-100 pl-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 
+                        3.1 Итоговый экзамен
+                        <button title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1" onClick={() => setTestResultsOpen('test-60-questions')}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                      <span className="text-[11px] text-emerald-600 ml-3.5 mt-0.5">Оценка: 45/60 (Сдан)</span>
+                    </div>
+                    <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md" title="Пройден: 18.03.2026 11:30">Пройден (18.03.2026 11:30)</span>
                   </div>
                 </div>
               </div>
@@ -999,6 +1048,13 @@ function StudentDetailsModal({
           </div>
         </div>
       </div>
+
+      {/* Test Results Modal */}
+      <TestResultsModal
+        isOpen={testResultsOpen !== null}
+        onClose={() => setTestResultsOpen(null)}
+        testId={testResultsOpen || ''}
+      />
     </div>
   );
 }
@@ -1015,8 +1071,15 @@ export default function CourseDetailPage() {
   const [modules, setModules] = useState<any[]>(courseData?.modules || []);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<any>(null);
-  const [copiedId, setCopiedId] = useState(false);
   const [moduleModalOpen, setModuleModalOpen] = useState(false);
+  const [addElementModalOpen, setAddElementModalOpen] = useState(false);
+  const [addElementTargetModule, setAddElementTargetModule] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+
+  const showToast = (msg: string) => {
+    setToast({ message: msg, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
   const [editingModule, setEditingModule] = useState<any>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean, title: string, name: string, onConfirm: () => void }>({ open: false, title: '', name: '', onConfirm: () => {} });
   const [students, setStudents] = useState<any[]>(MOCK_STUDENTS[courseId] || []);
@@ -1037,6 +1100,7 @@ export default function CourseDetailPage() {
   const [settingsStatus, setSettingsStatus] = useState(courseData?.status || 'Draft');
   const [settingsInCatalog, setSettingsInCatalog] = useState(courseData?.inCatalog || false);
   const [settingsHours, setSettingsHours] = useState(courseData?.hours || 0);
+  const [settingsMinutes, setSettingsMinutes] = useState(courseData?.minutes || 0);
   const [settingsLang, setSettingsLang] = useState(courseData?.lang || 'Русский');
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [settingsStatusOpen, setSettingsStatusOpen] = useState(false);
@@ -1058,12 +1122,6 @@ export default function CourseDetailPage() {
       </div>
     );
   }
-
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(courseData.id);
-    setCopiedId(true);
-    setTimeout(() => setCopiedId(false), 2000);
-  };
 
   const totalElements = modules.reduce((acc, m) => acc + m.items.length, 0);
 
@@ -1135,6 +1193,10 @@ export default function CourseDetailPage() {
     } else {
       router.push(`/courses/${courseId}/lesson/${itemId}`);
     }
+  };
+
+  const handlePreviewItem = (itemId: string, itemType: string) => {
+    router.push(`/courses/${courseId}/preview/${itemId}?type=${itemType}`);
   };
 
   const handleDeleteModule = (moduleId: string) => {
@@ -1300,9 +1362,15 @@ export default function CourseDetailPage() {
 
       <div className="flex-1 overflow-auto">
         {/* Banner */}
-        <div className={`h-44 w-full relative ${courseData.cover} shrink-0`}>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMTggMTgtOC4wNiAxOC0xOHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40" />
+        <div className={`h-44 w-full relative ${courseData.cover} shrink-0 group/banner cursor-pointer transition-all`}>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent transition-opacity duration-300 group-hover/banner:opacity-60" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4UzAgOC4wNiAwIDE4czguMDYgMTggMTggMTggMTgtOC4wNiAxOC0xOHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40 transition-opacity duration-300 group-hover/banner:opacity-20" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/banner:opacity-100 transition-all duration-300">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-xl text-white font-medium text-[13px] border border-white/20 transition-all shadow-xl">
+              <Image className="w-4 h-4" />
+              Изменить обложку
+            </div>
+          </div>
         </div>
 
         {/* Course Info Card */}
@@ -1310,23 +1378,16 @@ export default function CourseDetailPage() {
           <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row gap-5">
               {/* PFP Icon */}
-              <div className={`w-[72px] h-[72px] rounded-2xl shrink-0 shadow-lg ring-4 ring-white flex items-center justify-center ${courseData.cover}`}>
-                <BookOpen className="w-7 h-7 text-white drop-shadow-md" />
+              <div className={`w-[72px] h-[72px] rounded-2xl shrink-0 shadow-lg ring-4 ring-white flex items-center justify-center ${courseData.cover} relative group/pfp cursor-pointer overflow-hidden transition-all hover:shadow-xl`}>
+                <BookOpen className="w-7 h-7 text-white drop-shadow-md transition-all duration-300 group-hover/pfp:scale-90 group-hover/pfp:opacity-0" />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover/pfp:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
+                  <Upload className="w-5 h-5 text-white" />
+                </div>
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <button 
-                    onClick={handleCopyId}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all active:scale-95 ${
-                      copiedId 
-                        ? 'bg-[var(--color-admin-primary-600)] text-white' 
-                        : 'font-mono text-neutral-500 bg-neutral-50 border border-neutral-200 hover:bg-neutral-100 hover:text-neutral-700'
-                    }`}
-                  >
-                    {copiedId ? 'ID скопирован' : courseData.id}
-                  </button>
                   <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${statusClass}`}>{statusLabel}</span>
                   {courseData.inCatalog && (
                     <span className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-blue-50 text-blue-500 border-blue-200">В каталоге</span>
@@ -1341,7 +1402,7 @@ export default function CourseDetailPage() {
             <div className="flex flex-wrap gap-x-8 gap-y-3 mt-6 pt-5 border-t border-neutral-100">
               {[
                 { icon: Globe, label: 'Язык', value: courseData.lang, isText: true },
-                { icon: Clock, label: 'Часы', value: courseData.hours },
+                { icon: Clock, label: 'Время', value: `${courseData.hours || 0} ч ${courseData.minutes || 0} мин`, isText: true },
                 { icon: BookOpen, label: 'Модули', value: modules.length },
                 { icon: Layers, label: 'Элементы', value: totalElements },
                 { icon: Users, label: 'Студенты', value: courseData.users },
@@ -1426,9 +1487,14 @@ export default function CourseDetailPage() {
                           onEdit={() => handleEditModule(mod.id)}
                           onAddLesson={() => handleAddItem(mod.id, 'lesson')}
                           onAddTest={() => handleAddItem(mod.id, 'test')}
+                          onAddElement={() => {
+                            setAddElementTargetModule(mod.id);
+                            setAddElementModalOpen(true);
+                          }}
                           onDelete={() => handleDeleteModule(mod.id)}
                           onDeleteItem={(itemId, itemTitle) => handleDeleteItem(mod.id, itemId, itemTitle)}
                           onEditItem={handleEditItem}
+                          onPreviewItem={handlePreviewItem}
                         />
                       ))
                     )}
@@ -1462,10 +1528,16 @@ export default function CourseDetailPage() {
                   <h2 className="text-[15px] font-semibold text-neutral-900">Студенты курса</h2>
                   <p className="text-[12px] text-neutral-400 mt-0.5">{students.length} {students.length === 1 ? 'студент' : students.length < 5 ? 'студента' : 'студентов'}</p>
                 </div>
-                <Button variant="primary" onClick={handleAddStudent} className="font-medium gap-2 shadow-sm text-[13px]">
-                  <UserPlus className="w-4 h-4" />
-                  Добавить студента
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" className="font-medium gap-2 shadow-sm text-[13px] bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-200 h-9">
+                    <Download className="w-4 h-4" />
+                    Результаты
+                  </Button>
+                  <Button variant="primary" onClick={handleAddStudent} className="font-medium gap-2 shadow-sm text-[13px] h-9">
+                    <UserPlus className="w-4 h-4" />
+                    Добавить студента
+                  </Button>
+                </div>
               </div>
 
               {/* Search */}
@@ -1848,14 +1920,30 @@ export default function CourseDetailPage() {
                 <div className="px-6 py-5">
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-[12px] font-semibold text-neutral-500 uppercase tracking-wider mb-2">Продолжительность (часов)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={settingsHours}
-                        onChange={(e) => setSettingsHours(Number(e.target.value))}
-                        className="w-full px-4 py-3 rounded-xl border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent bg-neutral-50 hover:bg-white focus:bg-white transition-all"
-                      />
+                      <label className="block text-[12px] font-semibold text-neutral-500 uppercase tracking-wider mb-2">Продолжительность</label>
+                      <div className="flex gap-3">
+                        <div className="flex-1 relative">
+                          <input
+                            type="number"
+                            min={0}
+                            value={settingsHours}
+                            onChange={(e) => setSettingsHours(Number(e.target.value))}
+                            className="w-full pl-4 pr-10 py-3 rounded-xl border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent bg-neutral-50 hover:bg-white focus:bg-white transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-medium text-neutral-400 pointer-events-none select-none">ч</span>
+                        </div>
+                        <div className="flex-1 relative">
+                          <input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={settingsMinutes}
+                            onChange={(e) => setSettingsMinutes(Number(e.target.value))}
+                            className="w-full pl-4 pr-12 py-3 rounded-xl border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent bg-neutral-50 hover:bg-white focus:bg-white transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-medium text-neutral-400 pointer-events-none select-none">мин</span>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[12px] font-semibold text-neutral-500 uppercase tracking-wider mb-2">Язык курса</label>
@@ -1885,12 +1973,6 @@ export default function CourseDetailPage() {
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-[12px] font-semibold text-neutral-500 uppercase tracking-wider mb-2">ID курса</label>
-                    <div className="flex items-center gap-2">
-                      <span className="px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-sm text-neutral-500 font-mono flex-1">{courseData.id}</span>
                     </div>
                   </div>
                 </div>
@@ -1951,6 +2033,51 @@ export default function CourseDetailPage() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Module Modal (Create / Edit) */}
+      <AddElementModal
+        isOpen={addElementModalOpen}
+        onClose={() => {
+          setAddElementModalOpen(false);
+          setAddElementTargetModule(null);
+        }}
+        onSelect={(el) => {
+          if (addElementTargetModule) {
+            const typeMap: Record<string, ItemType> = { lesson: 'lesson', homework: 'homework', test: 'test', survey: 'survey', event: 'event' };
+            const newItem = {
+              id: `imported-${Date.now()}`,
+              type: (typeMap[el.type] || 'lesson') as ItemType,
+              title: el.title,
+              status: 'open' as AccessStatus,
+            };
+            setModules(prev => prev.map(m =>
+              m.id === addElementTargetModule
+                ? { ...m, items: [...m.items, newItem] }
+                : m
+            ));
+            const targetMod = modules.find(m => m.id === addElementTargetModule);
+            showToast(`«${el.title}» добавлен в модуль «${targetMod?.title || ''}»`);
+          }
+          setAddElementModalOpen(false);
+          setAddElementTargetModule(null);
+        }}
+      />
+
+      {/* Toast Notification */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] transition-all duration-300 ${
+          toast.visible
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center gap-3 px-5 py-3.5 bg-white border border-neutral-200 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] max-w-lg">
+          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Check className="w-3.5 h-3.5 text-emerald-600" />
+          </div>
+          <p className="text-[13px] font-medium text-neutral-800">{toast.message}</p>
         </div>
       </div>
 

@@ -18,7 +18,12 @@ import {
   Check,
   ArrowDownAZ,
   ArrowUpZA,
-  ArrowUpDown
+  ArrowUpDown,
+  X,
+  FileSpreadsheet,
+  Download,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const mockUsers = [
@@ -85,7 +90,19 @@ function MarqueeText({ text, className }: { text: string, className?: string }) 
 
 function CustomSelect({ label, options, value, onChange }: { label: string, options: string[], value: string, onChange: (val: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [options, searchQuery]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -110,24 +127,128 @@ function CustomSelect({ label, options, value, onChange }: { label: string, opti
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 w-full min-w-[180px] bg-white border border-neutral-200 shadow-xl rounded-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-          <button
-            onClick={() => { onChange(""); setOpen(false); }}
-            className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
-          >
-            <span className={value === "" ? "font-semibold text-neutral-900" : ""}>{label} (Все)</span>
-            {value === "" && <Check className="w-4 h-4 text-neutral-900" />}
-          </button>
-          {options.map(opt => (
-            <button
-              key={opt}
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
-            >
-              <span className={value === opt ? "font-semibold text-neutral-900" : ""}>{opt}</span>
-              {value === opt && <Check className="w-4 h-4 text-neutral-900" />}
-            </button>
-          ))}
+        <div className="absolute top-full mt-2 w-full min-w-[200px] bg-white border border-neutral-200 shadow-xl rounded-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[300px]">
+          <div className="px-2 pb-1.5 border-b border-neutral-100 mb-1">
+            <input
+              type="text"
+              placeholder="Поиск..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-md px-3 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--color-admin-primary-500)] focus:border-[var(--color-admin-primary-500)] placeholder:text-neutral-400"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="overflow-y-auto">
+            {!searchQuery && (
+              <button
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+              >
+                <span className={value === "" ? "font-semibold text-neutral-900" : ""}>{label} (Все)</span>
+                {value === "" && <Check className="w-4 h-4 text-neutral-900" />}
+              </button>
+            )}
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-[13px] text-neutral-400 text-center">Нет результатов</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+                >
+                  <span className={value === opt ? "font-semibold text-neutral-900" : ""}>{opt}</span>
+                  {value === opt && <Check className="w-4 h-4 text-neutral-900" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormSelect({ label, placeholder, options, value, onChange, showSearch = true }: { label: string, placeholder: string, options: string[], value: string, onChange: (val: string) => void, showSearch?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!showSearch || !searchQuery) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [options, searchQuery, showSearch]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayValue = value === "" ? placeholder : value;
+
+  return (
+    <div className="relative group" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full text-left px-4 py-3 bg-neutral-50/50 hover:bg-neutral-50 border ${open ? 'border-[var(--color-admin-primary-500)] ring-2 ring-[var(--color-admin-primary-100)]' : 'border-neutral-200'} rounded-xl text-[14px] ${value === "" ? 'text-neutral-400' : 'text-neutral-900'} focus:outline-none transition-all flex items-center justify-between min-h-[46px]`}
+      >
+        <span className="truncate">{displayValue}</span>
+        <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 w-full min-w-[200px] bg-white border border-neutral-200 shadow-xl rounded-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[250px]">
+          {showSearch && (
+            <div className="px-2 pb-1.5 border-b border-neutral-100 mb-1">
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-md px-3 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--color-admin-primary-500)] focus:border-[var(--color-admin-primary-500)] placeholder:text-neutral-400"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto">
+            {(!searchQuery && placeholder) && (
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+              >
+                <span className={value === "" ? "font-semibold text-neutral-900" : ""}>{placeholder}</span>
+                {value === "" && <Check className="w-4 h-4 text-neutral-900" />}
+              </button>
+            )}
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-[13px] text-neutral-400 text-center">Нет результатов</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <button
+                  type="button"
+                  key={opt}
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+                >
+                  <span className={value === opt ? "font-semibold text-neutral-900" : ""}>{opt}</span>
+                  {value === opt && <Check className="w-4 h-4 text-neutral-900" />}
+                </button>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -150,6 +271,25 @@ export default function UsersPage() {
   // Sort state
   const [activitySort, setActivitySort] = useState<SortOrder>(null);
   const [regSort, setRegSort] = useState<SortOrder>(null);
+
+  // Modal states
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Form states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Form dropdown states
+  const [formGender, setFormGender] = useState("");
+  const [formRole, setFormRole] = useState("Студент");
+  const [formBranch, setFormBranch] = useState("");
+  const [formDept, setFormDept] = useState("");
+  const [formDiv, setFormDiv] = useState("");
+  const [formPosition, setFormPosition] = useState("");
 
   // Extract unique options
   const branches = useMemo(() => Array.from(new Set(mockUsers.map(u => u.branch))), []);
@@ -223,10 +363,18 @@ export default function UsersPage() {
         title="Пользователи" 
         actions={
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="flex items-center gap-2 font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100">
-              <Upload className="w-4 h-4" /> Excel
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsUploadModalOpen(true)}
+              className="flex items-center gap-2 font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+            >
+              <Upload className="w-4 h-4" /> Массовая загрузка
             </Button>
-            <Button variant="primary" className="flex items-center gap-2 font-medium shadow-sm">
+            <Button 
+              variant="primary" 
+              onClick={() => setIsAddUserModalOpen(true)}
+              className="flex items-center gap-2 font-medium shadow-sm"
+            >
               <Plus className="w-4 h-4" /> Добавить пользователя
             </Button>
           </div>
@@ -327,21 +475,10 @@ export default function UsersPage() {
                         <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-800" />
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <div className="bg-neutral-100 px-2.5 py-1 rounded-md inline-flex max-w-full">
-                          <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-700" />
-                        </div>
+                        <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-800" />
                       </td>
-                      <td className="px-3 py-3 truncate">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${
-                            user.status === 'Работает' ? 'bg-emerald-500' :
-                            user.status === 'Отпуск' ? 'bg-amber-400' :
-                            'bg-rose-500'
-                          }`} />
-                          <span className="text-[12px] font-medium text-neutral-700 truncate">
-                            {user.status}
-                          </span>
-                        </div>
+                      <td className="px-3 py-3 overflow-hidden">
+                        <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-800" />
                       </td>
                       <td className="px-3 py-3 truncate">
                         {renderDateTime(user.visit)}
@@ -384,6 +521,289 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Mass Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setIsUploadModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-100">
+              <h2 className="text-xl font-bold text-neutral-900">Массовая загрузка</h2>
+              <button 
+                onClick={() => setIsUploadModalOpen(false)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <p className="text-[14px] text-neutral-600 leading-relaxed">
+                  Загрузите список пользователей из Excel-файла (.xlsx, .csv).
+                </p>
+                <button className="flex items-center gap-2 text-[14px] font-medium text-[var(--color-admin-primary-500)] hover:underline self-start mt-1">
+                  <Download className="w-4 h-4" /> Скачать шаблон
+                </button>
+              </div>
+
+              <div 
+                className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center gap-4 transition-colors cursor-pointer group relative ${isDragging ? 'border-[var(--color-admin-primary-500)] bg-[var(--color-admin-primary-500)]/5' : 'border-neutral-200 bg-neutral-50/50 hover:bg-neutral-50 hover:border-[var(--color-admin-primary-400)]'}`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    setSelectedFile(e.dataTransfer.files[0]);
+                  }
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept=".xlsx,.xls,.csv" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setSelectedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+                
+                {selectedFile ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                      <Check className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[14px] font-medium text-neutral-900 truncate max-w-[200px]">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-[13px] text-neutral-500 mt-1">
+                        {(selectedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-white border border-neutral-200 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <FileSpreadsheet className="w-6 h-6 text-neutral-400 group-hover:text-[var(--color-admin-primary-500)] transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[14px] font-medium text-neutral-900 pointer-events-none">
+                        Перетащите файл сюда
+                      </p>
+                      <p className="text-[13px] text-neutral-500 mt-1 pointer-events-none">
+                        или нажмите для выбора файла на устройстве
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-neutral-100 bg-neutral-50/50 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setIsUploadModalOpen(false)}>
+                Отмена
+              </Button>
+              <Button variant="primary" disabled={!selectedFile}>
+                Загрузить файл
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {isAddUserModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setIsAddUserModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-100 shrink-0">
+              <h2 className="text-xl font-bold text-neutral-900">Добавить пользователя</h2>
+              <button 
+                onClick={() => setIsAddUserModalOpen(false)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <form className="flex flex-col gap-10">
+                
+                {/* Personal Information */}
+                <div className="flex flex-col gap-5">
+                  <h3 className="text-lg font-bold text-neutral-900">Персональная информация</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Имя <span className="text-rose-500">*</span></label>
+                      <input type="text" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Фамилия <span className="text-rose-500">*</span></label>
+                      <input type="text" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Отчество</label>
+                      <input type="text" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Дата рождения</label>
+                        <input type="date" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all text-neutral-400" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Пол</label>
+                        <FormSelect 
+                          label="Пол" 
+                          placeholder="" 
+                          options={["Мужской", "Женский"]} 
+                          value={formGender} 
+                          onChange={setFormGender}
+                          showSearch={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Data */}
+                <div className="flex flex-col gap-5 pt-2 border-t border-neutral-100">
+                  <h3 className="text-lg font-bold text-neutral-900">Дополнительные данные</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Роль <span className="text-rose-500">*</span></label>
+                      <FormSelect 
+                        label="Роль" 
+                        placeholder="" 
+                        options={["Студент", "Куратор", "Гость"]} 
+                        value={formRole} 
+                        onChange={setFormRole}
+                        showSearch={false}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Филиал</label>
+                      <FormSelect 
+                        label="Филиал" 
+                        placeholder="Филиал" 
+                        options={branches} 
+                        value={formBranch} 
+                        onChange={setFormBranch} 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Департамент</label>
+                      <FormSelect 
+                        label="Департамент" 
+                        placeholder="Департамент" 
+                        options={depts} 
+                        value={formDept} 
+                        onChange={setFormDept} 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Отдел</label>
+                      <FormSelect 
+                        label="Отдел" 
+                        placeholder="Отдел" 
+                        options={divs} 
+                        value={formDiv} 
+                        onChange={setFormDiv} 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Должность</label>
+                      <FormSelect 
+                        label="Должность" 
+                        placeholder="Должность" 
+                        options={roles} 
+                        value={formPosition} 
+                        onChange={setFormPosition} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auth Data */}
+                <div className="flex flex-col gap-5 pt-2 border-t border-neutral-100">
+                  <h3 className="text-lg font-bold text-neutral-900">Данные для авторизации</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Номер телефона <span className="text-rose-500">*</span></label>
+                      <input type="tel" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" placeholder="+998" />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Почта</label>
+                      <input type="email" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" placeholder="example@ex.com" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Пароль</label>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl pl-4 pr-11 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Подтвердите пароль</label>
+                        <div className="relative">
+                          <input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl pl-4 pr-11 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div className="p-6 border-t border-neutral-100 bg-neutral-50/50 flex justify-end gap-3 shrink-0">
+              <Button variant="ghost" onClick={() => setIsAddUserModalOpen(false)}>
+                Отмена
+              </Button>
+              <Button variant="primary" className="px-8 bg-black hover:bg-neutral-800 text-white rounded-xl">
+                Сохранить
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,7 +21,7 @@ import {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type AccessStatus = 'open' | 'closed' | 'scheduled' | 'limited';
-type BlockType = 'video' | 'file' | 'text' | 'image' | 'slider' | 'callout' | 'button' | 'exercise' | 'iframe' | 'table' | 'columns';
+type BlockType = 'video' | 'file' | 'text' | 'image' | 'slider' | 'callout' | 'button' | 'exercise' | 'iframe' | 'table' | 'columns' | 'scale' | 'open_question';
 
 interface LessonSettings {
   title: string;
@@ -35,6 +35,7 @@ interface LessonSettings {
   timerEnabled: boolean;
   timerMinutes: number;
   fileAccess: 'both' | 'preview' | 'download';
+  language: string;
 }
 
 interface ExerciseAnswer {
@@ -49,6 +50,7 @@ interface ContentBlock {
   id: string;
   type: BlockType;
   data: any;
+  isRequired?: boolean;
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -81,23 +83,75 @@ const DEFAULT_BLOCK: Record<BlockType, () => any> = {
   iframe: () => ({ code: '' }),
   table: () => ({ cells: [['', '', ''], ['', '', ''], ['', '', '']], headerRow: true }),
   columns: () => ({ count: 2, cols: [[], []] as ContentBlock[][] }),
+  scale: () => ({ question: '', description: '', useEmojis: false }),
+  open_question: () => ({ question: '', description: '', format: 'short' }),
 };
 
 // ─── Mock ────────────────────────────────────────────────────────────────────
 
-const MOCK: LessonSettings = {
-  title: 'Введение в корпоративную безопасность',
+const EMPTY_MOCK: LessonSettings = {
+  title: '',
   accessStatus: 'open',
   scheduledDate: '', startDate: '', endDate: '',
   ratingEnabled: true, reviewEnabled: false,
   homeworkEnabled: false, timerEnabled: true, timerMinutes: 5,
   fileAccess: 'both',
+  language: 'ru',
+};
+
+const MOCK: LessonSettings = {
+  title: 'Опрос удовлетворенности пользователей',
+  accessStatus: 'open',
+  scheduledDate: '', startDate: '', endDate: '',
+  ratingEnabled: true, reviewEnabled: false,
+  homeworkEnabled: false, timerEnabled: true, timerMinutes: 5,
+  fileAccess: 'both',
+  language: 'ru',
 };
 
 const MOCK_BLOCKS: ContentBlock[] = [
-  { id: 'b1', type: 'text', data: { html: '<p>В этом уроке мы рассмотрим основные принципы корпоративной безопасности.</p>' } },
-  { id: 'b2', type: 'video', data: { fileName: 'intro_lecture.mp4' } },
-  { id: 'b3', type: 'callout', data: { icon: 'info', html: '<p>Материалы этого урока обязательны для изучения перед тестом.</p>', iconColor: '#378CFF', bgColor: '#EBF5FF' } },
+  {
+    id: 'b-1',
+    type: 'exercise',
+    isRequired: true,
+    data: {
+      type: 'radio',
+      question: 'Как часто вы пользуетесь нашей платформой?',
+      description: 'Выберите один наиболее подходящий вариант.',
+      questionImage: '',
+      answers: [
+        { id: 'a1', text: 'Каждый день', description: '', imageUrl: '', isCorrect: false },
+        { id: 'a2', text: 'Несколько раз в неделю', description: '', imageUrl: '', isCorrect: false },
+        { id: 'a3', text: 'Редко', description: '', imageUrl: '', isCorrect: false },
+      ],
+      isDivider: false,
+      items: [],
+      pairs: [],
+      correctAnswer: true
+    }
+  },
+  {
+    id: 'b-2',
+    type: 'scale',
+    isRequired: false,
+    data: {
+      question: 'Оцените удобство интерфейса',
+      description: 'От 1 до 5, где 5 — максимально удобно.',
+      useEmojis: true,
+      isDivider: false
+    }
+  },
+  {
+    id: 'b-3',
+    type: 'open_question',
+    isRequired: false,
+    data: {
+      question: 'Что бы вы хотели улучшить?',
+      description: 'Опишите ваши пожелания подробно.',
+      format: 'detailed',
+      isDivider: false
+    }
+  }
 ];
 
 const MOCK_IMPORT_COURSES = [
@@ -231,12 +285,14 @@ function ColorPicker({ value, onChange, label }: { value: string; onChange: (c: 
 
 // ═══ Block Toolbar ═══════════════════════════════════════════════════════════
 
-function BlockToolbar({ index, total, onMoveUp, onMoveDown, onDuplicate, onDelete, label, onDragStart }: {
+function BlockToolbar({ index, total, onMoveUp, onMoveDown, onDuplicate, onDelete, label, onDragStart, isRequired, onToggleRequired }: {
   index: number; total: number;
   onMoveUp: () => void; onMoveDown: () => void;
   onDuplicate: () => void; onDelete: () => void;
   label: string;
   onDragStart: (e: React.DragEvent) => void;
+  isRequired?: boolean;
+  onToggleRequired?: (val: boolean) => void;
 }) {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-100 bg-neutral-50/50">
@@ -250,11 +306,19 @@ function BlockToolbar({ index, total, onMoveUp, onMoveDown, onDuplicate, onDelet
         </div>
         <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">{label}</span>
       </div>
-      <div className="flex items-center gap-0.5">
-        <button onClick={onMoveUp} disabled={index === 0} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:pointer-events-none transition-colors"><ChevronUp className="w-3.5 h-3.5" /></button>
-        <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:pointer-events-none transition-colors"><ChevronDown className="w-3.5 h-3.5" /></button>
-        <button onClick={onDuplicate} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"><Copy className="w-3.5 h-3.5" /></button>
-        <button onClick={onDelete} className="p-1 rounded-md text-neutral-400 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+      <div className="flex items-center gap-2">
+        {onToggleRequired !== undefined && (
+          <label className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-500 mr-2 cursor-pointer">
+            <input type="checkbox" checked={isRequired} onChange={e => onToggleRequired(e.target.checked)} className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5" />
+            Обязательный
+          </label>
+        )}
+        <div className="flex items-center gap-0.5">
+          <button onClick={onMoveUp} disabled={index === 0} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:pointer-events-none transition-colors"><ChevronUp className="w-3.5 h-3.5" /></button>
+          <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:pointer-events-none transition-colors"><ChevronDown className="w-3.5 h-3.5" /></button>
+          <button onClick={onDuplicate} className="p-1 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"><Copy className="w-3.5 h-3.5" /></button>
+          <button onClick={onDelete} className="p-1 rounded-md text-neutral-400 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+        </div>
       </div>
     </div>
   );
@@ -705,8 +769,7 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
   const exerciseTypes = [
     {id:'radio', icon: CircleDot, label:'Один'},
     {id:'checkbox', icon: CheckSquare, label:'Несколько'},
-    {id:'ordering', icon: ArrowUpDown, label:'Порядок'},
-    {id:'matching', icon: Shuffle, label:'Соединение'},
+
     {id:'truefalse', icon: ToggleLeft, label:'Да/Нет'},
   ];
 
@@ -726,8 +789,11 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
 
       {/* Question (shared for all types) */}
       <input type="text" value={data.question} onChange={e => onChange({...data, question: e.target.value})}
-        placeholder="Введите вопрос..."
+        placeholder="Вопрос..."
         className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 text-[14px] font-medium placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+      <input type="text" value={data.description || ''} onChange={e => onChange({...data, description: e.target.value})}
+        placeholder="Описание (необязательно)"
+        className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
 
       {data.questionImage ? (
         <div className="relative rounded-lg overflow-hidden h-28 bg-neutral-100 group/qi">
@@ -745,11 +811,7 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
         <div className="space-y-2">
           {answers.map((a: ExerciseAnswer, ai: number) => (
             <div key={a.id} className="flex gap-3 items-center">
-              <button onClick={() => setCorrect(a.id)}
-                className={`w-5 h-5 shrink-0 flex items-center justify-center transition-all ${
-                  data.type === 'radio' ? `rounded-full border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}` : `rounded-md border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}`
-                }`}>{a.isCorrect && <Check className="w-3 h-3 text-white" />}</button>
-              <span className="text-[11px] font-bold text-neutral-400 w-4 shrink-0">{String.fromCharCode(65+ai)}</span>
+              <span className="text-[11px] font-bold text-neutral-400 w-4 shrink-0 text-center">{String.fromCharCode(65+ai)}</span>
               <div className="flex-1 min-w-0 space-y-1">
                 <input type="text" value={a.text} onChange={e => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,text:e.target.value} : ans)})}
                   placeholder={`Вариант ${String.fromCharCode(65+ai)}...`}
@@ -842,25 +904,18 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
 
       {/* ──── True / False ──── */}
       {data.type === 'truefalse' && (
-        <div className="space-y-3">
-          <p className="text-[11px] text-neutral-400">Выберите правильный ответ для вопроса выше.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => onChange({...data, correctAnswer: true})}
-              className={`p-5 rounded-xl border-2 text-center transition-all ${data.correctAnswer === true ? 'border-emerald-400 bg-emerald-50 shadow-[0_0_0_1px_rgba(52,211,153,0.2)]' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${data.correctAnswer === true ? 'bg-emerald-500' : 'bg-neutral-100'}`}>
-                <Check className={`w-5 h-5 ${data.correctAnswer === true ? 'text-white' : 'text-neutral-400'}`} />
-              </div>
-              <p className={`text-[14px] font-semibold ${data.correctAnswer === true ? 'text-emerald-700' : 'text-neutral-600'}`}>Правда</p>
-
-            </button>
-            <button onClick={() => onChange({...data, correctAnswer: false})}
-              className={`p-5 rounded-xl border-2 text-center transition-all ${data.correctAnswer === false ? 'border-rose-400 bg-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.2)]' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${data.correctAnswer === false ? 'bg-rose-500' : 'bg-neutral-100'}`}>
-                <X className={`w-5 h-5 ${data.correctAnswer === false ? 'text-white' : 'text-neutral-400'}`} />
-              </div>
-              <p className={`text-[14px] font-semibold ${data.correctAnswer === false ? 'text-rose-700' : 'text-neutral-600'}`}>Ложь</p>
-
-            </button>
+        <div className="grid grid-cols-2 gap-3 opacity-70 pointer-events-none mt-2">
+          <div className="p-5 rounded-xl border-2 border-neutral-200 bg-white text-center flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-neutral-100 mb-2 flex items-center justify-center">
+              <Check className="w-5 h-5 text-neutral-400" />
+            </div>
+            <p className="text-[14px] font-semibold text-neutral-600">Правда</p>
+          </div>
+          <div className="p-5 rounded-xl border-2 border-neutral-200 bg-white text-center flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-neutral-100 mb-2 flex items-center justify-center">
+              <X className="w-5 h-5 text-neutral-400" />
+            </div>
+            <p className="text-[14px] font-semibold text-neutral-600">Ложь</p>
           </div>
         </div>
       )}
@@ -1095,9 +1150,88 @@ function ColumnsBlockEditor({ data, onChange }: { data: any; onChange: (d: any) 
   );
 }
 
+function ScaleBlockEditor({ data, onChange }: any) {
+  return (
+    <div className="px-4 py-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <Toggle checked={data.useEmojis} onChange={v => onChange({...data, useEmojis: v})} label="Использовать смайлики" />
+        <Toggle checked={data.isDivider} onChange={v => onChange({...data, isDivider: v})} label="Разделитель" icon={EyeOff} />
+      </div>
+      <input type="text" value={data.question} onChange={e => onChange({...data, question: e.target.value})} placeholder="Вопрос..." className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 text-[14px] font-medium bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+      <input type="text" value={data.description} onChange={e => onChange({...data, description: e.target.value})} placeholder="Описание (необязательно)" className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+      
+      {data.questionImage ? (
+        <div className="relative rounded-lg overflow-hidden h-28 bg-neutral-100 group/qi">
+          <img src={data.questionImage} alt="" className="w-full h-full object-cover" />
+          <button onClick={() => onChange({...data, questionImage:''})} className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover/qi:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+        </div>
+      ) : (
+        <button className="w-full h-12 border border-dashed border-neutral-200 rounded-lg flex items-center justify-center gap-2 text-[11px] text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 transition-all">
+          <ImageIcon className="w-3.5 h-3.5" /> Изображение к вопросу
+        </button>
+      )}
+      
+
+
+      <div className="flex items-center justify-between gap-2 pt-2 pb-4 px-4 border-t border-neutral-100">
+        {[1,2,3,4,5].map(n => (
+           <div key={n} className="flex flex-col items-center gap-2">
+             <div className="w-12 h-12 rounded-full border-2 border-neutral-200 bg-neutral-50 flex items-center justify-center text-neutral-400">
+               {data.useEmojis ? (
+                 n === 1 ? '😠' : n === 2 ? '☹️' : n === 3 ? '😐' : n === 4 ? '🙂' : '🤩'
+               ) : (
+                 <span className="text-[16px] font-bold">{n}</span>
+               )}
+             </div>
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OpenQuestionBlockEditor({ data, onChange }: any) {
+  return (
+    <div className="px-4 py-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-neutral-100 rounded-lg p-0.5 w-fit">
+          <button onClick={() => onChange({...data, format: 'short'})} className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${data.format === 'short' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500'}`}>Короткий ответ</button>
+          <button onClick={() => onChange({...data, format: 'detailed'})} className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${data.format === 'detailed' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500'}`}>Развернутый ответ</button>
+        </div>
+        <Toggle checked={data.isDivider} onChange={v => onChange({...data, isDivider: v})} label="Разделитель" icon={EyeOff} />
+      </div>
+
+      <input type="text" value={data.question} onChange={e => onChange({...data, question: e.target.value})} placeholder="Вопрос..." className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 text-[14px] font-medium bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+      <input type="text" value={data.description} onChange={e => onChange({...data, description: e.target.value})} placeholder="Описание (необязательно)" className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+      
+      {data.questionImage ? (
+        <div className="relative rounded-lg overflow-hidden h-28 bg-neutral-100 group/qi">
+          <img src={data.questionImage} alt="" className="w-full h-full object-cover" />
+          <button onClick={() => onChange({...data, questionImage:''})} className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover/qi:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+        </div>
+      ) : (
+        <button className="w-full h-12 border border-dashed border-neutral-200 rounded-lg flex items-center justify-center gap-2 text-[11px] text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 transition-all">
+          <ImageIcon className="w-3.5 h-3.5" /> Изображение к вопросу
+        </button>
+      )}
+
+      <div className="pt-2">
+        {data.format === 'short' ? (
+          <input type="text" disabled placeholder="Поле для ответа пользователя..." className="w-full px-3 py-2.5 rounded-lg border border-dashed border-neutral-300 text-[13px] bg-neutral-50/50 cursor-not-allowed" />
+        ) : (
+          <textarea disabled placeholder="Поле для развернутого ответа пользователя..." rows={3} className="w-full px-3 py-2.5 rounded-lg border border-dashed border-neutral-300 text-[13px] bg-neutral-50/50 resize-none cursor-not-allowed" />
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Registry ────────────────────────────────────────────────────────────────
 
 const BLOCK_REG: { type: BlockType; label: string; desc: string; icon: any; color: string }[] = [
+  {type:'scale',label:'Шкала',desc:'Оценка от 1 до 5',icon:Star,color:'text-amber-600 bg-amber-50'},
+  {type:'open_question',label:'Открытый',desc:'Текстовый ответ',icon:MessageSquare,color:'text-purple-600 bg-purple-50'},
+  {type:'exercise',label:'Вопрос',desc:'Выбор вариантов',icon:HelpCircle,color:'text-orange-600 bg-orange-50'},
   {type:'text',label:'Текст',desc:'Форматируемый блок',icon:Type,color:'text-neutral-600 bg-neutral-100'},
   {type:'video',label:'Видео',desc:'Загрузить видео',icon:Video,color:'text-rose-600 bg-rose-50'},
   {type:'image',label:'Картинка',desc:'Загрузить изображение',icon:ImageIcon,color:'text-blue-600 bg-blue-50'},
@@ -1105,7 +1239,6 @@ const BLOCK_REG: { type: BlockType; label: string; desc: string; icon: any; colo
   {type:'file',label:'Файл',desc:'PDF, Excel и др.',icon:FileText,color:'text-amber-600 bg-amber-50'},
   {type:'callout',label:'Подсказка',desc:'Блок-сноска',icon:Info,color:'text-sky-600 bg-sky-50'},
   {type:'button',label:'Кнопка',desc:'Ссылка / разделитель',icon:MousePointer,color:'text-emerald-600 bg-emerald-50'},
-  {type:'exercise',label:'Упражнение',desc:'Мини-тест',icon:HelpCircle,color:'text-orange-600 bg-orange-50'},
   {type:'iframe',label:'Код',desc:'HTML / JS виджет',icon:Code,color:'text-purple-600 bg-purple-50'},
   {type:'table',label:'Таблица',desc:'Данные в таблице',icon:Table,color:'text-teal-600 bg-teal-50'},
   {type:'columns',label:'Колонки',desc:'Сетка 2–3',icon:Columns,color:'text-indigo-600 bg-indigo-50'},
@@ -1116,6 +1249,7 @@ const EDITORS: Record<BlockType, React.FC<{data:any;onChange:(d:any)=>void}>> = 
   file:FileBlockEditor,slider:SliderBlockEditor,callout:CalloutBlockEditor,
   button:ButtonBlockEditor,exercise:ExerciseBlockEditor,iframe:IframeBlockEditor,
   table:TableBlockEditor,columns:ColumnsBlockEditor,
+  scale:ScaleBlockEditor,open_question:OpenQuestionBlockEditor,
 };
 
 // ═══ Floating Bar ════════════════════════════════════════════════════════════
@@ -1152,15 +1286,18 @@ function FloatingBar({ onAdd, onImport }: { onAdd: (t: BlockType) => void; onImp
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export default function LessonEditorPage() {
-  const params = useParams();
+export default function CreateSurveyPage() {
   const router = useRouter();
-  const courseId = params.id as string;
 
-  const [settings, setSettings] = useState<LessonSettings>(MOCK);
-  const [blocks, setBlocks] = useState<ContentBlock[]>(
-    typeof params.lessonId === 'string' && params.lessonId.startsWith('item-') ? [] : MOCK_BLOCKS
-  );
+  const [settings, setSettings] = useState<LessonSettings>(EMPTY_MOCK);
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('id=')) {
+      setSettings(MOCK);
+      setBlocks(MOCK_BLOCKS);
+    }
+  }, []);
   const [saved, setSaved] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [showImport, setShowImport] = useState(false);
@@ -1174,7 +1311,7 @@ export default function LessonEditorPage() {
   const upd = (p: Partial<LessonSettings>) => setSettings(prev => ({...prev,...p}));
 
   const addBlock = (type: BlockType) => {
-    const newBlock = {id: mkId(), type, data: DEFAULT_BLOCK[type]()};
+    const newBlock = {id: mkId(), type, data: DEFAULT_BLOCK[type](), isRequired: false};
     if (insertIdx !== null) {
       setBlocks(prev => {
         const next = [...prev];
@@ -1187,6 +1324,7 @@ export default function LessonEditorPage() {
     }
   };
   const updateBlock = (id:string,data:any) => setBlocks(p=>p.map(b=>b.id===id?{...b,data}:b));
+  const toggleRequired = (id:string,req:boolean) => setBlocks(p=>p.map(b=>b.id===id?{...b,isRequired:req}:b));
   const deleteBlock = (id:string) => setBlocks(p=>p.filter(b=>b.id!==id));
   const dupBlock = (id:string) => {
     const s=blocks.find(b=>b.id===id);if(!s)return;
@@ -1215,7 +1353,13 @@ export default function LessonEditorPage() {
 
   const handleImport = (importedBlocks: ContentBlock[]) => { setBlocks(prev => [...prev, ...importedBlocks]); };
 
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),3000); };
+  const save = () => { 
+    setSaved(true); 
+    setTimeout(()=> {
+      setSaved(false);
+      router.push('/surveys');
+    }, 800); 
+  };
 
   const accessOpts = [
     {id:'open',label:'Открытый',dot:'bg-emerald-500'},
@@ -1227,7 +1371,7 @@ export default function LessonEditorPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
       <PageHeader
-        breadcrumbs={[{label:'Курсы',href:'/courses'},{label:'Содержание',href:`/courses/${courseId}`},{label:settings.title||'Новый урок'}]}
+        breadcrumbs={[{label:'Опросы',href:'/surveys'},{label:settings.title||'Новый опрос'}]}
         actions={<div className="flex items-center gap-2">
           {saved && <span className="text-[13px] text-emerald-600 font-medium flex items-center gap-1.5"><Check className="w-4 h-4" /> Сохранено</span>}
           <Button variant="primary" onClick={save} className="gap-2 text-[13px]"><Save className="w-4 h-4" /> Сохранить</Button>
@@ -1237,16 +1381,16 @@ export default function LessonEditorPage() {
       <div className="max-w-4xl mx-auto px-6 py-6" style={{paddingBottom:'140px'}}>
         {/* Title */}
         <input type="text" value={settings.title} onChange={e=>upd({title:e.target.value})}
-          placeholder="Название урока..."
+          placeholder="Название опроса..."
           className="w-full text-[26px] font-bold text-neutral-900 placeholder-neutral-300 border-0 focus:outline-none bg-transparent leading-tight mb-5" />
 
         {/* Settings */}
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-6 overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-6 z-20 relative">
           <button onClick={()=>setSettingsOpen(!settingsOpen)}
-            className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-neutral-50/50 transition-colors">
+            className={`w-full flex items-center justify-between px-5 py-3 text-left hover:bg-neutral-50/50 transition-colors ${settingsOpen ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center"><BookOpen className="w-3.5 h-3.5 text-neutral-500" /></div>
-              <span className="text-[14px] font-semibold text-neutral-900">Настройки урока</span>
+              <span className="text-[14px] font-semibold text-neutral-900">Настройки опроса</span>
             </div>
             <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${settingsOpen?'rotate-180':''}`} />
           </button>
@@ -1277,33 +1421,29 @@ export default function LessonEditorPage() {
                 </div>
               )}
 
-              <div className="border-t border-neutral-100" />
 
-              {/* 2) Rating + Review */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-                <Toggle checked={settings.ratingEnabled} onChange={v=>upd({ratingEnabled:v})} label="Оценка урока" description="От 1 до 5 звёзд" icon={Star} />
-                <Toggle checked={settings.reviewEnabled} onChange={v=>upd({reviewEnabled:v})} label="Развёрнутый отзыв" description="Текстовый комментарий" icon={MessageCircle} />
-              </div>
-
-              <div className="border-t border-neutral-100" />
-
-              {/* 3) Timer + Homework */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 items-start">
-                <div>
-                  <Toggle checked={settings.timerEnabled} onChange={v=>upd({timerEnabled:v})} label="Таймер-блокировка" description="Мин. время на уроке" icon={Timer} />
-                  {settings.timerEnabled && (
-                    <div className="flex items-center gap-2 pl-10 mt-1">
-                      <input type="number" min={1} value={settings.timerMinutes} onChange={e=>upd({timerMinutes:Number(e.target.value)})}
-                        className="w-20 px-3 py-1.5 rounded-lg border border-neutral-200 text-[13px] text-center bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-                      <span className="text-[12px] text-neutral-400">минут</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Toggle checked={settings.homeworkEnabled} onChange={v=>upd({homeworkEnabled:v})} label="Домашнее задание" description="Чат с куратором" icon={MessageSquare} />
+              <div className="border-t border-neutral-100 mt-2 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 items-center">
+                  <div className="pt-2">
+                    <Toggle checked={settings.timerEnabled} onChange={v=>upd({timerEnabled:v})} label="Время на опросе" description="Мин. время на опросе" icon={Timer} />
+                    {settings.timerEnabled && (
+                      <div className="flex items-center gap-2 pl-10 mt-1">
+                        <input type="number" min={1} value={settings.timerMinutes} onChange={e=>upd({timerMinutes:Number(e.target.value)})}
+                          className="w-20 px-3 py-2 rounded-lg border border-neutral-200 text-[13px] text-center bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+                        <span className="text-[12px] text-neutral-400">минут</span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-2 mt-1">Язык опроса</label>
+                    <Dropdown value={settings.language || 'ru'} options={[
+                      {id:'ru', label:'Русский'},
+                      {id:'uz', label:'Узбекский'},
+                      {id:'en', label:'Английский'},
+                    ]} onChange={v=>upd({language:v})} />
+                  </div>
                 </div>
               </div>
-
 
             </div>
           )}
@@ -1318,7 +1458,7 @@ export default function LessonEditorPage() {
         {blocks.length === 0 ? (
           <div className="bg-white border-2 border-dashed border-neutral-200 rounded-2xl p-16 flex flex-col items-center text-center">
             <div className="w-14 h-14 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-center mb-4"><BookOpen className="w-6 h-6 text-neutral-300" /></div>
-            <h3 className="font-semibold text-neutral-800 mb-1">Начните создавать урок</h3>
+            <h3 className="font-semibold text-neutral-800 mb-1">Начните создавать опрос</h3>
             <p className="text-[13px] text-neutral-400 max-w-sm">Используйте панель инструментов внизу экрана</p>
           </div>
         ) : (
@@ -1344,9 +1484,11 @@ export default function LessonEditorPage() {
                     onDelete={()=>deleteBlock(block.id)}
                     label={meta?.label||block.type}
                     onDragStart={e=>handleDragStart(e,idx)}
+                    isRequired={['scale', 'open_question', 'exercise'].includes(block.type) ? block.isRequired : undefined}
+                    onToggleRequired={['scale', 'open_question', 'exercise'].includes(block.type) ? (v: boolean) => toggleRequired(block.id, v) : undefined}
                   />
                   <Ed data={block.data} onChange={d=>updateBlock(block.id,d)} />
-                  {(block.type==='button'||block.type==='exercise')&&block.data.isDivider && (
+                  {['button','exercise','scale','open_question'].includes(block.type) && block.data.isDivider && (
                     <div className="px-4 pb-3">
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium">
                         <EyeOff className="w-3.5 h-3.5" /> Контент ниже скрыт до взаимодействия

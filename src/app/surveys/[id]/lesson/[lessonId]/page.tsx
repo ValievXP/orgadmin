@@ -14,8 +14,7 @@ import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Link, Quote, Strikethrough, Heading1, Heading2, Heading3,
   Zap, Info, AlertCircle, HelpCircle, Lightbulb, Shield, XCircle, CheckCircle,
-  CircleDot, CheckSquare, Minus, Pipette, MessageCircle, Palette, ArrowDown,
-  ArrowUpDown, Shuffle, ToggleLeft
+  CircleDot, CheckSquare, Minus, Pipette, MessageCircle
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -34,7 +33,6 @@ interface LessonSettings {
   homeworkEnabled: boolean;
   timerEnabled: boolean;
   timerMinutes: number;
-  fileAccess: 'both' | 'preview' | 'download';
 }
 
 interface ExerciseAnswer {
@@ -64,19 +62,13 @@ const DEFAULT_BLOCK: Record<BlockType, () => any> = {
   callout: () => ({ icon: 'info', html: '', iconColor: '#378CFF', bgColor: '#EBF5FF' }),
   button: () => ({ text: 'Кнопка', url: '', color: '#378CFF', textColor: '#FFFFFF', isDivider: false }),
   exercise: () => ({
-    type: 'radio' as 'radio' | 'checkbox' | 'ordering' | 'matching' | 'truefalse',
+    type: 'radio' as 'radio' | 'checkbox',
     question: '', questionImage: '',
     answers: [
       { id: mkId(), text: '', description: '', imageUrl: '', isCorrect: false },
       { id: mkId(), text: '', description: '', imageUrl: '', isCorrect: false },
     ] as ExerciseAnswer[],
     isDivider: false,
-    // ordering
-    items: [] as {id:string;text:string;imageUrl:string}[],
-    // matching
-    pairs: [] as {id:string;left:string;right:string;leftImage:string;rightImage:string}[],
-    // truefalse
-    correctAnswer: true,
   }),
   iframe: () => ({ code: '' }),
   table: () => ({ cells: [['', '', ''], ['', '', ''], ['', '', '']], headerRow: true }),
@@ -91,7 +83,6 @@ const MOCK: LessonSettings = {
   scheduledDate: '', startDate: '', endDate: '',
   ratingEnabled: true, reviewEnabled: false,
   homeworkEnabled: false, timerEnabled: true, timerMinutes: 5,
-  fileAccess: 'both',
 };
 
 const MOCK_BLOCKS: ContentBlock[] = [
@@ -405,23 +396,6 @@ function RichEditor({ html, onUpdate, className, placeholder }: {
 
 // ═══ Block Editors ═══════════════════════════════════════════════════════════
 
-function ColorPickerBtn({ onColor, execFn }: { onColor?: (c: string) => void; execFn?: (cmd: string, val?: string) => void }) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <span className="relative inline-flex">
-      <button onMouseDown={e => { e.preventDefault(); ref.current?.click(); }} className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors" title="Цвет текста">
-        <Palette className="w-3.5 h-3.5" />
-      </button>
-      <input ref={ref} type="color" defaultValue="#ff0000"
-        onChange={e => {
-          if (execFn) execFn('foreColor', e.target.value);
-          if (onColor) onColor(e.target.value);
-        }}
-        className="absolute w-0 h-0 opacity-0 pointer-events-none" />
-    </span>
-  );
-}
-
 function TextBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => void }) {
   const onHtmlChange = useCallback((h: string) => onChange({ ...data, html: h }), [data, onChange]);
   const exec = (cmd: string, val?: string) => { document.execCommand(cmd, false, val); };
@@ -462,7 +436,6 @@ function TextBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => 
         ].map((b, i) => (
           <button key={i} onMouseDown={e => { e.preventDefault(); b.cmd(); }} className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors" title={b.title}><b.icon className="w-3.5 h-3.5" /></button>
         ))}
-        <ColorPickerBtn execFn={exec} />
       </div>
       <RichEditor
         html={data.html}
@@ -522,25 +495,10 @@ function FileBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => 
   return (
     <div className="px-4 py-4">
       {data.name ? (
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200">
-            <FileText className="w-5 h-5 text-amber-600 shrink-0" />
-            <div className="flex-1 min-w-0"><p className="text-[13px] font-medium text-neutral-800 truncate">{data.name}</p><p className="text-[11px] text-neutral-400">{data.size}</p></div>
-            <button onClick={() => onChange({name:'',size:''})} className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"><X className="w-4 h-4" /></button>
-          </div>
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Доступ:</span>
-            <div className="flex gap-1 bg-neutral-100 rounded-lg p-0.5">
-              <button onClick={() => onChange({...data, access: 'preview'})}
-                className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 ${(data.access || 'download') === 'preview' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                <Eye className="w-3 h-3" /> Предпросмотр
-              </button>
-              <button onClick={() => onChange({...data, access: 'download'})}
-                className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all flex items-center gap-1.5 ${(data.access || 'download') === 'download' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                <Download className="w-3 h-3" /> Скачать
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200">
+          <FileText className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="flex-1 min-w-0"><p className="text-[13px] font-medium text-neutral-800 truncate">{data.name}</p><p className="text-[11px] text-neutral-400">{data.size}</p></div>
+          <button onClick={() => onChange({name:'',size:''})} className="p-1 rounded text-neutral-400 hover:text-rose-500"><X className="w-3.5 h-3.5" /></button>
         </div>
       ) : (
         <button className="w-full h-24 border-2 border-dashed border-neutral-200 rounded-xl flex flex-col items-center justify-center gap-2 text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 hover:bg-neutral-50/50 transition-all cursor-pointer">
@@ -621,7 +579,6 @@ function CalloutBlockEditor({ data, onChange }: { data: any; onChange: (d: any) 
           {[
             { cmd: () => execC('insertUnorderedList'), icon: List, title: 'Список' },
             { cmd: () => { const u=prompt('URL:'); if(u) execC('createLink',u); }, icon: Link, title: 'Ссылка' },
-            { cmd: () => { const c = prompt('Цвет текста (hex/имя):', '#ff0000'); if (c) execC('foreColor', c); }, icon: Palette, title: 'Цвет текста' },
           ].map((b,i) => (
             <button key={i} onMouseDown={e => { e.preventDefault(); b.cmd(); }} className="p-1 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100" title={b.title}><b.icon className="w-3 h-3" /></button>
           ))}
@@ -691,40 +648,16 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
     else onChange({...data, answers: answers.map((a: ExerciseAnswer) => a.id === id ? {...a, isCorrect: !a.isCorrect} : a)});
   };
 
-  // Ordering helpers
-  const items: {id:string;text:string;imageUrl:string}[] = data.items || [];
-  const moveItem = (from: number, to: number) => {
-    if (to < 0 || to >= items.length) return;
-    const n = [...items]; const [m] = n.splice(from, 1); n.splice(to, 0, m);
-    onChange({...data, items: n});
-  };
-
-  // Matching helpers
-  const pairs: {id:string;left:string;right:string;leftImage:string;rightImage:string}[] = data.pairs || [];
-
-  const exerciseTypes = [
-    {id:'radio', icon: CircleDot, label:'Один'},
-    {id:'checkbox', icon: CheckSquare, label:'Несколько'},
-    {id:'ordering', icon: ArrowUpDown, label:'Порядок'},
-    {id:'matching', icon: Shuffle, label:'Соединение'},
-    {id:'truefalse', icon: ToggleLeft, label:'Да/Нет'},
-  ];
-
   return (
     <div className="px-4 py-4 space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex gap-0.5 bg-neutral-100 rounded-lg p-0.5 flex-wrap">
-          {exerciseTypes.map(t => (
-            <button key={t.id} onClick={() => onChange({...data, type: t.id})}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${data.type===t.id?'bg-white text-neutral-900 shadow-sm':'text-neutral-500 hover:text-neutral-700'}`}>
-              <t.icon className="w-3 h-3" /> {t.label}
-            </button>
-          ))}
+        <div className="flex gap-1 bg-neutral-100 rounded-lg p-0.5">
+          <button onClick={() => onChange({...data, type:'radio'})} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${data.type==='radio'?'bg-white text-neutral-900 shadow-sm':'text-neutral-500'}`}><CircleDot className="w-3 h-3" /> Один</button>
+          <button onClick={() => onChange({...data, type:'checkbox'})} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${data.type==='checkbox'?'bg-white text-neutral-900 shadow-sm':'text-neutral-500'}`}><CheckSquare className="w-3 h-3" /> Несколько</button>
         </div>
         <Toggle checked={data.isDivider} onChange={v => onChange({...data, isDivider: v})} label="Разделитель" icon={EyeOff} />
       </div>
 
-      {/* Question (shared for all types) */}
       <input type="text" value={data.question} onChange={e => onChange({...data, question: e.target.value})}
         placeholder="Введите вопрос..."
         className="w-full px-3 py-2.5 rounded-lg border border-neutral-200 text-[14px] font-medium placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
@@ -740,130 +673,47 @@ function ExerciseBlockEditor({ data, onChange }: { data: any; onChange: (d: any)
         </button>
       )}
 
-      {/* ──── Radio / Checkbox ──── */}
-      {(data.type === 'radio' || data.type === 'checkbox') && (
-        <div className="space-y-2">
-          {answers.map((a: ExerciseAnswer, ai: number) => (
-            <div key={a.id} className="flex gap-3 items-center">
-              <button onClick={() => setCorrect(a.id)}
-                className={`w-5 h-5 shrink-0 flex items-center justify-center transition-all ${
-                  data.type === 'radio' ? `rounded-full border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}` : `rounded-md border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}`
-                }`}>{a.isCorrect && <Check className="w-3 h-3 text-white" />}</button>
-              <span className="text-[11px] font-bold text-neutral-400 w-4 shrink-0">{String.fromCharCode(65+ai)}</span>
-              <div className="flex-1 min-w-0 space-y-1">
-                <input type="text" value={a.text} onChange={e => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,text:e.target.value} : ans)})}
-                  placeholder={`Вариант ${String.fromCharCode(65+ai)}...`}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-                <input type="text" value={a.description} onChange={e => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,description:e.target.value} : ans)})}
-                  placeholder="Описание ответа..."
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-              </div>
-              <div className="shrink-0">
-                {a.imageUrl ? (
-                  <div className="relative w-[60px] h-[60px] rounded-lg overflow-hidden bg-neutral-100 group/ai">
-                    <img src={a.imageUrl} alt="" className="w-full h-full object-cover" />
-                    <button onClick={() => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,imageUrl:''} : ans)})}
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/ai:opacity-100 transition-opacity"><X className="w-3.5 h-3.5 text-white" /></button>
-                  </div>
-                ) : (
-                  <button className="w-[60px] h-[60px] rounded-lg border border-dashed border-neutral-200 flex items-center justify-center text-neutral-300 hover:border-neutral-300 hover:text-neutral-400 transition-all">
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              {answers.length > 2 && <button onClick={() => onChange({...data, answers: answers.filter((x: ExerciseAnswer) => x.id !== a.id)})} className="p-1 text-neutral-300 hover:text-rose-500 shrink-0"><X className="w-3.5 h-3.5" /></button>}
+      <div className="space-y-2">
+        {answers.map((a: ExerciseAnswer, ai: number) => (
+          <div key={a.id} className="flex gap-3 items-center">
+            {/* Left: check + letter */}
+            <button onClick={() => setCorrect(a.id)}
+              className={`w-5 h-5 shrink-0 flex items-center justify-center transition-all ${
+                data.type === 'radio' ? `rounded-full border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}` : `rounded-md border-2 ${a.isCorrect?'border-emerald-500 bg-emerald-500':'border-neutral-300'}`
+              }`}>{a.isCorrect && <Check className="w-3 h-3 text-white" />}</button>
+            <span className="text-[11px] font-bold text-neutral-400 w-4 shrink-0">{String.fromCharCode(65+ai)}</span>
+            {/* Center: text + description stacked, same width */}
+            <div className="flex-1 min-w-0 space-y-1">
+              <input type="text" value={a.text} onChange={e => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,text:e.target.value} : ans)})}
+                placeholder={`Вариант ${String.fromCharCode(65+ai)}...`}
+                className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+              <input type="text" value={a.description} onChange={e => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,description:e.target.value} : ans)})}
+                placeholder="Описание ответа..."
+                className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
             </div>
-          ))}
-          <button onClick={() => onChange({...data, answers: [...answers, {id:mkId(),text:'',description:'',imageUrl:'',isCorrect:false}]})}
-            className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
-            <Plus className="w-3 h-3" /> Добавить вариант
-          </button>
-        </div>
-      )}
-
-      {/* ──── Ordering (Drag & Drop) ──── */}
-      {data.type === 'ordering' && (
-        <div className="space-y-2">
-          <p className="text-[11px] text-neutral-400">Расставьте карточки в правильном порядке. У студента они будут перемешаны.</p>
-          {items.map((item: any, i: number) => (
-            <div key={item.id} className="flex items-center gap-2 p-3 bg-white border border-neutral-200 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] group/ord">
-              <div className="flex flex-col gap-0.5 shrink-0">
-                <button onClick={() => moveItem(i, i-1)} disabled={i===0} className="p-0.5 rounded text-neutral-300 hover:text-neutral-600 disabled:opacity-20"><ChevronUp className="w-3 h-3" /></button>
-                <button onClick={() => moveItem(i, i+1)} disabled={i===items.length-1} className="p-0.5 rounded text-neutral-300 hover:text-neutral-600 disabled:opacity-20"><ChevronDown className="w-3 h-3" /></button>
-              </div>
-              <GripVertical className="w-4 h-4 text-neutral-300 shrink-0" />
-              <input type="text" value={item.text}
-                onChange={e => onChange({...data, items: items.map((it: any, idx: number) => idx===i ? {...it, text: e.target.value} : it)})}
-                placeholder={`Элемент ${i+1}...`}
-                className="flex-1 px-3 py-1.5 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-              <span className="text-[12px] font-bold text-neutral-300 w-6 text-right shrink-0">{i+1}</span>
-              {items.length > 2 && <button onClick={() => onChange({...data, items: items.filter((_: any, idx: number) => idx !== i)})} className="p-1 text-neutral-300 hover:text-rose-500 opacity-0 group-hover/ord:opacity-100 transition-opacity shrink-0"><X className="w-3.5 h-3.5" /></button>}
+            {/* Right: image 1:1 */}
+            <div className="shrink-0">
+              {a.imageUrl ? (
+                <div className="relative w-[60px] h-[60px] rounded-lg overflow-hidden bg-neutral-100 group/ai">
+                  <img src={a.imageUrl} alt="" className="w-full h-full object-cover" />
+                  <button onClick={() => onChange({...data, answers: answers.map((ans: ExerciseAnswer) => ans.id===a.id ? {...ans,imageUrl:''} : ans)})}
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/ai:opacity-100 transition-opacity"><X className="w-3.5 h-3.5 text-white" /></button>
+                </div>
+              ) : (
+                <button className="w-[60px] h-[60px] rounded-lg border border-dashed border-neutral-200 flex items-center justify-center text-neutral-300 hover:border-neutral-300 hover:text-neutral-400 transition-all">
+                  <ImageIcon className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          ))}
-          <button onClick={() => onChange({...data, items: [...items, {id: mkId(), text:'', imageUrl:''}]})}
-            className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
-            <Plus className="w-3 h-3" /> Добавить элемент
-          </button>
-        </div>
-      )}
-
-      {/* ──── Matching (Connect lines) ──── */}
-      {data.type === 'matching' && (
-        <div className="space-y-2">
-          <p className="text-[11px] text-neutral-400">Укажите правильные пары. У студента правый столбец будет перемешан.</p>
-          {pairs.map((pair: any, i: number) => (
-            <div key={pair.id} className="flex items-center gap-2 group/mp">
-              <div className="flex-1 p-2.5 bg-blue-50/50 border border-blue-200/50 rounded-xl">
-                <input type="text" value={pair.left}
-                  onChange={e => onChange({...data, pairs: pairs.map((p: any, idx: number) => idx===i ? {...p, left: e.target.value} : p)})}
-                  placeholder={`Левый ${i+1}...`}
-                  className="w-full px-2 py-1.5 rounded-lg border border-blue-200/50 text-[13px] placeholder-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300" />
-              </div>
-              <div className="flex flex-col items-center gap-0.5 shrink-0 px-1">
-                <div className="w-2 h-2 rounded-full bg-neutral-400" />
-                <div className="w-px h-3 bg-neutral-300" />
-                <div className="w-2 h-2 rounded-full bg-neutral-400" />
-              </div>
-              <div className="flex-1 p-2.5 bg-amber-50/50 border border-amber-200/50 rounded-xl">
-                <input type="text" value={pair.right}
-                  onChange={e => onChange({...data, pairs: pairs.map((p: any, idx: number) => idx===i ? {...p, right: e.target.value} : p)})}
-                  placeholder={`Правый ${i+1}...`}
-                  className="w-full px-2 py-1.5 rounded-lg border border-amber-200/50 text-[13px] placeholder-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300" />
-              </div>
-              {pairs.length > 2 && <button onClick={() => onChange({...data, pairs: pairs.filter((_: any, idx: number) => idx !== i)})} className="p-1 text-neutral-300 hover:text-rose-500 opacity-0 group-hover/mp:opacity-100 transition-opacity shrink-0"><X className="w-3.5 h-3.5" /></button>}
-            </div>
-          ))}
-          <button onClick={() => onChange({...data, pairs: [...pairs, {id: mkId(), left:'', right:'', leftImage:'', rightImage:''}]})}
-            className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
-            <Plus className="w-3 h-3" /> Добавить пару
-          </button>
-        </div>
-      )}
-
-      {/* ──── True / False ──── */}
-      {data.type === 'truefalse' && (
-        <div className="space-y-3">
-          <p className="text-[11px] text-neutral-400">Выберите правильный ответ для вопроса выше.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => onChange({...data, correctAnswer: true})}
-              className={`p-5 rounded-xl border-2 text-center transition-all ${data.correctAnswer === true ? 'border-emerald-400 bg-emerald-50 shadow-[0_0_0_1px_rgba(52,211,153,0.2)]' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${data.correctAnswer === true ? 'bg-emerald-500' : 'bg-neutral-100'}`}>
-                <Check className={`w-5 h-5 ${data.correctAnswer === true ? 'text-white' : 'text-neutral-400'}`} />
-              </div>
-              <p className={`text-[14px] font-semibold ${data.correctAnswer === true ? 'text-emerald-700' : 'text-neutral-600'}`}>Правда</p>
-
-            </button>
-            <button onClick={() => onChange({...data, correctAnswer: false})}
-              className={`p-5 rounded-xl border-2 text-center transition-all ${data.correctAnswer === false ? 'border-rose-400 bg-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.2)]' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-              <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${data.correctAnswer === false ? 'bg-rose-500' : 'bg-neutral-100'}`}>
-                <X className={`w-5 h-5 ${data.correctAnswer === false ? 'text-white' : 'text-neutral-400'}`} />
-              </div>
-              <p className={`text-[14px] font-semibold ${data.correctAnswer === false ? 'text-rose-700' : 'text-neutral-600'}`}>Ложь</p>
-
-            </button>
+            {/* Delete */}
+            {answers.length > 2 && <button onClick={() => onChange({...data, answers: answers.filter((x: ExerciseAnswer) => x.id !== a.id)})} className="p-1 text-neutral-300 hover:text-rose-500 shrink-0"><X className="w-3.5 h-3.5" /></button>}
           </div>
-        </div>
-      )}
+        ))}
+        <button onClick={() => onChange({...data, answers: [...answers, {id:mkId(),text:'',description:'',imageUrl:'',isCorrect:false}]})}
+          className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
+          <Plus className="w-3 h-3" /> Добавить вариант
+        </button>
+      </div>
     </div>
   );
 }
@@ -881,129 +731,32 @@ function IframeBlockEditor({ data, onChange }: { data: any; onChange: (d: any) =
 }
 
 function TableBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => void }) {
-  const cells = data.cells || [[{html:''},{html:''}],[{html:''},{html:''}]];
-  const colWidths: number[] = data.colWidths || [];
-  const [activeCell, setActiveCell] = useState<{r:number,c:number}|null>(null);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const dragRef = useRef<{colIdx:number, startX:number, startW:number}|null>(null);
-
-  const updateCell = (r: number, c: number, html: string) => {
-    const n = cells.map((row: any[], ri: number) => row.map((cell: any, ci: number) => ri===r&&ci===c ? {...cell, html} : cell));
-    onChange({...data, cells: n});
-  };
-  const updateCellColor = (color: string) => {
-    if (!activeCell) return;
-    const {r, c} = activeCell;
-    const n = cells.map((row: any[], ri: number) => row.map((cell: any, ci: number) => ri===r&&ci===c ? {...cell, color} : cell));
-    onChange({...data, cells: n});
-  };
-
-  const execT = (cmd: string, val?: string) => { document.execCommand(cmd, false, val); };
-  const normCells = cells.map((row: any[]) => row.map((cell: any) => typeof cell === 'string' ? {html: cell} : cell));
-  const numCols = normCells[0]?.length || 2;
-
-  // Drag-to-resize column handlers
-  const onResizeStart = (e: React.MouseEvent, colIdx: number) => {
-    e.preventDefault();
-    const table = tableRef.current;
-    if (!table) return;
-    const thCells = table.querySelectorAll('tr:first-child td');
-    const startW = (thCells[colIdx] as HTMLElement)?.offsetWidth || 100;
-    dragRef.current = { colIdx, startX: e.clientX, startW };
-
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!dragRef.current) return;
-      const diff = ev.clientX - dragRef.current.startX;
-      const newW = Math.max(40, dragRef.current.startW + diff);
-      const nw = [...(colWidths.length === numCols ? colWidths : Array(numCols).fill(0))];
-      // Initialize widths from actual DOM if not set
-      if (!colWidths.length) {
-        thCells.forEach((td, i) => { nw[i] = (td as HTMLElement).offsetWidth; });
-      }
-      nw[dragRef.current.colIdx] = newW;
-      onChange({...data, colWidths: nw});
-    };
-    const onMouseUp = () => {
-      dragRef.current = null;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  };
-
+  const cells: string[][] = data.cells || [['',''],['','']];
+  const updateCell = (r:number,c:number,v:string) => {const n=cells.map((row:string[],ri:number)=>row.map((cell:string,ci:number)=>ri===r&&ci===c?v:cell));onChange({...data,cells:n})};
   return (
-    <div className="px-4 py-4 space-y-3">
-      {activeCell !== null && (
-        <div className="flex items-center gap-0.5 px-2 py-1.5 border border-neutral-200 rounded-lg bg-white mb-2 flex-wrap">
-          {[
-            { cmd: () => execT('bold'), icon: Bold, title: 'Жирный' },
-            { cmd: () => execT('italic'), icon: Italic, title: 'Курсив' },
-            { cmd: () => execT('underline'), icon: Underline, title: 'Подчёркнутый' },
-            { cmd: () => { const u=prompt('URL:'); if(u) execT('createLink',u); }, icon: Link, title: 'Ссылка' },
-          ].map((b,i) => (
-            <button key={i} onMouseDown={e => { e.preventDefault(); b.cmd(); }} className="p-1 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"><b.icon className="w-3.5 h-3.5" /></button>
-          ))}
-          <ColorPickerBtn execFn={execT} />
-          <div className="w-px h-4 bg-neutral-200 mx-1" />
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase text-neutral-400 font-semibold pl-1">Фон:</span>
-            <input type="color" value={normCells[activeCell.r]?.[activeCell.c]?.color || '#ffffff'} onChange={e=>updateCellColor(e.target.value)} className="w-5 h-5 rounded cursor-pointer p-0 border-0" />
-          </div>
-        </div>
-      )}
+    <div className="px-4 py-4">
       <div className="overflow-x-auto rounded-lg border border-neutral-200">
-        <table ref={tableRef} className="w-full border-collapse" style={{tableLayout: colWidths.length ? 'fixed' : 'auto'}}>
-          {colWidths.length > 0 && (
-            <colgroup>
-              {Array.from({length: numCols}).map((_, ci) => (
-                <col key={ci} style={{width: colWidths[ci] ? `${colWidths[ci]}px` : 'auto'}} />
-              ))}
-              <col style={{width: '24px'}} />
-            </colgroup>
-          )}
-          <tbody>{normCells.map((row: any[], ri: number) => (
-            <tr key={ri}>{row.map((cell: any, ci: number) => (
-              <td key={ci} style={{backgroundColor: cell.color || (ri===0&&data.headerRow?'#f5f5f5':'transparent')}}
-                className={"border-r border-b border-neutral-200 last:border-r-0 p-0 transition-colors relative " + (ri===0&&data.headerRow?'font-semibold':'')}>
-                <div onFocus={()=>setActiveCell({r:ri,c:ci})}>
-                  <RichEditor
-                    html={cell.html}
-                    onUpdate={h=>updateCell(ri,ci,h)}
-                    placeholder={ri===0&&data.headerRow?'Заголовок':''}
-                    className="w-full px-2.5 py-2 min-h-[36px] text-[13px] text-neutral-800 focus:outline-none focus:bg-blue-50/20"
-                  />
-                </div>
-                {ci < numCols - 1 && (
-                  <div
-                    onMouseDown={e => onResizeStart(e, ci)}
-                    className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-400/40 transition-colors z-10"
-                    style={{transform: 'translateX(50%)'}}
-                  />
-                )}
+        <table className="w-full border-collapse">
+          <tbody>{cells.map((row:string[],ri:number)=>(
+            <tr key={ri}>{row.map((cell:string,ci:number)=>(
+              <td key={ci} className={`border-r border-b border-neutral-200 last:border-r-0 p-0 ${ri===0&&data.headerRow?'bg-neutral-100':''}`}>
+                <input type="text" value={cell} onChange={e=>updateCell(ri,ci,e.target.value)} placeholder={ri===0&&data.headerRow?'Заголовок':''}
+                  className={`w-full px-2.5 py-2 text-[12px] bg-transparent focus:outline-none focus:bg-blue-50/30 min-w-[80px] ${ri===0&&data.headerRow?'font-semibold text-neutral-800':'text-neutral-700'}`} />
               </td>
-            ))}<td className="w-6 border-b border-neutral-200 text-center">{normCells.length>1&&<button onClick={()=>onChange({...data,cells:normCells.filter((_: any,i: number)=>i!==ri)})} className="p-0.5 text-neutral-300 hover:text-rose-500"><X className="w-3.5 h-3.5 mx-auto" /></button>}</td></tr>
+            ))}<td className="w-6 border-b border-neutral-200">{cells.length>1&&<button onClick={()=>onChange({...data,cells:cells.filter((_:any,i:number)=>i!==ri)})} className="p-0.5 text-neutral-300 hover:text-rose-500"><X className="w-3 h-3" /></button>}</td></tr>
           ))}</tbody>
         </table>
       </div>
       <div className="flex items-center gap-2 mt-2">
-        <button onClick={()=>onChange({...data,cells:[...normCells,Array(normCells[0]?.length||2).fill({html:''})], colWidths})} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100"><Plus className="w-3 h-3" /> Строка</button>
-        <button onClick={()=>{
-          onChange({...data,
-            cells:normCells.map((r: any[])=>[...r,{html:''}]),
-            colWidths: colWidths.length ? [...colWidths, 100] : []
-          })
-        }} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100"><Plus className="w-3 h-3" /> Столбец</button>
+        <button onClick={()=>onChange({...data,cells:[...cells,Array(cells[0]?.length||2).fill('')]})} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100"><Plus className="w-3 h-3" /> Строка</button>
+        <button onClick={()=>onChange({...data,cells:cells.map((r:string[])=>[...r,''])})} className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100"><Plus className="w-3 h-3" /> Столбец</button>
         <div className="flex-1" />
         <Toggle checked={data.headerRow} onChange={v=>onChange({...data,headerRow:v})} label="Заголовок" />
       </div>
     </div>
   );
 }
+
 // Mini block type selector for columns
 const COL_BLOCK_TYPES: {type:BlockType; icon:any; label:string}[] = [
   {type:'text',icon:Type,label:'Текст'},{type:'image',icon:ImageIcon,label:'Картинка'},
@@ -1169,22 +922,11 @@ export default function LessonEditorPage() {
   const dragIdxRef = useRef<number|null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number|null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [insertIdx, setInsertIdx] = useState<number | null>(null);
 
   const upd = (p: Partial<LessonSettings>) => setSettings(prev => ({...prev,...p}));
 
   const addBlock = (type: BlockType) => {
-    const newBlock = {id: mkId(), type, data: DEFAULT_BLOCK[type]()};
-    if (insertIdx !== null) {
-      setBlocks(prev => {
-        const next = [...prev];
-        next.splice(insertIdx, 0, newBlock);
-        return next;
-      });
-      setInsertIdx(insertIdx + 1);
-    } else {
-      setBlocks(prev => [...prev, newBlock]);
-    }
+    setBlocks(prev => [...prev, {id: mkId(), type, data: DEFAULT_BLOCK[type]()}]);
   };
   const updateBlock = (id:string,data:any) => setBlocks(p=>p.map(b=>b.id===id?{...b,data}:b));
   const deleteBlock = (id:string) => setBlocks(p=>p.filter(b=>b.id!==id));
@@ -1252,30 +994,23 @@ export default function LessonEditorPage() {
           </button>
           {settingsOpen && (
             <div className="px-5 pb-5 border-t border-neutral-100 pt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Тип доступа</label>
+              {/* 1) Access */}
+              <div>
+                <label className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Тип доступа</label>
+                <div className="max-w-xs">
                   <Dropdown value={settings.accessStatus} options={accessOpts} onChange={v=>upd({accessStatus:v as AccessStatus})} />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Доступ к файлам</label>
-                  <Dropdown value={settings.fileAccess} options={[
-                    {id:'both',label:'Полный',dot:'bg-emerald-500'},
-                    {id:'preview',label:'Предпросмотр',dot:'bg-blue-500'},
-                    {id:'download',label:'Скачать',dot:'bg-amber-500'},
-                  ]} onChange={v=>upd({fileAccess:v as 'both'|'preview'|'download'})} />
-                </div>
+                {settings.accessStatus === 'scheduled' && (
+                  <div className="mt-2 max-w-xs"><input type="datetime-local" value={settings.scheduledDate} onChange={e=>upd({scheduledDate:e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" /></div>
+                )}
+                {settings.accessStatus === 'limited' && (
+                  <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
+                    <input type="datetime-local" value={settings.startDate} onChange={e=>upd({startDate:e.target.value})} className="px-3 py-2 rounded-lg border border-neutral-200 text-[12px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+                    <input type="datetime-local" value={settings.endDate} onChange={e=>upd({endDate:e.target.value})} className="px-3 py-2 rounded-lg border border-neutral-200 text-[12px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
+                  </div>
+                )}
               </div>
-              {settings.accessStatus === 'scheduled' && (
-                <div className="max-w-xs"><input type="datetime-local" value={settings.scheduledDate} onChange={e=>upd({scheduledDate:e.target.value})}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 text-[13px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" /></div>
-              )}
-              {settings.accessStatus === 'limited' && (
-                <div className="grid grid-cols-2 gap-2 max-w-md">
-                  <input type="datetime-local" value={settings.startDate} onChange={e=>upd({startDate:e.target.value})} className="px-3 py-2 rounded-lg border border-neutral-200 text-[12px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-                  <input type="datetime-local" value={settings.endDate} onChange={e=>upd({endDate:e.target.value})} className="px-3 py-2 rounded-lg border border-neutral-200 text-[12px] bg-neutral-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-                </div>
-              )}
 
               <div className="border-t border-neutral-100" />
 
@@ -1303,8 +1038,6 @@ export default function LessonEditorPage() {
                   <Toggle checked={settings.homeworkEnabled} onChange={v=>upd({homeworkEnabled:v})} label="Домашнее задание" description="Чат с куратором" icon={MessageSquare} />
                 </div>
               </div>
-
-
             </div>
           )}
         </div>
@@ -1329,7 +1062,7 @@ export default function LessonEditorPage() {
               const over = dragOverIdx === idx && dragIdxRef.current !== idx;
 
               return (
-                <React.Fragment key={block.id}><div data-block
+                <div key={block.id} data-block
                   onDragOver={e=>handleDragOver(e,idx)}
                   onDrop={e=>handleDrop(e,idx)}
                   onDragEnd={handleDragEnd}
@@ -1354,13 +1087,6 @@ export default function LessonEditorPage() {
                     </div>
                   )}
                 </div>
-                  <div className={"relative h-8 flex items-center justify-center -my-1 z-10 transition-all " + (insertIdx === idx + 1 ? "opacity-100 scale-100" : "opacity-0 hover:opacity-100 scale-95 hover:scale-100")}>
-                    <div className={"absolute inset-x-8 h-px transition-colors " + (insertIdx === idx + 1 ? "bg-blue-300" : "bg-neutral-300")} />
-                    <button onClick={() => setInsertIdx(insertIdx === idx + 1 ? null : idx + 1)} className={"relative px-3 py-1 rounded-full text-[10px] font-semibold tracking-wide flex items-center gap-1.5 transition-all shadow-sm border " + (insertIdx === idx + 1 ? "text-blue-700 bg-blue-50 border-blue-200" : "text-neutral-600 bg-neutral-100 border-neutral-300 hover:bg-neutral-200 hover:text-neutral-800")}>
-                      <ArrowDown className="w-3 h-3" /> {insertIdx === idx + 1 ? "Добавление сюда..." : "Вставить блок здесь"}
-                    </button>
-                  </div>
-                </React.Fragment>
               );
             })}
           </div>

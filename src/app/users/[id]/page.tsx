@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TestResultsModal } from '@/components/modals/TestResultsModal';
+import { AssignCourseModal } from '@/components/modals/AssignCourseModal';
 import { Button } from '@/components/ui/Button';
 import { 
   ArrowLeft, 
@@ -20,7 +22,11 @@ import {
   PlayCircle,
   FileText,
   Award,
-  Calendar
+  Calendar,
+  Download,
+  Eye,
+  User as UserIcon,
+  Check
 } from 'lucide-react';
 
 const mockUser = {
@@ -30,7 +36,9 @@ const mockUser = {
   email: 'a.smirnov@osnova.uz',
   phone: '+998 90 123-45-67',
   birthDate: '12/05/1990',
+  gender: 'Мужской',
   customFields: [
+    { label: 'Роль', value: 'Студент' },
     { label: 'Филиал', value: 'Ташкент (ГК)' },
     { label: 'Департамент', value: 'Коммерческий департамент' },
     { label: 'Отдел', value: 'Отдел продаж B2B' },
@@ -53,13 +61,16 @@ const mockUser = {
   ]
 };
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
+export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'courses' | 'testings' | 'certificates'>('courses');
   const [expandedCourseId, setExpandedCourseId] = useState<number | null>(null);
+  const [testResultsOpen, setTestResultsOpen] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // In a real app, you would fetch user data using params.id
-  const user = mockUser; 
+  const [user, setUser] = useState(mockUser); 
 
   return (
     <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] pb-12">
@@ -75,7 +86,10 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
             <h1 className="text-lg font-semibold text-neutral-900 leading-tight">Профиль пользователя</h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Button variant="primary" className="flex items-center gap-2 font-medium shadow-sm">
+            <Button variant="outline" className="flex items-center gap-2 font-medium shadow-sm bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50 h-9">
+              <Download className="w-4 h-4" /> Результаты
+            </Button>
+            <Button variant="primary" className="flex items-center gap-2 font-medium shadow-sm h-9">
               <Edit3 className="w-4 h-4" /> Редактировать
             </Button>
           </div>
@@ -98,6 +112,15 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4 text-neutral-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[12px] text-neutral-500 font-medium">Телефон</span>
+                    <span className="text-[14px] text-neutral-900">{user.phone}</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4 text-neutral-400" />
                   </div>
                   <div className="flex flex-col">
@@ -116,11 +139,11 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
-                    <Phone className="w-4 h-4 text-neutral-400" />
+                    <UserIcon className="w-4 h-4 text-neutral-400" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[12px] text-neutral-500 font-medium">Телефон</span>
-                    <span className="text-[14px] text-neutral-900">{user.phone}</span>
+                    <span className="text-[12px] text-neutral-500 font-medium">Пол</span>
+                    <span className="text-[14px] text-neutral-900">{user.gender}</span>
                   </div>
                 </div>
               </div>
@@ -190,11 +213,23 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                 >
                   Сертификаты
                 </button>
+                <button 
+                  disabled
+                  className="px-4 py-3 text-[14px] font-semibold transition-all border-b-2 border-transparent text-neutral-400 opacity-60 cursor-not-allowed"
+                >
+                  Опросы
+                </button>
+                <button 
+                  disabled
+                  className="px-4 py-3 text-[14px] font-semibold transition-all border-b-2 border-transparent text-neutral-400 opacity-60 cursor-not-allowed"
+                >
+                  Мероприятия
+                </button>
               </div>
               
               {activeTab === 'courses' && (
                 <div className="pb-2">
-                  <Button variant="primary" className="h-9 px-4 text-[13px] font-semibold">Назначить курс</Button>
+                  <Button variant="primary" className="h-9 px-4 text-[13px] font-semibold" onClick={() => setAssignModalOpen(true)}>Назначить курс</Button>
                 </div>
               )}
               {activeTab === 'testings' && (
@@ -221,6 +256,8 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                         <div className="flex items-center gap-4 text-[13px] text-neutral-500 font-medium">
                           {course.status === 'Завершен' ? (
                             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Завершен: 15.03.2026 10:00</span>
+                          ) : course.status === 'Назначен' ? (
+                            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-neutral-400" /> Назначен: {course.date}</span>
                           ) : (
                             <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-neutral-400" /> Последняя активность: 14.03.2026 14:30</span>
                           )}
@@ -255,17 +292,25 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                               <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2 block">Активность</span>
                               <div className="flex flex-col gap-0.5 text-[13px] text-neutral-500 font-medium mb-auto">
                                  <span>Назначен: {course.date}</span>
-                                 <span>Посл. акт: 15.03.2026</span>
+                                 {course.status !== 'Назначен' && <span>Посл. акт: 14.03.2026 14:30</span>}
                               </div>
-                              <div className="mt-3 inline-flex items-center w-fit text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-emerald-50 text-emerald-600 rounded">
-                                 Завершен 15.03.2026 10:00
-                              </div>
+                              {course.status === 'Завершен' && (
+                                <div className="mt-3 inline-flex items-center w-fit text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-emerald-50 text-emerald-600 rounded">
+                                   Завершен 15.03.2026 10:00
+                                </div>
+                              )}
                            </div>
                         </div>
 
-                        <h5 className="text-[15px] font-bold text-neutral-900 mb-5">Прохождение модулей и уроков</h5>
-                        
-                        <div className="flex flex-col gap-6">
+                        {course.status === 'Назначен' ? (
+                          <div className="py-8 text-center border-t border-neutral-200/60 mt-4">
+                            <BookOpen className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+                            <p className="text-[14px] font-medium text-neutral-700">Пользователь еще не приступал к курсу</p>
+                          </div>
+                        ) : (
+                          <>
+                            <h5 className="text-[15px] font-bold text-neutral-900 mb-5">Прохождение модулей и уроков</h5>
+                            <div className="flex flex-col gap-6">
                           {/* Module 1 */}
                           <div className="flex flex-col relative">
                             <div className="flex items-center justify-between mb-3">
@@ -295,10 +340,15 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                               <div className="flex items-center justify-between pl-4 relative mt-1">
                                 <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-emerald-500" />
                                 <div className="flex flex-col">
-                                  <span className="text-[13px] text-neutral-700">1.2 Тест: Основные понятия</span>
-                                  <span className="text-[12px] text-emerald-600 font-medium">Оценка: 100/100 (Сдан)</span>
+                                  <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                                    1.2 Тест: Основные понятия
+                                    <button onClick={() => setTestResultsOpen('test-basics')} title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1">
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                  </span>
+                                  <span className="text-[12px] text-emerald-600 font-medium mt-0.5">Оценка: 5/5 (Сдан)</span>
                                 </div>
-                                <span className="text-[12px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">Пройден (15.03.2026 10:00)</span>
+                                <span className="text-[12px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md self-start mt-0.5">Пройден (15.03.2026 10:00)</span>
                               </div>
                             </div>
                           </div>
@@ -328,18 +378,30 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
                               <div className="flex items-center justify-between pl-4 relative">
                                 <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-rose-500" />
                                 <div className="flex flex-col">
-                                  <span className="text-[13px] text-neutral-700">2.3 Тест: Защита данных</span>
-                                  <span className="text-[12px] text-rose-600 font-medium">Оценка: 40/100 (Провален)</span>
+                                  <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                                    2.3 Тест: Защита данных
+                                    <button onClick={() => setTestResultsOpen('test-data-protection')} title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1">
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                  </span>
+                                  <span className="text-[12px] text-rose-600 font-medium mt-0.5">Оценка: 1/5 (Не сдан)</span>
                                 </div>
-                                <span className="text-[12px] font-medium text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md">Не сдан (17.03.2026 14:15)</span>
+                                <span className="text-[12px] font-medium text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md self-start mt-0.5">Не сдан (17.03.2026 14:15)</span>
                               </div>
                             </div>
                           </div>
                         </div>
+                          </>
+                        )}
 
-                        <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-neutral-200/60">
-                           <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 h-9 px-4 rounded-xl text-[13px] font-medium shadow-none">Открепить курс</Button>
-                           <Button className="h-9 px-4 rounded-xl text-[13px] font-medium bg-white border border-neutral-200 hover:bg-neutral-50 shadow-sm text-neutral-700">Подробнее о курсе</Button>
+                        <div className="flex items-center justify-between pt-6 mt-4 border-t border-neutral-200/60">
+                           <button className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors bg-white border border-neutral-200 hover:bg-neutral-50 px-3 py-1.5 rounded-lg">
+                              <Download className="w-3.5 h-3.5" /> Результаты
+                           </button>
+                           <div className="flex justify-end gap-3">
+                              <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 h-9 px-4 rounded-xl text-[13px] font-medium shadow-none">Открепить курс</Button>
+                              <Button onClick={() => router.push(`/courses/COR-${course.id}`)} className="h-9 px-4 rounded-xl text-[13px] font-medium bg-white border border-neutral-200 hover:bg-neutral-50 shadow-sm text-neutral-700">Перейти в курс</Button>
+                           </div>
                         </div>
                       </div>
                     )}
@@ -410,6 +472,48 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
           </div>
         </div>
       </div>
+
+      {/* Test Results Modal */}
+      <TestResultsModal
+        isOpen={testResultsOpen !== null}
+        onClose={() => setTestResultsOpen(null)}
+        testId={testResultsOpen || ''}
+      />
+
+      {/* Assign Course Modal */}
+      <AssignCourseModal
+        isOpen={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        onAssign={(selectedIds) => {
+          setAssignModalOpen(false);
+          // In a real app we'd fetch the real course names here or they'd be returned by the modal
+          const newCourses = selectedIds.map(id => ({
+            id: parseInt(id.replace('c-', '')) || Math.floor(Math.random() * 1000),
+            title: `Новый курс (${id})`,
+            progress: 0,
+            status: 'Назначен',
+            date: new Date().toLocaleDateString('ru-RU')
+          }));
+          setUser(prev => ({
+            ...prev,
+            courses: [...newCourses, ...prev.courses]
+          }));
+          setToastMessage(`Назначено курсов: ${selectedIds.length}`);
+          setTimeout(() => setToastMessage(null), 3000);
+        }}
+      />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="bg-neutral-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <span className="text-[14px] font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

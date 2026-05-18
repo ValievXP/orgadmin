@@ -4,19 +4,18 @@ import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import {
-  ChevronDown, ChevronUp, X, Plus, GripVertical, Trash2,
+  ChevronDown, X, Plus, GripVertical, Trash2,
   Clock, RotateCcw, ShieldCheck, Target, Shuffle, Eye, EyeOff,
   Upload, Image as ImageIcon, FileSpreadsheet, Check,
   Unlock, Lock, CalendarClock, Timer,
   CircleDot, CheckSquare, AlertTriangle, Save,
-  ChevronLeft, ChevronRight, Copy, Search,
-  ArrowUpDown, ToggleLeft
+  ChevronLeft, ChevronRight, Copy, Search
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type AccessStatus = 'open' | 'closed' | 'scheduled' | 'limited';
-type QuestionType = 'radio' | 'checkbox' | 'ordering' | 'matching' | 'truefalse';
+type QuestionType = 'radio' | 'checkbox';
 
 interface Answer {
   id: string;
@@ -26,21 +25,12 @@ interface Answer {
   explanation: string;
 }
 
-interface OrderItem { id: string; text: string; }
-interface MatchPair { id: string; left: string; right: string; }
-
 interface Question {
   id: string;
   type: QuestionType;
   text: string;
   image: string | null;
   answers: Answer[];
-  // ordering
-  items?: OrderItem[];
-  // matching
-  pairs?: MatchPair[];
-  // truefalse
-  correctAnswer?: boolean;
 }
 
 interface TestSettings {
@@ -268,19 +258,15 @@ export default function TestEditorPage() {
 
   // ─── Question handlers ────────────────────────────────────────
   const addQuestion = (type: QuestionType) => {
-    const ts = Date.now();
     const newQ: Question = {
-      id: `q-${ts}`,
+      id: `q-${Date.now()}`,
       type,
       text: '',
       image: null,
-      answers: type === 'radio' || type === 'checkbox' ? [
-        { id: `a-${ts}-1`, text: '', isCorrect: false, image: null, explanation: '' },
-        { id: `a-${ts}-2`, text: '', isCorrect: false, image: null, explanation: '' },
-      ] : [],
-      ...(type === 'ordering' ? { items: [{ id: `i-${ts}-1`, text: '' }, { id: `i-${ts}-2`, text: '' }] } : {}),
-      ...(type === 'matching' ? { pairs: [{ id: `p-${ts}-1`, left: '', right: '' }, { id: `p-${ts}-2`, left: '', right: '' }] } : {}),
-      ...(type === 'truefalse' ? { correctAnswer: true } : {}),
+      answers: [
+        { id: `a-${Date.now()}-1`, text: '', isCorrect: false, image: null, explanation: '' },
+        { id: `a-${Date.now()}-2`, text: '', isCorrect: false, image: null, explanation: '' },
+      ],
     };
     setQuestions(prev => [...prev, newQ]);
     setSelectedQuestionId(newQ.id);
@@ -703,17 +689,9 @@ export default function TestEditorPage() {
                   ) : (
                     filteredQuestions.map((q, fIdx) => {
                       const globalIdx = questions.findIndex(qo => qo.id === q.id);
-                      const hasCorrect = q.type === 'truefalse' ? q.correctAnswer !== undefined : q.type === 'ordering' ? (q.items?.length || 0) >= 2 : q.type === 'matching' ? (q.pairs?.length || 0) >= 2 : q.answers.some(a => a.isCorrect);
+                      const hasCorrect = q.answers.some(a => a.isCorrect);
                       const hasText = q.text.length > 0;
                       const isLast = fIdx === filteredQuestions.length - 1;
-                      const iconMap: Record<string,{bg:string;color:string;Icon:any}> = {
-                        radio: {bg:'bg-blue-50',color:'text-blue-500',Icon:CircleDot},
-                        checkbox: {bg:'bg-violet-50',color:'text-violet-500',Icon:CheckSquare},
-                        ordering: {bg:'bg-teal-50',color:'text-teal-500',Icon:ArrowUpDown},
-                        matching: {bg:'bg-amber-50',color:'text-amber-500',Icon:Shuffle},
-                        truefalse: {bg:'bg-rose-50',color:'text-rose-500',Icon:ToggleLeft},
-                      };
-                      const ic = iconMap[q.type] || iconMap.radio;
                       return (
                         <button
                           key={q.id}
@@ -725,8 +703,10 @@ export default function TestEditorPage() {
                           }`}
                         >
                           <span className="text-[11px] font-semibold text-neutral-300 tabular-nums w-5 text-right shrink-0">{globalIdx + 1}</span>
-                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${ic.bg} ${ic.color}`}>
-                            <ic.Icon className="w-3 h-3" />
+                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
+                            q.type === 'radio' ? 'bg-blue-50 text-blue-500' : 'bg-violet-50 text-violet-500'
+                          }`}>
+                            {q.type === 'radio' ? <CircleDot className="w-3 h-3" /> : <CheckSquare className="w-3 h-3" />}
                           </div>
                           <span className="flex-1 min-w-0 q-text-marquee">
                             <span
@@ -779,25 +759,20 @@ export default function TestEditorPage() {
                 </div>
 
                 {/* Add question buttons */}
-                <div className="border-t border-neutral-100 p-3 space-y-1.5">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button onClick={() => addQuestion('radio')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all">
-                      <CircleDot className="w-4 h-4" /> Один ответ
-                    </button>
-                    <button onClick={() => addQuestion('checkbox')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all">
-                      <CheckSquare className="w-4 h-4" /> Несколько
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button onClick={() => addQuestion('ordering')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all">
-                      <ArrowUpDown className="w-4 h-4" /> Порядок
-                    </button>
-                    <button onClick={() => addQuestion('matching')} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all">
-                      <Shuffle className="w-4 h-4" /> Соединение
-                    </button>
-                  </div>
-                  <button onClick={() => addQuestion('truefalse')} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all">
-                    <ToggleLeft className="w-4 h-4" /> Да/Нет
+                <div className="border-t border-neutral-100 p-3 flex gap-2">
+                  <button
+                    onClick={() => addQuestion('radio')}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all"
+                  >
+                    <CircleDot className="w-3 h-3" />
+                    Radio
+                  </button>
+                  <button
+                    onClick={() => addQuestion('checkbox')}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-200 text-[11px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 hover:border-neutral-300 transition-all"
+                  >
+                    <CheckSquare className="w-3 h-3" />
+                    Checkbox
                   </button>
                 </div>
               </div>
@@ -816,22 +791,28 @@ export default function TestEditorPage() {
                           Вопрос {questions.findIndex(q => q.id === selectedQuestion.id) + 1} из {questions.length}
                         </span>
                         <span className="text-neutral-200">|</span>
-                        <div className="flex items-center gap-0.5 bg-neutral-100 rounded-lg p-0.5 flex-wrap">
-                          {([
-                            {id:'radio' as const,icon:CircleDot,label:'Один'},
-                            {id:'checkbox' as const,icon:CheckSquare,label:'Несколько'},
-                            {id:'ordering' as const,icon:ArrowUpDown,label:'Порядок'},
-                            {id:'matching' as const,icon:Shuffle,label:'Соединение'},
-                            {id:'truefalse' as const,icon:ToggleLeft,label:'Да/Нет'},
-                          ]).map(t => (
-                            <button key={t.id}
-                              onClick={() => updateQuestion(selectedQuestion.id, { type: t.id })}
-                              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
-                                selectedQuestion.type === t.id ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
-                              }`}>
-                              <t.icon className="w-3 h-3" /> {t.label}
-                            </button>
-                          ))}
+                        <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-0.5">
+                          <button
+                            onClick={() => updateQuestion(selectedQuestion.id, { type: 'radio' })}
+                            className={`flex items-center gap-1
+                              px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                                selectedQuestion.type === 'radio'
+                                  ? 'bg-white text-neutral-900 shadow-sm'
+                                  : 'text-neutral-500 hover:text-neutral-700'
+                              }`}
+                          >
+                            <CircleDot className="w-3 h-3" /> Один ответ
+                          </button>
+                          <button
+                            onClick={() => updateQuestion(selectedQuestion.id, { type: 'checkbox' })}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                                selectedQuestion.type === 'checkbox'
+                                  ? 'bg-white text-neutral-900 shadow-sm'
+                                  : 'text-neutral-500 hover:text-neutral-700'
+                              }`}
+                          >
+                            <CheckSquare className="w-3 h-3" /> Несколько ответов
+                          </button>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -905,12 +886,12 @@ export default function TestEditorPage() {
                     </div>
                   </div>
 
-                  {/* Answers - Radio/Checkbox */}
-                  {(selectedQuestion.type === 'radio' || selectedQuestion.type === 'checkbox') && (
+                  {/* Answers */}
                   <div className="space-y-2">
                     {selectedQuestion.answers.map((answer, aIdx) => (
                       <div key={answer.id} className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
                         <div className="flex items-start gap-3 px-5 py-4">
+                          {/* Correct indicator */}
                           <button
                             onClick={() => setCorrectAnswer(selectedQuestion.id, answer.id)}
                             className={`mt-1 shrink-0 flex items-center justify-center transition-all ${
@@ -922,6 +903,8 @@ export default function TestEditorPage() {
                           >
                             {answer.isCorrect && <Check className="w-3 h-3 text-white" />}
                           </button>
+
+                          {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-semibold text-neutral-300 uppercase">Вариант {String.fromCharCode(65 + aIdx)}</span>
@@ -929,33 +912,53 @@ export default function TestEditorPage() {
                                 <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">✓ Верный</span>
                               )}
                             </div>
-                            <input type="text" value={answer.text}
+                            <input
+                              type="text"
+                              value={answer.text}
                               onChange={e => updateAnswer(selectedQuestion.id, answer.id, { text: e.target.value })}
                               placeholder="Текст ответа..."
-                              className="w-full text-[13px] text-neutral-800 placeholder-neutral-300 border-0 focus:outline-none focus:ring-0 bg-transparent font-medium" />
+                              className="w-full text-[13px] text-neutral-800 placeholder-neutral-300 border-0 focus:outline-none focus:ring-0 bg-transparent font-medium"
+                            />
+
+                            {/* Answer image */}
                             {answer.image ? (
                               <div className="relative mt-2 rounded-lg overflow-hidden w-fit group/aimg">
                                 <img src={answer.image} alt="" className="max-h-24 rounded-lg" />
-                                <button onClick={() => updateAnswer(selectedQuestion.id, answer.id, { image: null })}
-                                  className="absolute top-1 right-1 p-0.5 rounded bg-black/50 text-white opacity-0 group-hover/aimg:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => updateAnswer(selectedQuestion.id, answer.id, { image: null })}
+                                  className="absolute top-1 right-1 p-0.5 rounded bg-black/50 text-white opacity-0 group-hover/aimg:opacity-100 transition-opacity"
+                                >
                                   <X className="w-3 h-3" />
                                 </button>
                               </div>
                             ) : null}
+
+                            {/* Explanation */}
                             <div className="mt-2">
-                              <input type="text" value={answer.explanation}
+                              <input
+                                type="text"
+                                value={answer.explanation}
                                 onChange={e => updateAnswer(selectedQuestion.id, answer.id, { explanation: e.target.value })}
                                 placeholder="Описание ответа (показывается в результатах)..."
-                                className="w-full text-[11px] text-neutral-500 placeholder-neutral-300 border-0 focus:outline-none focus:ring-0 bg-transparent italic" />
+                                className="w-full text-[11px] text-neutral-500 placeholder-neutral-300 border-0 focus:outline-none focus:ring-0 bg-transparent italic"
+                              />
                             </div>
                           </div>
+
+                          {/* Actions */}
                           <div className="flex items-center gap-0.5 mt-1 shrink-0">
-                            <button className="p-1 rounded text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100 transition-colors" title="Добавить изображение">
+                            <button
+                              className="p-1 rounded text-neutral-300 hover:text-neutral-500 hover:bg-neutral-100 transition-colors"
+                              title="Добавить изображение"
+                            >
                               <ImageIcon className="w-3.5 h-3.5" />
                             </button>
                             {selectedQuestion.answers.length > 2 && (
-                              <button onClick={() => removeAnswer(selectedQuestion.id, answer.id)}
-                                className="p-1 rounded text-neutral-300 hover:text-rose-500 hover:bg-rose-50 transition-colors" title="Удалить вариант">
+                              <button
+                                onClick={() => removeAnswer(selectedQuestion.id, answer.id)}
+                                className="p-1 rounded text-neutral-300 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                                title="Удалить вариант"
+                              >
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             )}
@@ -963,94 +966,16 @@ export default function TestEditorPage() {
                         </div>
                       </div>
                     ))}
-                    <button onClick={() => addAnswer(selectedQuestion.id)}
-                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-neutral-200 rounded-2xl text-[12px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 hover:bg-white transition-all">
-                      <Plus className="w-4 h-4" /> Добавить вариант ответа
+
+                    {/* Add answer */}
+                    <button
+                      onClick={() => addAnswer(selectedQuestion.id)}
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-neutral-200 rounded-2xl text-[12px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 hover:bg-white transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Добавить вариант ответа
                     </button>
                   </div>
-                  )}
-
-                  {/* Ordering */}
-                  {selectedQuestion.type === 'ordering' && (
-                  <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden p-5 space-y-2">
-                    <p className="text-[11px] text-neutral-400 mb-3">Расставьте элементы в правильном порядке. У студента они будут перемешаны.</p>
-                    {(selectedQuestion.items || []).map((item, i) => (
-                      <div key={item.id} className="flex items-center gap-2 p-3 bg-neutral-50 border border-neutral-200 rounded-xl group/oi">
-                        <div className="flex flex-col gap-0.5 shrink-0">
-                          <button onClick={() => { const items = [...(selectedQuestion.items||[])]; if(i>0){const[m]=items.splice(i,1);items.splice(i-1,0,m);updateQuestion(selectedQuestion.id,{items});} }} disabled={i===0} className="p-0.5 rounded text-neutral-300 hover:text-neutral-600 disabled:opacity-20"><ChevronUp className="w-3 h-3" /></button>
-                          <button onClick={() => { const items = [...(selectedQuestion.items||[])]; if(i<items.length-1){const[m]=items.splice(i,1);items.splice(i+1,0,m);updateQuestion(selectedQuestion.id,{items});} }} disabled={i===(selectedQuestion.items||[]).length-1} className="p-0.5 rounded text-neutral-300 hover:text-neutral-600 disabled:opacity-20"><ChevronDown className="w-3 h-3" /></button>
-                        </div>
-                        <GripVertical className="w-4 h-4 text-neutral-300 shrink-0" />
-                        <input type="text" value={item.text}
-                          onChange={e => { const items = (selectedQuestion.items||[]).map((it,idx) => idx===i?{...it,text:e.target.value}:it); updateQuestion(selectedQuestion.id,{items}); }}
-                          placeholder={`Элемент ${i+1}...`}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-neutral-200 text-[13px] placeholder-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300" />
-                        <span className="text-[12px] font-bold text-neutral-300 w-6 text-right shrink-0">{i+1}</span>
-                        {(selectedQuestion.items||[]).length > 2 && <button onClick={() => updateQuestion(selectedQuestion.id,{items:(selectedQuestion.items||[]).filter((_,idx)=>idx!==i)})} className="p-1 text-neutral-300 hover:text-rose-500 opacity-0 group-hover/oi:opacity-100 transition-opacity shrink-0"><X className="w-3.5 h-3.5" /></button>}
-                      </div>
-                    ))}
-                    <button onClick={() => { const ts=Date.now(); updateQuestion(selectedQuestion.id,{items:[...(selectedQuestion.items||[]),{id:`i-${ts}`,text:''}]}); }}
-                      className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
-                      <Plus className="w-3 h-3" /> Добавить элемент
-                    </button>
-                  </div>
-                  )}
-
-                  {/* Matching */}
-                  {selectedQuestion.type === 'matching' && (
-                  <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden p-5 space-y-2">
-                    <p className="text-[11px] text-neutral-400 mb-3">Укажите правильные пары. У студента правый столбец будет перемешан.</p>
-                    {(selectedQuestion.pairs || []).map((pair, i) => (
-                      <div key={pair.id} className="flex items-center gap-2 group/mp">
-                        <div className="flex-1 p-2.5 bg-blue-50/50 border border-blue-200/50 rounded-xl">
-                          <input type="text" value={pair.left}
-                            onChange={e => { const pairs = (selectedQuestion.pairs||[]).map((p,idx) => idx===i?{...p,left:e.target.value}:p); updateQuestion(selectedQuestion.id,{pairs}); }}
-                            placeholder={`Левый ${i+1}...`}
-                            className="w-full px-2 py-1.5 rounded-lg border border-blue-200/50 text-[13px] placeholder-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300" />
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5 shrink-0 px-1">
-                          <div className="w-2 h-2 rounded-full bg-neutral-400" />
-                          <div className="w-px h-3 bg-neutral-300" />
-                          <div className="w-2 h-2 rounded-full bg-neutral-400" />
-                        </div>
-                        <div className="flex-1 p-2.5 bg-amber-50/50 border border-amber-200/50 rounded-xl">
-                          <input type="text" value={pair.right}
-                            onChange={e => { const pairs = (selectedQuestion.pairs||[]).map((p,idx) => idx===i?{...p,right:e.target.value}:p); updateQuestion(selectedQuestion.id,{pairs}); }}
-                            placeholder={`Правый ${i+1}...`}
-                            className="w-full px-2 py-1.5 rounded-lg border border-amber-200/50 text-[13px] placeholder-neutral-300 bg-white focus:outline-none focus:ring-1 focus:ring-amber-300" />
-                        </div>
-                        {(selectedQuestion.pairs||[]).length > 2 && <button onClick={() => updateQuestion(selectedQuestion.id,{pairs:(selectedQuestion.pairs||[]).filter((_,idx)=>idx!==i)})} className="p-1 text-neutral-300 hover:text-rose-500 opacity-0 group-hover/mp:opacity-100 transition-opacity shrink-0"><X className="w-3.5 h-3.5" /></button>}
-                      </div>
-                    ))}
-                    <button onClick={() => { const ts=Date.now(); updateQuestion(selectedQuestion.id,{pairs:[...(selectedQuestion.pairs||[]),{id:`p-${ts}`,left:'',right:''}]}); }}
-                      className="w-full py-2 border-2 border-dashed border-neutral-200 rounded-lg text-[11px] font-medium text-neutral-400 hover:border-neutral-300 hover:text-neutral-600 flex items-center justify-center gap-1.5">
-                      <Plus className="w-3 h-3" /> Добавить пару
-                    </button>
-                  </div>
-                  )}
-
-                  {/* True/False */}
-                  {selectedQuestion.type === 'truefalse' && (
-                  <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden p-5">
-                    <p className="text-[11px] text-neutral-400 mb-3">Выберите правильный ответ.</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => updateQuestion(selectedQuestion.id, { correctAnswer: true })}
-                        className={`p-5 rounded-xl border-2 text-center transition-all ${selectedQuestion.correctAnswer === true ? 'border-emerald-400 bg-emerald-50' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${selectedQuestion.correctAnswer === true ? 'bg-emerald-500' : 'bg-neutral-100'}`}>
-                          <Check className={`w-5 h-5 ${selectedQuestion.correctAnswer === true ? 'text-white' : 'text-neutral-400'}`} />
-                        </div>
-                        <p className={`text-[14px] font-semibold ${selectedQuestion.correctAnswer === true ? 'text-emerald-700' : 'text-neutral-600'}`}>Правда</p>
-                      </button>
-                      <button onClick={() => updateQuestion(selectedQuestion.id, { correctAnswer: false })}
-                        className={`p-5 rounded-xl border-2 text-center transition-all ${selectedQuestion.correctAnswer === false ? 'border-rose-400 bg-rose-50' : 'border-neutral-200 bg-white hover:border-neutral-300'}`}>
-                        <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${selectedQuestion.correctAnswer === false ? 'bg-rose-500' : 'bg-neutral-100'}`}>
-                          <X className={`w-5 h-5 ${selectedQuestion.correctAnswer === false ? 'text-white' : 'text-neutral-400'}`} />
-                        </div>
-                        <p className={`text-[14px] font-semibold ${selectedQuestion.correctAnswer === false ? 'text-rose-700' : 'text-neutral-600'}`}>Ложь</p>
-                      </button>
-                    </div>
-                  </div>
-                  )}
 
                   {/* Navigation */}
                   <div className="flex items-center justify-between pt-2">

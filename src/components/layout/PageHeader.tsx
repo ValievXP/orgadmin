@@ -16,17 +16,35 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
 }
 
+import { useRouter } from 'next/navigation';
+
 export function PageHeader({ title, breadcrumbs, backHref, onBack, actions }: PageHeaderProps) {
+  const router = useRouter();
+
+  let effectiveBackHref = backHref;
+  let effectiveOnBack = onBack;
+
+  if (!effectiveBackHref && !effectiveOnBack && breadcrumbs && breadcrumbs.length > 1) {
+    const prevCrumb = breadcrumbs[breadcrumbs.length - 2];
+    if (prevCrumb.href) {
+      effectiveBackHref = prevCrumb.href;
+    } else if (prevCrumb.onClick) {
+      effectiveOnBack = prevCrumb.onClick;
+    } else {
+      effectiveOnBack = () => router.back();
+    }
+  }
+
   return (
     <header className="h-16 bg-[var(--bg-surface)] border-b border-[var(--border-default)] w-full shrink-0 z-[60] sticky top-0 flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
-        {(backHref || onBack) && (
-          backHref ? (
-            <Link href={backHref} className="p-1.5 -ml-1.5 rounded-lg text-[var(--text-subtle)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-strong)] transition-colors">
+        {(effectiveBackHref || effectiveOnBack) && (
+          effectiveBackHref ? (
+            <Link href={effectiveBackHref} className="p-1.5 -ml-1.5 rounded-lg text-[var(--text-subtle)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-strong)] transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
           ) : (
-            <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-lg text-[var(--text-subtle)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-strong)] transition-colors">
+            <button onClick={effectiveOnBack} className="p-1.5 -ml-1.5 rounded-lg text-[var(--text-subtle)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-strong)] transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </button>
           )

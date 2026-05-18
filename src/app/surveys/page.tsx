@@ -3,8 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
-import { Search, Filter, Plus, Users, BookOpen, MoreVertical, LayoutGrid, List, Folder, Globe, Layers, Edit3, Move, Trash2, Check } from 'lucide-react';
-import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent, useDroppable } from '@dnd-kit/core';
+import { Search, Filter, Plus, Users, BookOpen, MoreVertical, LayoutGrid, List, Folder, Globe, Layers, Edit3, Move, Trash2, Check, Unlock, Lock, CalendarDays, Clock } from 'lucide-react';
+import { DndContext, DragOverlay, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -19,36 +19,31 @@ const FOLDER_COLORS = [
 ];
 
 const INITIAL_FOLDERS = [
-  { id: 'f1', title: 'Onboarding 2026', coursesCount: 4, parentId: null, colorId: 'blue' },
-  { id: 'f2', title: 'Compliance & Legal', coursesCount: 12, parentId: null, colorId: 'purple' },
-  { id: 'f3', title: 'IT & Security Core', coursesCount: 2, parentId: 'f1', colorId: 'yellow' },
+  { id: 'f1', title: 'HR Опросы', coursesCount: 4, parentId: null, colorId: 'blue' },
+  { id: 'f2', title: 'Фидбек от клиентов', coursesCount: 12, parentId: null, colorId: 'purple' },
+  { id: 'f3', title: 'Секретные опросы', coursesCount: 2, parentId: 'f1', colorId: 'yellow' },
 ];
 
-const INITIAL_COURSES = [
+const INITIAL_SURVEYS = [
   { 
-    id: 'COR-821', title: 'Основы корпоративной безопасности', lang: 'RUS', status: 'Active', inCatalog: true, 
-    users: 142, modules: 12, lessons: 48, parentId: null,
-    cover: 'bg-gradient-to-br from-emerald-400 to-teal-600'
+    id: 'SRV-821', title: 'Опрос удовлетворенности сотрудников', lang: 'RUS', status: 'Active', type: 'Открытый',
+    users: 142, parentId: null
   },
   { 
-    id: 'COR-724', title: 'Введение в управление проектами', lang: 'UZB', status: 'Draft', inCatalog: false, 
-    users: 0, modules: 8, lessons: 24, parentId: null,
-    cover: 'bg-gradient-to-br from-slate-200 to-slate-400'
+    id: 'SRV-724', title: 'Регистрация на вебинар', lang: 'UZB', status: 'Draft', type: 'Открытый',
+    users: 0, parentId: null
   },
   { 
-    id: 'COR-612', title: 'Дизайн-системы в Figma', lang: 'RUS', status: 'Active', inCatalog: true, 
-    users: 89, modules: 24, lessons: 120, parentId: null,
-    cover: 'bg-gradient-to-br from-fuchsia-500 to-purple-600'
+    id: 'SRV-612', title: 'Оценка качества обучения', lang: 'RUS', status: 'Active', type: 'По расписанию',
+    users: 89, parentId: null
   },
   { 
-    id: 'COR-509', title: 'Английский язык (Средний уровень)', lang: 'RUS', status: 'Archived', inCatalog: false, 
-    users: 512, modules: 40, lessons: 240, parentId: null,
-    cover: 'bg-gradient-to-br from-orange-400 to-rose-500'
+    id: 'SRV-509', title: 'Сбор заявок на парковку', lang: 'RUS', status: 'Closed', type: 'Ограниченное время',
+    users: 512, parentId: null
   },
   { 
-    id: 'COR-990', title: 'Welcome Day: Знакомство с компанией', lang: 'RUS', status: 'Active', inCatalog: true, 
-    users: 1240, modules: 2, lessons: 8, parentId: 'f1',
-    cover: 'bg-gradient-to-br from-blue-400 to-indigo-500'
+    id: 'SRV-990', title: 'Анкета предзаписи на новый курс', lang: 'RUS', status: 'Active', type: 'Открытый',
+    users: 1240, parentId: 'f1'
   },
 ];
 
@@ -120,7 +115,7 @@ function SortableFolder({ folder, isDraggingCourse, onClick, onMenuClick, openMe
       className={`group/f bg-white border rounded-2xl p-4 flex items-start gap-4 transition-all relative ${
         isOverCourse 
           ? 'border-[var(--color-admin-primary-500)] bg-[var(--color-admin-primary-50)] shadow-[0_4px_20px_rgba(0,0,0,0.1)] ring-2 ring-[var(--color-admin-primary-200)] scale-[1.02] z-10' 
-          : isDragging ? 'opacity-40 scale-[0.98] shadow-inner bg-neutral-50 z-50' : 'border-neutral-200 hover:border-[var(--color-admin-primary-500)]/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]'
+          : isDragging ? 'opacity-50 shadow-md bg-neutral-50 z-50' : 'border-neutral-200 hover:border-[var(--color-admin-primary-500)]/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)]'
       }`}
     >
       <div 
@@ -131,7 +126,7 @@ function SortableFolder({ folder, isDraggingCourse, onClick, onMenuClick, openMe
       
       <div className="flex-1 min-w-0 py-1 cursor-pointer" onClick={(!isDraggingCourse && !menuOpen) ? onClick : undefined}>
         <MarqueeText text={folder.title} className="font-semibold text-neutral-900 transition-colors" />
-        <p className="text-xs text-neutral-500 mt-1">{folder.coursesCount} курсов</p>
+        <p className="text-xs text-neutral-500 mt-1">{folder.coursesCount} опросов</p>
       </div>
 
       <div className="relative">
@@ -176,7 +171,7 @@ function SortableFolder({ folder, isDraggingCourse, onClick, onMenuClick, openMe
   );
 }
 
-function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpenMenuId }: { course: any, viewMode: 'grid' | 'list', onMenuClick?: (action: 'edit' | 'move' | 'duplicate' | 'delete', courseId: string) => void, openMenuId?: string | null, setOpenMenuId?: (id: string | null) => void }) {
+function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenuId, setOpenMenuId }: { course: any, index?: number, viewMode: 'grid' | 'list', onMenuClick?: (action: 'edit' | 'move' | 'duplicate' | 'delete', courseId: string) => void, openMenuId?: string | null, setOpenMenuId?: (id: string | null) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: course.id,
     data: { type: 'course', course }
@@ -213,7 +208,7 @@ function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpen
 
   const menuDropdown = (
     <div className={`absolute right-0 w-48 bg-white border border-neutral-200 rounded-xl shadow-xl py-1.5 z-[100] animate-in fade-in zoom-in-95 duration-150 text-neutral-900 text-left ${flipUp ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
-      <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 transition-colors font-medium" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onMenuClick?.('edit', course.id); }}><Edit3 className="w-4 h-4 text-neutral-400" />Редактировать</button>
+      <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 transition-colors font-medium" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); router?.push('/surveys/create?id=' + course.id); }}><Edit3 className="w-4 h-4 text-neutral-400" />Редактировать</button>
       <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 transition-colors font-medium" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onMenuClick?.('move', course.id); }}><Move className="w-4 h-4 text-neutral-400" />Переместить</button>
       <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 transition-colors font-medium" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onMenuClick?.('duplicate', course.id); }}><svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>Дублировать</button>
       <div className="h-px bg-neutral-100 my-1.5 mx-2" />
@@ -225,33 +220,50 @@ function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpen
     return (
       <div 
         ref={setNodeRef} style={style}
-        onClick={(e) => { if (!menuOpen) router?.push(`/courses/${course.id}`); }}
-        className={`grid grid-cols-12 gap-4 px-6 py-4 items-center bg-white transition-all group cursor-pointer ${
+        className={`grid grid-cols-12 gap-4 px-6 py-4 items-center bg-white transition-all group ${
           isDragging ? 'opacity-30 bg-neutral-50 shadow-inner' : 'hover:bg-[var(--color-admin-primary-50)]/30'
         }`}
       >
-        <div className="col-span-4 flex items-center gap-4 overflow-hidden pr-4">
-          <div className={`w-10 h-10 rounded-lg shrink-0 ${course.cover}`}></div>
+        <div className="col-span-5 flex items-center gap-3 pr-4 min-w-0">
+          <div className="w-5 text-neutral-400 font-semibold text-[13px] text-center shrink-0">{index + 1}</div>
+          <div className="relative group/tooltip flex items-center justify-center shrink-0">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                course.type === 'Открытый' ? 'bg-emerald-50 text-emerald-600' :
+                
+                course.type === 'По расписанию' ? 'bg-blue-50 text-blue-600' :
+                'bg-orange-50 text-orange-600'
+              }`}>
+               {course.type === 'Открытый' ? <Unlock className="w-4 h-4" /> :
+                
+                course.type === 'По расписанию' ? <CalendarDays className="w-4 h-4" /> :
+                <Clock className="w-4 h-4" />}
+            </div>
+            
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-all z-50 flex flex-col items-center origin-bottom scale-95 group-hover/tooltip:scale-100">
+              <div className="bg-[#1A1A1A] text-white text-[11px] leading-tight rounded-lg py-2 px-3 whitespace-nowrap shadow-xl border border-white/10">
+                <div className="font-bold mb-1">{course.type}</div>
+                {course.type === 'По расписанию' && <div className="text-neutral-400">Откроется: 25 апр 2026, 09:00</div>}
+                {course.type === 'Ограниченное время' && <div className="text-neutral-400">Доступен до: 30 апр 2026</div>}
+                {course.type === 'Открытый' && <div className="text-neutral-400">Доступен всем без ограничений</div>}
+                
+              </div>
+              <div className="w-2 h-2 bg-[#1A1A1A] rotate-45 -mt-1 border-b border-r border-white/10" />
+            </div>
+          </div>
           <div className="flex flex-col min-w-0 flex-1 justify-center">
-            <MarqueeText text={course.title} className="font-bold text-neutral-900 hover:text-[var(--color-admin-primary-600)] transition-colors" />
+            <MarqueeText text={course.title} className="font-bold text-neutral-900 hover:text-[var(--color-admin-primary-600)] transition-colors max-w-full" />
           </div>
         </div>
-        <div className="col-span-3 flex flex-wrap gap-2 items-center">
+        <div className="col-span-1 text-neutral-600 font-medium text-[13px]">{course.lang}</div>
+        <div className="col-span-2 flex flex-wrap gap-2 items-center">
           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider
-            ${course.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 
-              course.status === 'Draft' ? 'bg-slate-100 text-slate-600' : 'bg-neutral-100 text-neutral-500'}`}>
-            {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Архив'}
+            ${course.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 
+              course.status === 'Draft' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+            {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Завершен'}
           </span>
-          {course.inCatalog && (
-             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm bg-blue-50 text-blue-600">
-               В каталоге
-             </span>
-          )}
         </div>
-        <div className="col-span-1 text-neutral-700 font-semibold text-sm">{course.lang}</div>
-        <div className="col-span-1 text-right text-neutral-900 font-semibold text-sm">{course.users}</div>
-        <div className="col-span-1 text-right text-neutral-900 font-semibold text-sm">{course.modules}</div>
-        <div className="col-span-1 text-right text-neutral-900 font-semibold text-sm">{course.lessons}</div>
+        <div className="col-span-1 text-right text-neutral-900 font-semibold text-[13px]">{course.users}</div>
+        <div className="col-span-2 text-right pr-6 flex justify-end flex-col text-[12px]"><span className="text-neutral-900 font-medium leading-none mb-1">12.05.2026</span><span className="text-neutral-400 leading-none">14:30</span></div>
         <div className="col-span-1 text-right relative" ref={menuRef}>
           {menuOpen && (
              <div className="fixed inset-0 z-[90]" onClick={() => setMenuOpen(false)} />
@@ -273,8 +285,7 @@ function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpen
   return (
     <div 
       ref={setNodeRef} style={style}
-      onClick={(e) => { if (!menuOpen) router?.push(`/courses/${course.id}`); }}
-      className={`group bg-white border border-neutral-200 rounded-2xl flex flex-col transition-all duration-200 relative cursor-pointer ${menuOpen ? 'z-50 ring-2 ring-[var(--color-admin-primary-500)] border-[var(--color-admin-primary-500)]' : 'z-10'} ${
+      className={`group bg-white border border-neutral-200 rounded-2xl flex flex-col transition-all duration-200 relative ${menuOpen ? 'z-50 ring-2 ring-[var(--color-admin-primary-500)] border-[var(--color-admin-primary-500)]' : 'z-10'} ${
         isDragging ? 'opacity-30 scale-[0.98] shadow-inner bg-neutral-100' : 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-neutral-300'
       }`}
     >
@@ -298,14 +309,10 @@ function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpen
       </div>
       <div className="p-6 flex flex-col flex-1 min-w-0">
         <div className="flex flex-wrap gap-1.5 mb-3">
-          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${course.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : course.status === 'Draft' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-neutral-50 text-neutral-500 border border-neutral-200'}`}>
-            {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Архив'}
+          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${course.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : course.status === 'Draft' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+            {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Завершен'}
           </span>
-          {course.inCatalog && (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm bg-blue-50 text-blue-600 border border-blue-200">
-              В каталоге
-            </span>
-          )}
+          
         </div>
         <MarqueeText text={course.title} className="text-lg font-bold text-neutral-900 leading-snug mb-5" />
         <div className="mt-auto grid grid-cols-4 gap-2 pt-5 border-t border-neutral-100">
@@ -320,12 +327,13 @@ function SortableCourseCard({ course, viewMode, onMenuClick, openMenuId, setOpen
 }
 
 export default function CoursesPage() {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const router = useRouter();
+  const viewMode = 'list';
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const [folders, setFolders] = useState(INITIAL_FOLDERS);
-  const [courses, setCourses] = useState(INITIAL_COURSES);
+  const [courses, setCourses] = useState(INITIAL_SURVEYS);
   const [activeItem, setActiveItem] = useState<any>(null);
 
   // Modals state
@@ -382,7 +390,7 @@ export default function CoursesPage() {
 
   const breadcrumbs = useMemo(() => {
     if (!currentFolderId && !isSearching) return undefined;
-    const trail = [{ label: 'Курсы', onClick: () => { setCurrentFolderId(null); setSearchQuery(''); } }];
+    const trail: any[] = [{ label: 'Опросы', onClick: () => { setCurrentFolderId(null); setSearchQuery(''); } }];
     if (isSearching) {
       trail.push({ label: `Поиск "${searchQuery.trim()}"` });
       return trail;
@@ -522,7 +530,7 @@ export default function CoursesPage() {
         title: courseForm.title,
         lang: courseForm.lang,
         status: 'Draft',
-        inCatalog: false,
+        
         users: 0,
         modules: 0,
         lessons: 0,
@@ -563,7 +571,7 @@ export default function CoursesPage() {
   return (
     <div className="flex flex-col min-h-full w-full bg-[#F9FAFB] dark:bg-[var(--bg-app)] overflow-x-hidden relative">
       <PageHeader 
-        title={!breadcrumbs ? "Курсы" : undefined}
+        title={!breadcrumbs ? "Опросы" : undefined}
         breadcrumbs={breadcrumbs}
         onBack={currentFolderId ? () => {
           const folder = folders.find(f => f.id === currentFolderId);
@@ -581,11 +589,11 @@ export default function CoursesPage() {
             </Button>
             <Button 
               variant="primary" 
-              onClick={() => { setCourseForm({ title: '', description: '', courseId: '', lang: 'RUS', access: 'paid', price: '', hasDiscount: false, discountPrice: '' }); setCourseEditor({ mode: 'create', folderId: currentFolderId }); }}
+              onClick={() => router.push('/surveys/create')}
               className="gap-2 shadow-md h-9"
             >
               <Plus className="w-4 h-4" />
-              Создать курс
+              Создать опрос
             </Button>
           </>
         }
@@ -603,29 +611,15 @@ export default function CoursesPage() {
               className="w-full h-9 pl-10 pr-4 bg-white border border-neutral-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20 focus:border-[var(--color-admin-primary-500)] transition-all shadow-sm"
             />
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="flex items-center border border-neutral-200 rounded-lg bg-white p-0.5 shadow-sm h-9">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-neutral-100 text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-700'}`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-neutral-100 text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-700'}`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-            <Button variant="outline" size="sm" className="h-9 gap-2 bg-white shadow-sm border-neutral-200">
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-9 gap-2 bg-white shadow-sm border-neutral-200 rounded-xl px-4 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors">
               <Filter className="w-4 h-4 text-neutral-500" />
               Фильтры
             </Button>
           </div>
         </div>
 
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={pointerWithin}>
           
           {isSearching && visibleFolders.length === 0 && visibleCourses.length === 0 ? (
             <div className="py-24 flex flex-col items-center justify-center text-neutral-500 animate-in fade-in duration-500">
@@ -657,37 +651,26 @@ export default function CoursesPage() {
 
               {(visibleCourses.length > 0 || !isSearching) && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-75">
-                  <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">{isSearching ? 'Результаты поиска' : 'Курсы'}</h2>
+                  <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">{isSearching ? 'Результаты поиска' : 'Опросы'}</h2>
                   <SortableContext items={visibleCourses.map(c => c.id)} strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}>
                     {viewMode === 'grid' ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {!isSearching && (
-                          <div 
-                            onClick={() => { setCourseForm({ title: '', description: '', courseId: '', lang: 'RUS', access: 'paid', price: '', hasDiscount: false, discountPrice: '' }); setCourseEditor({ mode: 'create', folderId: currentFolderId }); }}
-                            className="group bg-transparent border-2 border-dashed border-neutral-300 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-[var(--color-admin-primary-500)] hover:bg-[var(--color-admin-primary-50)]/50 transition-colors cursor-pointer min-h-[300px]"
-                          >
-                            <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-600 group-hover:bg-[var(--color-admin-primary-600)] group-hover:text-white group-hover:border-[var(--color-admin-primary-600)] transition-all mb-4"><Plus className="w-6 h-6" /></div>
-                            <h3 className="font-bold text-neutral-900 transition-colors mb-1 text-lg">Создать курс</h3>
-                            <p className="text-sm text-neutral-400 text-center max-w-[200px]">Новый обучающий материал</p>
-                          </div>
-                        )}
                         {visibleCourses.map(course => <SortableCourseCard key={course.id} course={course} viewMode="grid" onMenuClick={handleCourseMenuAction} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />)}
                       </div>
                     ) : (
                       <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col">
                         <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 rounded-t-2xl text-[11px] font-bold text-neutral-400 uppercase tracking-wider items-center">
-                          <div className="col-span-4">Курс</div>
-                          <div className="col-span-3">Статус</div>
+                          <div className="col-span-5">Опрос</div>
                           <div className="col-span-1">Язык</div>
-                          <div className="col-span-1 text-right">Студенты</div>
-                          <div className="col-span-1 text-right">Модули</div>
-                          <div className="col-span-1 text-right">Элементы</div>
+                          <div className="col-span-2">Статус</div>
+                          <div className="col-span-1 text-right">Ответов</div>
+                          <div className="col-span-2 text-right pr-6">Создан</div>
                           <div className="col-span-1"></div>
                         </div>
                         <div className="flex flex-col divide-y divide-neutral-100 relative min-h-[100px]">
                            {visibleCourses.length === 0 ? (
-                              <div className="py-12 flex flex-col items-center justify-center text-neutral-500"><p>Здесь пока нет курсов</p></div>
-                           ) : visibleCourses.map(course => <SortableCourseCard key={course.id} course={course} viewMode="list" onMenuClick={handleCourseMenuAction} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />)}
+                              <div className="py-12 flex flex-col items-center justify-center text-neutral-500"><p>Здесь пока нет опросов</p></div>
+                           ) : visibleCourses.map((course, index) => <SortableCourseCard key={course.id} course={course} index={index} viewMode="list" onMenuClick={handleCourseMenuAction} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} />)}
                         </div>
                       </div>
                     )}
@@ -802,7 +785,7 @@ export default function CoursesPage() {
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setMoveCourseId(null)} />
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-10 p-6 animate-in zoom-in-95 duration-200">
-             <h2 className="text-xl font-bold text-neutral-900 mb-2">Переместить курс</h2>
+             <h2 className="text-xl font-bold text-neutral-900 mb-2">Переместить опрос</h2>
              <p className="text-sm text-neutral-500 mb-6">Выберите новое расположение для "{courses.find(c => c.id === moveCourseId)?.title}"</p>
              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto mb-6 p-1">
                 <button 
@@ -850,8 +833,8 @@ export default function CoursesPage() {
               <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-6">
                  <Trash2 className="w-8 h-8 text-rose-500" />
               </div>
-              <h2 className="text-[22px] font-bold text-neutral-900 mb-3 tracking-tight">Удалить курс?</h2>
-              <p className="text-[15px] text-neutral-500 mb-8 leading-relaxed max-w-[340px]">Вы действительно хотите безвозвратно удалить курс <strong className="text-neutral-900 font-semibold">"{courses.find(c => c.id === deleteCourseId)?.title}"</strong>?</p>
+              <h2 className="text-[22px] font-bold text-neutral-900 mb-3 tracking-tight">Удалить опрос?</h2>
+              <p className="text-[15px] text-neutral-500 mb-8 leading-relaxed max-w-[340px]">Вы действительно хотите безвозвратно удалить опрос <strong className="text-neutral-900 font-semibold">"{courses.find(c => c.id === deleteCourseId)?.title}"</strong>?</p>
               <div className="flex gap-3 w-full">
                  <Button variant="outline" className="flex-1 font-semibold" onClick={() => setDeleteCourseId(null)}>Отмена</Button>
                  <Button className="flex-1 font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-transparent" onClick={() => {
@@ -868,10 +851,10 @@ export default function CoursesPage() {
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
            <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setDuplicateCourseId(null)} />
            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative z-10 p-6 animate-in zoom-in-95 duration-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-6">Дублирование курса</h2>
+              <h2 className="text-xl font-bold text-neutral-900 mb-6">Дублирование опроса</h2>
               <div className="flex flex-col gap-6">
                 <div>
-                  <label className="block text-[14px] font-semibold text-neutral-800 mb-2">Новое название курса</label>
+                  <label className="block text-[14px] font-semibold text-neutral-800 mb-2">Новое название опроса</label>
                   <input 
                      type="text" autoFocus
                      className="w-full h-11 px-4 border border-neutral-200 rounded-xl focus:ring-4 focus:ring-[var(--color-admin-primary-500)]/10 focus:border-[var(--color-admin-primary-500)] outline-none transition-all shadow-sm text-sm" 
@@ -913,7 +896,7 @@ export default function CoursesPage() {
                  {/* Basic Info */}
                  <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col gap-6">
                    <div className="grid grid-cols-[180px_1fr] items-center gap-6">
-                     <label className="text-[14px] font-semibold text-neutral-800">Название курса</label>
+                     <label className="text-[14px] font-semibold text-neutral-800">Название опроса</label>
                      <input 
                         type="text" autoFocus
                         value={courseForm.title} 
@@ -926,7 +909,7 @@ export default function CoursesPage() {
                    <div className="h-px bg-neutral-100 w-full" />
 
                    <div className="grid grid-cols-[180px_1fr] items-start gap-6">
-                     <label className="text-[14px] font-semibold text-neutral-800 mt-3">Описание курса</label>
+                     <label className="text-[14px] font-semibold text-neutral-800 mt-3">Описание опроса</label>
                      <textarea 
                         value={courseForm.description} 
                         onChange={e => setCourseForm(prev => ({ ...prev, description: e.target.value }))} 
@@ -938,7 +921,7 @@ export default function CoursesPage() {
                    <div className="h-px bg-neutral-100 w-full" />
 
                    <div className="grid grid-cols-[180px_1fr] items-center gap-6">
-                     <label className="text-[14px] font-semibold text-neutral-800">Язык курса</label>
+                     <label className="text-[14px] font-semibold text-neutral-800">Язык опроса</label>
                      <div className="relative">
                        <button 
                          type="button"
@@ -981,7 +964,7 @@ export default function CoursesPage() {
                  {/* Settings / Access */}
                  <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col gap-6">
                    <div className="grid grid-cols-[180px_1fr] items-start gap-6 pt-1">
-                     <label className="text-[14px] font-semibold text-neutral-800 mt-2">Доступ к курсу</label>
+                     <label className="text-[14px] font-semibold text-neutral-800 mt-2">Доступ к опросу</label>
                      <div className="flex flex-col gap-6">
                        <div className="flex bg-neutral-100/80 p-1 rounded-xl w-full border border-neutral-200/50">
                          <button 
@@ -1056,7 +1039,7 @@ export default function CoursesPage() {
              <div className="p-6 sm:px-8 bg-white border-t border-neutral-100 flex justify-end gap-3 shrink-0">
                 <Button variant="outline" className="font-semibold px-6 h-11 min-w-[120px] rounded-xl text-neutral-600 border-neutral-200 hover:bg-neutral-50" onClick={() => setCourseEditor(null)}>Отмена</Button>
                 <Button variant="primary" className="font-semibold shadow-md px-6 h-11 rounded-xl min-w-[140px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100" disabled={!courseForm.title.trim()} onClick={saveCourse}>
-                  {courseEditor.mode === 'create' ? 'Создать курс' : 'Сохранить'}
+                  {courseEditor.mode === 'create' ? 'Создать опрос' : 'Сохранить'}
                 </Button>
              </div>
           </div>

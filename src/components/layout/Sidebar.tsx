@@ -11,14 +11,18 @@ import {
   Globe,
   LayoutDashboard,
   ClipboardCheck,
+  ClipboardList,
   BarChart3,
   UserCog,
-  Wand2
+  Wand2,
+  Calendar
 } from "lucide-react";
 
 const navigation = [
   { name: "Курсы", href: "/courses", icon: GraduationCap },
   { name: "Тестирование", href: "/testing", icon: ClipboardCheck },
+  { name: "Опросы", href: "/surveys", icon: ClipboardList },
+  { name: "Мероприятия", href: "#", icon: Calendar },
   { name: "Пользователи", href: "/users", icon: Users },
   { name: "Статистика", href: "/statistics", icon: BarChart3 },
   { name: "Команда", href: "/team", icon: UserCog },
