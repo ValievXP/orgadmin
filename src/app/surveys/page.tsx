@@ -328,7 +328,7 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
 
 export default function CoursesPage() {
   const router = useRouter();
-  const viewMode = 'list';
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
@@ -392,7 +392,7 @@ export default function CoursesPage() {
     if (!currentFolderId && !isSearching) return undefined;
     const trail: any[] = [{ label: 'Опросы', onClick: () => { setCurrentFolderId(null); setSearchQuery(''); } }];
     if (isSearching) {
-      trail.push({ label: `Поиск "${searchQuery.trim()}"` });
+      trail.push({ label: `Поиск "${searchQuery.trim()}"`, onClick: () => {} });
       return trail;
     }
     const hierarchy = [];
@@ -526,16 +526,13 @@ export default function CoursesPage() {
     
     if (courseEditor?.mode === 'create') {
       const newCourse = {
-        id: `COR-${Math.floor(Math.random() * 10000)}`,
+        id: `SRV-${Math.floor(Math.random() * 10000)}`,
         title: courseForm.title,
         lang: courseForm.lang,
         status: 'Draft',
-        
+        type: 'Открытый',
         users: 0,
-        modules: 0,
-        lessons: 0,
-        parentId: courseEditor.folderId || null,
-        cover: 'bg-gradient-to-br from-neutral-200 to-neutral-400'
+        parentId: courseEditor.folderId || null
       };
       setCourses([newCourse, ...courses]);
       

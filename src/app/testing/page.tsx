@@ -394,7 +394,7 @@ export default function TestingPage() {
     if (!currentFolderId && !isSearching) return undefined;
     const trail = [{ label: 'Тестирования', onClick: () => { setCurrentFolderId(null); setSearchQuery(''); } }];
     if (isSearching) {
-      trail.push({ label: `Поиск "${searchQuery.trim()}"` });
+      trail.push({ label: `Поиск "${searchQuery.trim()}"`, onClick: () => {} });
       return trail;
     }
     const hierarchy = [];

@@ -22,7 +22,7 @@ const navigation = [
   { name: "Курсы", href: "/courses", icon: GraduationCap },
   { name: "Тестирование", href: "/testing", icon: ClipboardCheck },
   { name: "Опросы", href: "/surveys", icon: ClipboardList },
-  { name: "Мероприятия", href: "#", icon: Calendar },
+  { name: "Мероприятия", href: "/events", icon: Calendar },
   { name: "Пользователи", href: "/users", icon: Users },
   { name: "Статистика", href: "/statistics", icon: BarChart3 },
   { name: "Команда", href: "/team", icon: UserCog },
