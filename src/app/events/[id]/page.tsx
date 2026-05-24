@@ -346,32 +346,32 @@ function AddStudentModal({
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 overflow-hidden border border-neutral-100">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200 overflow-hidden border border-neutral-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
           <div>
-            <h2 className="text-lg font-bold text-neutral-900">Добавить участников</h2>
-            <p className="text-xs text-neutral-400 mt-0.5">Выберите пользователей для добавления на мероприятие</p>
+            <h2 className="text-base font-bold text-neutral-900">Добавить участников</h2>
+            <p className="text-[11px] text-neutral-400 mt-0.5">Выберите пользователей для добавления на мероприятие</p>
           </div>
           <button onClick={onClose} className="p-2 text-neutral-400 hover:bg-neutral-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
         </div>
         
-        <div className="p-6 flex flex-col gap-5 overflow-y-auto">
+        <div className="px-5 pt-4 pb-3 flex flex-col gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               placeholder="Поиск по ФИО, телефону или email..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full px-4 py-2.5 pl-11 rounded-xl border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20 bg-neutral-50 hover:bg-white focus:bg-white transition-all"
+              className="w-full px-3.5 py-2 pl-10 rounded-xl border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20 bg-neutral-50 hover:bg-white focus:bg-white transition-all"
             />
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col z-[50]">
-              <label className="text-[13px] font-semibold text-neutral-700 mb-2 block">Город</label>
+              <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5 block">Город</label>
               <MultiSelectDropdown
                 values={filterCity}
                 onChange={setFilterCity}
@@ -387,7 +387,7 @@ function AddStudentModal({
               />
             </div>
             <div className="flex flex-col z-[50]">
-              <label className="text-[13px] font-semibold text-neutral-700 mb-2 block">Учебное заведение</label>
+              <label className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5 block">Учебное заведение</label>
               <MultiSelectDropdown
                 values={filterSchool}
                 onChange={setFilterSchool}
@@ -405,83 +405,82 @@ function AddStudentModal({
               />
             </div>
           </div>
+        </div>
 
-          {/* List Table */}
-          <div className="border border-neutral-200 rounded-xl overflow-hidden mt-2 bg-white">
-            <div className="max-h-[300px] overflow-y-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-neutral-50 sticky top-0 border-b border-neutral-200 z-10">
-                  <tr className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                    <th className="px-4 py-3 w-10 text-center">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedIds.size === filtered.length && filtered.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedIds(new Set(filtered.map(s => s.id)));
-                          else setSelectedIds(new Set());
-                        }}
-                        className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-4 h-4 cursor-pointer" 
-                      />
-                    </th>
-                    <th className="px-4 py-3">Студент</th>
-                    <th className="px-4 py-3">Контакты</th>
-                    <th className="px-4 py-3">Детали</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-sm font-medium text-neutral-400">
-                        По вашему запросу студенты не найдены
-                      </td>
-                    </tr>
-                  ) : filtered.map(s => (
-                    <tr key={s.id} className="hover:bg-neutral-50/40 cursor-pointer transition-colors" onClick={() => toggleSelect(s.id)}>
-                      <td className="px-4 py-3 text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.has(s.id)}
-                          onChange={() => toggleSelect(s.id)}
-                          onClick={e => e.stopPropagation()}
-                          className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-4 h-4 cursor-pointer" 
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <img src={s.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-neutral-100" />
-                          <div className="font-semibold text-neutral-900 text-sm">{s.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">
-                        <div className="max-w-[150px] truncate" title={s.email}>{s.email}</div>
-                        <div className="mt-0.5 text-neutral-400 font-medium">{s.phone}</div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">
-                        <div>{s.city}</div>
-                        <div className="mt-0.5 text-neutral-400 font-medium">{s.school}</div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* List */}
+        <div className="flex-1 overflow-hidden border-t border-neutral-100">
+          <div className="max-h-[340px] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-neutral-50 border-b border-neutral-200 grid grid-cols-[36px_1fr_1fr_100px_100px] items-center px-4 py-2 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+              <div className="flex items-center justify-center">
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.size === filtered.length && filtered.length > 0}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds(new Set(filtered.map(s => s.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                  className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 cursor-pointer" 
+                />
+              </div>
+              <div className="pl-1">ФИО</div>
+              <div>Email</div>
+              <div>Город</div>
+              <div>Заведение</div>
             </div>
+
+            {/* Rows */}
+            {filtered.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm font-medium text-neutral-400">
+                По вашему запросу студенты не найдены
+              </div>
+            ) : filtered.map(s => {
+              const isSelected = selectedIds.has(s.id);
+              const initials = s.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+              return (
+                <div 
+                  key={s.id} 
+                  onClick={() => toggleSelect(s.id)}
+                  className={`grid grid-cols-[36px_1fr_1fr_100px_100px] items-center px-4 py-2.5 border-b border-neutral-50 cursor-pointer transition-colors ${isSelected ? 'bg-[var(--color-admin-primary-50)]/40' : 'hover:bg-neutral-50/60'}`}
+                >
+                  <div className="flex items-center justify-center">
+                    <input 
+                      type="checkbox" 
+                      checked={isSelected}
+                      onChange={() => toggleSelect(s.id)}
+                      onClick={e => e.stopPropagation()}
+                      className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 w-3.5 h-3.5 cursor-pointer" 
+                    />
+                  </div>
+                  <div className="flex items-center gap-2.5 pl-1 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-[10px] flex items-center justify-center shrink-0">
+                      {initials}
+                    </div>
+                    <span className="text-[13px] font-semibold text-neutral-900 truncate">{s.name}</span>
+                  </div>
+                  <div className="text-[12px] text-neutral-500 truncate pr-2" title={s.email}>{s.email}</div>
+                  <div className="text-[12px] text-neutral-500 truncate">{s.city}</div>
+                  <div className="text-[12px] text-neutral-400 truncate">{s.school}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
         
-        <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
+        <div className="px-5 py-3.5 border-t border-neutral-100 bg-neutral-50/80 flex items-center justify-between">
           <button 
             onClick={handleAddAll} 
-            className="text-xs font-semibold text-[var(--color-admin-primary-600)] hover:text-[var(--color-admin-primary-700)] px-3 py-1.5 rounded-lg hover:bg-[var(--color-admin-primary-50)] transition-colors uppercase tracking-wider"
+            className="text-[11px] font-semibold text-[var(--color-admin-primary-600)] hover:text-[var(--color-admin-primary-700)] px-3 py-1.5 rounded-lg hover:bg-[var(--color-admin-primary-50)] transition-colors uppercase tracking-wider"
           >
             Добавить всех ({filtered.length})
           </button>
-          <div className="flex items-center gap-3">
-            <button onClick={onClose} className="text-xs font-semibold text-neutral-500 hover:text-neutral-700 px-4 py-2 hover:bg-neutral-100 rounded-xl transition-colors">Отмена</button>
+          <div className="flex items-center gap-2.5">
+            <button onClick={onClose} className="text-[11px] font-semibold text-neutral-500 hover:text-neutral-700 px-4 py-2 hover:bg-neutral-100 rounded-xl transition-colors">Отмена</button>
             <Button 
               variant="primary" 
               disabled={selectedIds.size === 0} 
               onClick={handleAddSelected} 
-              className="text-xs font-semibold px-5 h-9 shadow-sm"
+              className="text-[11px] font-semibold px-4 h-8 shadow-sm"
             >
               Добавить выбранных ({selectedIds.size})
             </Button>
