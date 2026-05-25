@@ -16,7 +16,8 @@ import {
   Check,
   X,
   Unlock,
-  BarChart
+  BarChart,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -241,11 +242,14 @@ const MOCK_SUBMISSIONS = [
 export default function SurveyDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   
-  // Tab selector: 'preview' | 'results'
-  const [activeTab, setActiveTab] = useState<'preview' | 'results'>('preview');
+  // Default tab set to 'results' (Ответы) as requested
+  const [activeTab, setActiveTab] = useState<'preview' | 'results'>('results');
   
   // Results view sub-tabs: 'summary' | 'individual'
   const [resultsMode, setResultsMode] = useState<'summary' | 'individual'>('summary');
+
+  // Export dropdown state
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Interactive preview input states
   const [prevQ1Val, setPrevQ1Val] = useState<string>('');
@@ -323,8 +327,9 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
     setIndividualPage(1);
   }, [individualSearch, individualLimit]);
 
-  // Working Client-side Export Methods
+  // Client-side Export Methods
   const handleExportCSV = () => {
+    setIsExportOpen(false);
     let csvContent = "\uFEFF"; // UTF-8 BOM
     if (resultsMode === 'summary') {
       csvContent += "Вопрос;Тип вопроса;Результаты / Доли ответов\n";
@@ -351,6 +356,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
   };
 
   const handleExportXLS = () => {
+    setIsExportOpen(false);
     let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/></head><body><table border="1">';
     if (resultsMode === 'summary') {
       htmlTable += '<tr><th style="background-color:#F2F2F2">Вопрос</th><th style="background-color:#F2F2F2">Тип вопроса</th><th style="background-color:#F2F2F2">Результаты / Доли ответов</th></tr>';
@@ -400,18 +406,8 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
           {/* Switcher and Редактировать Button */}
           <div className="flex items-center gap-3">
             
+            {/* Header Switcher: Ответы first, Предпросмотр second */}
             <div className="flex items-center border border-neutral-200 rounded-xl bg-neutral-50 p-0.5">
-              <button
-                onClick={() => setActiveTab('preview')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeTab === 'preview' 
-                    ? 'bg-white text-neutral-900 border border-neutral-200/55 shadow-sm' 
-                    : 'text-neutral-500 hover:text-neutral-800'
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Предпросмотр</span>
-              </button>
               <button
                 onClick={() => setActiveTab('results')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -421,14 +417,61 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Ответы</span>
+                <span>Ответы</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('preview')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeTab === 'preview' 
+                    ? 'bg-white text-neutral-900 border border-neutral-200/55 shadow-sm' 
+                    : 'text-neutral-500 hover:text-neutral-800'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Предпросмотр</span>
               </button>
             </div>
 
+            {/* Combined export button "Отчет" with dropdown format selector */}
+            <div className="relative">
+              {isExportOpen && (
+                <div className="fixed inset-0 z-[190]" onClick={() => setIsExportOpen(false)} />
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => setIsExportOpen(!isExportOpen)}
+                className="h-9 px-4 font-medium text-[13px] bg-white text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 border-neutral-200 shadow-sm"
+              >
+                <Download className="w-4 h-4 text-neutral-500" />
+                <span>Отчет</span>
+              </Button>
+
+              {/* Format selection popover */}
+              {isExportOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-neutral-200 rounded-xl shadow-xl py-1 z-[200] animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button 
+                    onClick={handleExportXLS}
+                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Скачать Excel (.xls)</span>
+                  </button>
+                  <button 
+                    onClick={handleExportCSV}
+                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Скачать CSV (.csv)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Редактировать Button styled exactly as courses lesson preview primary button */}
             <Button 
-              variant="outline" 
-              className="h-8 px-3 text-xs font-semibold rounded-lg bg-white border-neutral-200 hover:bg-neutral-50 hover:text-neutral-900 shadow-sm"
               onClick={() => router.push(`/surveys/create?id=${MOCK_SURVEY.id}`)}
+              variant="primary" 
+              className="h-9 px-4 font-medium text-[13px] shadow-sm"
             >
               Редактировать
             </Button>
@@ -458,12 +501,8 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
             <div className="border border-neutral-200 rounded-2xl shadow-sm overflow-hidden flex flex-col bg-white">
               <div className="p-10 lg:p-14 max-w-[850px] mx-auto w-full flex-1 flex flex-col gap-8">
                 
-                {/* Cover Title */}
+                {/* Cover Title (Metadata tags category and lang badges removed as requested) */}
                 <div className="pb-6 border-b border-neutral-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Опрос</span>
-                    <span className="text-[13px] font-medium text-neutral-450">{MOCK_SURVEY.lang}</span>
-                  </div>
                   <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">{MOCK_SURVEY.title}</h1>
                   <p className="text-[15px] text-neutral-500 leading-relaxed mt-4">{MOCK_SURVEY.description}</p>
                 </div>
@@ -489,10 +528,9 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                 <div className="h-px bg-neutral-100" />
 
-                {/* Question 1: Да/Нет (True/False check/cross layout cards) */}
+                {/* Question 1: Да/Нет (Technical category badges removed) */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Да/Нет</span>
                     <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[2].text}</h3>
@@ -537,7 +575,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Question 2: Rating Scale 1-5 */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Шкала оценки</span>
                     <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[3].text}</h3>
@@ -566,7 +603,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Question 3: Emoji Choice */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Смайлики</span>
                     <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[4].text}</h3>
@@ -595,7 +631,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Question 4: Single choice */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Один выбор</span>
                     <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[5].text}</h3>
@@ -629,7 +664,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Question 5: Multiple choice */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Множественный выбор</span>
                     <span className="text-xs text-neutral-400 font-bold">Необязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[6].text}</h3>
@@ -663,7 +697,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Question 6: Open question */}
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Открытый вопрос</span>
                     <span className="text-xs text-neutral-400 font-bold">Необязательный</span>
                   </div>
                   <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[7].text}</h3>
@@ -741,51 +774,29 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
             </div>
 
             {/* Results sub-tab switchers and Export panel */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-200 w-full gap-4 pb-0.5">
-              <div className="flex gap-6">
-                <button
-                  onClick={() => setResultsMode('summary')}
-                  className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
-                    resultsMode === 'summary' 
-                      ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
-                      : 'border-transparent text-neutral-400 hover:text-neutral-800'
-                  }`}
-                >
-                  <BarChart className="w-3.5 h-3.5" />
-                  Сводка результатов
-                </button>
-                <button
-                  onClick={() => setResultsMode('individual')}
-                  className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
-                    resultsMode === 'individual' 
-                      ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
-                      : 'border-transparent text-neutral-400 hover:text-neutral-800'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  Отдельные ответы ({MOCK_SUBMISSIONS.length})
-                </button>
-              </div>
-
-              {/* Working export controls */}
-              <div className="flex items-center gap-2 pb-2.5 sm:pb-0">
-                <button 
-                  onClick={handleExportXLS}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 transition-colors shadow-sm"
-                  title="Скачать Excel отчет"
-                >
-                  <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Скачать Excel</span>
-                </button>
-                <button 
-                  onClick={handleExportCSV}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 transition-colors shadow-sm"
-                  title="Скачать CSV отчет"
-                >
-                  <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Скачать CSV</span>
-                </button>
-              </div>
+            <div className="flex border-b border-neutral-200 w-full gap-6">
+              <button
+                onClick={() => setResultsMode('summary')}
+                className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
+                  resultsMode === 'summary' 
+                    ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
+                    : 'border-transparent text-neutral-400 hover:text-neutral-800'
+                }`}
+              >
+                <BarChart className="w-3.5 h-3.5" />
+                Сводка результатов
+              </button>
+              <button
+                onClick={() => setResultsMode('individual')}
+                className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
+                  resultsMode === 'individual' 
+                    ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
+                    : 'border-transparent text-neutral-400 hover:text-neutral-800'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                Отдельные ответы ({MOCK_SUBMISSIONS.length})
+              </button>
             </div>
 
             {/* SUB-VIEW 1: SUMMARY GRAPH ANALYSIS */}
@@ -1004,7 +1015,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                               <option value={5}>5</option>
                               <option value={10}>10</option>
                             </select>
-                            <ChevronDown className="w-3 h-3 text-neutral-450 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <ChevronDown className="w-3 h-3 text-neutral-455 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
                         <span className="text-neutral-400">
