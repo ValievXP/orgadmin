@@ -268,6 +268,10 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<'10' | '20' | '50' | 'all'>('10');
+  
   // Sort state
   const [activitySort, setActivitySort] = useState<SortOrder>(null);
   const [regSort, setRegSort] = useState<SortOrder>(null);
@@ -326,7 +330,24 @@ export default function UsersPage() {
     }
 
     return result;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, branchFilter, deptFilter, divFilter, roleFilter, statusFilter, activitySort, regSort]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, branchFilter, deptFilter, divFilter, roleFilter, statusFilter]);
+
+  const totalPages = useMemo(() => {
+    if (pageSize === 'all') return 1;
+    return Math.ceil(filteredUsers.length / Number(pageSize));
+  }, [filteredUsers.length, pageSize]);
+
+  const pagedUsers = useMemo(() => {
+    if (pageSize === 'all') return filteredUsers;
+    const start = (currentPage - 1) * Number(pageSize);
+    return filteredUsers.slice(start, start + Number(pageSize));
+  }, [filteredUsers, currentPage, pageSize]);
 
   const toggleSort = (type: 'activity' | 'reg') => {
     if (type === 'activity') {
@@ -442,86 +463,124 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {filteredUsers.length === 0 ? (
+                {pagedUsers.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-16 text-center text-neutral-400 text-[14px]">Пользователи не найдены</td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user, index) => (
-                    <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="group border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60 transition-colors cursor-pointer">
-                      <td className="px-3 py-3 text-center">
-                        <span className="text-[11px] text-neutral-300 tabular-nums">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
-                            {user.initials}
+                  pagedUsers.map((user, index) => {
+                    const globalIdx = pageSize === 'all' ? (index + 1) : ((currentPage - 1) * Number(pageSize) + index + 1);
+                    return (
+                      <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="group border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60 transition-colors cursor-pointer">
+                        <td className="px-3 py-3 text-center">
+                          <span className="text-[11px] text-neutral-300 tabular-nums">
+                            {String(globalIdx).padStart(2, '0')}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                              {user.initials}
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="font-semibold text-neutral-800 text-[13px] truncate" title={user.name}>
+                                {user.name}
+                              </span>
+                              <span className="text-[11px] text-neutral-400 font-medium truncate" title={user.email}>
+                                {user.email}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="font-semibold text-neutral-800 text-[13px] truncate" title={user.name}>
-                              {user.name}
-                            </span>
-                            <span className="text-[11px] text-neutral-400 font-medium truncate" title={user.email}>
-                              {user.email}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.branch} className="text-[12px] font-medium text-neutral-850" />
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.dept} className="text-[12px] font-medium text-neutral-850" />
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-850" />
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-850" />
-                      </td>
-                      <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-850" />
-                      </td>
-                      <td className="px-3 py-3 truncate">
-                        {renderDateTime(user.visit)}
-                      </td>
-                      <td className="px-3 py-3 truncate">
-                        {renderDateTime(user.reg)}
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <MarqueeText text={user.branch} className="text-[12px] font-medium text-neutral-850" />
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <MarqueeText text={user.dept} className="text-[12px] font-medium text-neutral-850" />
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-850" />
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-850" />
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-850" />
+                        </td>
+                        <td className="px-3 py-3 truncate">
+                          {renderDateTime(user.visit)}
+                        </td>
+                        <td className="px-3 py-3 truncate">
+                          {renderDateTime(user.reg)}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between bg-white rounded-b-2xl">
-            <span className="text-[13px] font-medium text-neutral-500">
-              Показано {filteredUsers.length} из {mockUsers.length}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-50 hover:text-neutral-800 transition-colors disabled:opacity-50">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              {[1, 2, 3, 4, 5, '...', 31].map((page, i) => (
-                <button 
-                  key={i} 
-                  className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-[13px] font-medium transition-colors ${
-                    page === 1 
-                      ? 'bg-indigo-50 text-indigo-700' 
-                      : 'text-neutral-600 hover:bg-neutral-50'
-                  } ${page === '...' ? 'pointer-events-none text-neutral-400' : ''}`}
+          <div className="border-t border-neutral-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-neutral-50/20 rounded-b-2xl">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 font-semibold">Показывать по:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(e.target.value as any);
+                    setCurrentPage(1);
+                  }}
+                  className="text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-300 shadow-sm cursor-pointer"
                 >
-                  {page}
-                </button>
-              ))}
-              <button className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-50 hover:text-neutral-800 transition-colors disabled:opacity-50">
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="all">Все</option>
+                </select>
+              </div>
+              <span className="text-xs text-neutral-400 font-semibold">
+                Показано <span className="text-neutral-700 font-bold">{filteredUsers.length === 0 ? 0 : (currentPage - 1) * (pageSize === 'all' ? filteredUsers.length : Number(pageSize)) + 1}–{pageSize === 'all' ? filteredUsers.length : Math.min(currentPage * Number(pageSize), filteredUsers.length)}</span> из <span className="text-neutral-700 font-bold">{filteredUsers.length}</span>
+              </span>
             </div>
+
+            {pageSize !== 'all' && totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  const isActive = page === currentPage;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center ${
+                        isActive
+                          ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+                          : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
