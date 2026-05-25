@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
-// Refined Mock Survey Definition
+// Refined Mock Survey Definition with statements fitting Правда/Ложь choice layouts
 const MOCK_SURVEY = {
   id: 'SRV-821',
   title: 'Опрос удовлетворенности сотрудников',
@@ -45,7 +45,7 @@ const MOCK_SURVEY = {
     {
       id: 'q1',
       type: 'yes_no',
-      text: '1. Довольны ли вы текущим гибридным форматом работы?',
+      text: '1. Утверждение: В нашей команде эффективно распределяются задачи и всегда соблюдаются сроки проектов.',
       required: true
     },
     {
@@ -323,6 +323,60 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
     setIndividualPage(1);
   }, [individualSearch, individualLimit]);
 
+  // Working Client-side Export Methods
+  const handleExportCSV = () => {
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+    if (resultsMode === 'summary') {
+      csvContent += "Вопрос;Тип вопроса;Результаты / Доли ответов\n";
+      csvContent += `"${MOCK_SURVEY.content[2].text}";"Да/Нет";"Правда (78%), Ложь (22%)"\n`;
+      csvContent += `"${MOCK_SURVEY.content[3].text}";"Шкала оценки";"Средняя: 4.1 (5 звезд: 45%, 4 звезды: 30%, 3 звезды: 15%, 2 звезды: 7%, 1 звезда: 3%)"\n`;
+      csvContent += `"${MOCK_SURVEY.content[4].text}";"Смайлики";"🤩 (35%), 🙂 (40%), 😐 (15%), 🙁 (7%), 😞 (3%)"\n`;
+      csvContent += `"${MOCK_SURVEY.content[5].text}";"Один выбор";"Каждый день (45%), Несколько раз в неделю (35%), Раз в неделю (15%), Раз в месяц или реже (5%)"\n`;
+      csvContent += `"${MOCK_SURVEY.content[6].text}";"Множественный выбор";"Слишком много созвонов (61%), Нечетко поставленные задачи (41%), Шум в офисе (30%), Проблемы с оборудованием (15%), Другое (7%)"\n`;
+    } else {
+      csvContent += "Студент;Email;Дата ответа;1. Правда/Ложь;2. Оценка (1-5);3. Настроение;4. Тет-а-тет;5. Факторы продуктивности;6. Предложения\n";
+      MOCK_SUBMISSIONS.forEach(s => {
+        const q5Text = s.answers.q5.join(', ');
+        csvContent += `"${s.studentName}";"${s.email}";"${s.date}";"${s.answers.q1}";"${s.answers.q2}";"${s.answers.q3}";"${s.answers.q4}";"${q5Text}";"${s.answers.q6 || ''}"\n`;
+      });
+    }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `survey_${resultsMode}_export.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportXLS = () => {
+    let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/></head><body><table border="1">';
+    if (resultsMode === 'summary') {
+      htmlTable += '<tr><th style="background-color:#F2F2F2">Вопрос</th><th style="background-color:#F2F2F2">Тип вопроса</th><th style="background-color:#F2F2F2">Результаты / Доли ответов</th></tr>';
+      htmlTable += `<tr><td>${MOCK_SURVEY.content[2].text}</td><td>Да/Нет</td><td>Правда (78%), Ложь (22%)</td></tr>`;
+      htmlTable += `<tr><td>${MOCK_SURVEY.content[3].text}</td><td>Шкала оценки</td><td>Средняя: 4.1 (5 звезд: 45%, 4 звезды: 30%, 3 звезды: 15%, 2 звезды: 7%, 1 звезда: 3%)</td></tr>`;
+      htmlTable += `<tr><td>${MOCK_SURVEY.content[4].text}</td><td>Смайлики</td><td>🤩 (35%), 🙂 (40%), 😐 (15%), 🙁 (7%), 😞 (3%)</td></tr>`;
+      htmlTable += `<tr><td>${MOCK_SURVEY.content[5].text}</td><td>Один выбор</td><td>Каждый день (45%), Несколько раз в неделю (35%), Раз в неделю (15%), Раз в месяц или реже (5%)</td></tr>`;
+      htmlTable += `<tr><td>${MOCK_SURVEY.content[6].text}</td><td>Множественный выбор</td><td>Слишком много созвонов (61%), Нечетко поставленные задачи (41%), Шум в офисе (30%), Проблемы с оборудованием (15%), Другое (7%)</td></tr>`;
+    } else {
+      htmlTable += '<tr><th style="background-color:#F2F2F2">Студент</th><th style="background-color:#F2F2F2">Email</th><th style="background-color:#F2F2F2">Дата ответа</th><th style="background-color:#F2F2F2">1. Правда/Ложь</th><th style="background-color:#F2F2F2">2. Оценка (1-5)</th><th style="background-color:#F2F2F2">3. Настроение</th><th style="background-color:#F2F2F2">4. Тет-а-тет</th><th style="background-color:#F2F2F2">5. Факторы продуктивности</th><th style="background-color:#F2F2F2">6. Предложения</th></tr>';
+      MOCK_SUBMISSIONS.forEach(s => {
+        const q5Text = s.answers.q5.join(', ');
+        htmlTable += `<tr><td>${s.studentName}</td><td>${s.email}</td><td>${s.date}</td><td>${s.answers.q1}</td><td>${s.answers.q2}</td><td>${s.answers.q3}</td><td>${s.answers.q4}</td><td>${q5Text}</td><td>${s.answers.q6 || ''}</td></tr>`;
+      });
+    }
+    htmlTable += '</table></body></html>';
+    const blob = new Blob([`\uFEFF${htmlTable}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `survey_${resultsMode}_export.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] relative h-full overflow-y-auto pb-16 text-neutral-800">
       
@@ -383,7 +437,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
         </div>
       </header>
 
-      {/* Centered screen content wrapper matching courses element preview */}
+      {/* Centered screen content wrapper */}
       <main className="flex-1 w-full max-w-[1200px] mx-auto px-6 lg:px-8 py-8 flex flex-col gap-6 animate-in fade-in duration-200">
         
         {/* ========================================================================= */}
@@ -400,7 +454,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
               </h2>
             </div>
 
-            {/* Interactive Survey Sheet (white box matching lesson preview layout) */}
+            {/* Interactive Survey Sheet */}
             <div className="border border-neutral-200 rounded-2xl shadow-sm overflow-hidden flex flex-col bg-white">
               <div className="p-10 lg:p-14 max-w-[850px] mx-auto w-full flex-1 flex flex-col gap-8">
                 
@@ -414,7 +468,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   <p className="text-[15px] text-neutral-500 leading-relaxed mt-4">{MOCK_SURVEY.description}</p>
                 </div>
 
-                {/* Decor Block: Image (no frame wrapper) */}
+                {/* Decor Block: Image */}
                 <div className="space-y-2">
                   <img 
                     src={MOCK_SURVEY.content[1].url} 
@@ -428,7 +482,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   )}
                 </div>
 
-                {/* Text Block intro (simple prose html, no frame) */}
+                {/* Text Block intro */}
                 <div className="prose prose-neutral max-w-none text-neutral-800 text-[15px] leading-relaxed">
                   <p>{MOCK_SURVEY.content[0].html}</p>
                 </div>
@@ -641,7 +695,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   </button>
                   <button 
                     onClick={() => alert('Демо-отправка завершена!')}
-                    className="h-9 px-5 rounded-lg text-xs font-bold text-white bg-neutral-950 hover:bg-neutral-900 transition-colors"
+                    className="h-9 px-5 rounded-lg text-xs font-bold text-white bg-neutral-955 hover:bg-neutral-900 transition-colors"
                   >
                     Отправить
                   </button>
@@ -686,30 +740,52 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
               </div>
             </div>
 
-            {/* Results sub-tab switchers */}
-            <div className="flex border-b border-neutral-200 w-full gap-6">
-              <button
-                onClick={() => setResultsMode('summary')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
-                  resultsMode === 'summary' 
-                    ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
-                    : 'border-transparent text-neutral-400 hover:text-neutral-800'
-                }`}
-              >
-                <BarChart className="w-3.5 h-3.5" />
-                Сводка результатов
-              </button>
-              <button
-                onClick={() => setResultsMode('individual')}
-                className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
-                  resultsMode === 'individual' 
-                    ? 'border-[var(--color-admin-primary-50)] text-[var(--color-admin-primary-600)]' 
-                    : 'border-transparent text-neutral-400 hover:text-neutral-800'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                Отдельные ответы ({MOCK_SUBMISSIONS.length})
-              </button>
+            {/* Results sub-tab switchers and Export panel */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-200 w-full gap-4 pb-0.5">
+              <div className="flex gap-6">
+                <button
+                  onClick={() => setResultsMode('summary')}
+                  className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
+                    resultsMode === 'summary' 
+                      ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
+                      : 'border-transparent text-neutral-400 hover:text-neutral-800'
+                  }`}
+                >
+                  <BarChart className="w-3.5 h-3.5" />
+                  Сводка результатов
+                </button>
+                <button
+                  onClick={() => setResultsMode('individual')}
+                  className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
+                    resultsMode === 'individual' 
+                      ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
+                      : 'border-transparent text-neutral-400 hover:text-neutral-800'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Отдельные ответы ({MOCK_SUBMISSIONS.length})
+                </button>
+              </div>
+
+              {/* Working export controls */}
+              <div className="flex items-center gap-2 pb-2.5 sm:pb-0">
+                <button 
+                  onClick={handleExportXLS}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 transition-colors shadow-sm"
+                  title="Скачать Excel отчет"
+                >
+                  <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Скачать Excel</span>
+                </button>
+                <button 
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 transition-colors shadow-sm"
+                  title="Скачать CSV отчет"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Скачать CSV</span>
+                </button>
+              </div>
             </div>
 
             {/* SUB-VIEW 1: SUMMARY GRAPH ANALYSIS */}
@@ -732,11 +808,11 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                       <div className="flex justify-between items-center text-[11px] font-semibold mt-1">
                         <span className="flex items-center gap-1.5 text-emerald-600">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          Да: 78% (92 отв.)
+                          Правда: 78% (92 отв.)
                         </span>
                         <span className="flex items-center gap-1.5 text-rose-600">
                           <span className="w-2 h-2 rounded-full bg-rose-500" />
-                          Нет: 22% (26 отв.)
+                          Ложь: 22% (26 отв.)
                         </span>
                       </div>
                     </div>
