@@ -509,10 +509,12 @@ function KanbanOverlay({ children, className }: KanbanOverlayProps) {
 
 // Sortable Item Context
 const SortableItemContext = React.createContext<{
+  attributes: DraggableAttributes;
   listeners: DraggableSyntheticListeners | undefined;
   isDragging?: boolean;
   disabled?: boolean;
 }>({
+  attributes: {} as DraggableAttributes,
   listeners: undefined,
   isDragging: false,
   disabled: false,
@@ -657,7 +659,7 @@ function SortableItem({ value, asChild = false, className, children, disabled }:
   const Comp = asChild ? Slot : 'div';
 
   return (
-    <SortableItemContext.Provider value={{ listeners, isDragging: isSortableDragging, disabled }}>
+    <SortableItemContext.Provider value={{ attributes, listeners, isDragging: isSortableDragging, disabled }}>
       <Comp
         data-slot="sortable-item"
         data-value={value}
@@ -681,7 +683,7 @@ export interface SortableItemHandleProps {
 }
 
 function SortableItemHandle({ asChild, className, children, cursor = true }: SortableItemHandleProps) {
-  const { listeners, isDragging, disabled } = React.useContext(SortableItemContext);
+  const { attributes, listeners, isDragging, disabled } = React.useContext(SortableItemContext);
 
   const Comp = asChild ? Slot : 'div';
 

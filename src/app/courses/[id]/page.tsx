@@ -684,6 +684,24 @@ function MultiSelectDropdown({ values, options, onChange, placeholder }: { value
   );
 }
 
+interface GlobalStudent {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  school: string;
+  avatar?: string;
+}
+
+// Mock global students
+const ALL_GLOBAL_STUDENTS: GlobalStudent[] = [
+  { id: 'g1', name: 'Иван Сергеев', email: 'ivan@example.com', phone: '+7 900 123 45 67', city: 'Москва', school: 'Школа №1' },
+  { id: 'g2', name: 'Мария Власова', email: 'maria@example.com', phone: '+7 900 234 56 78', city: 'Санкт-Петербург', school: 'Лицей №2' },
+  { id: 'g3', name: 'Петр Николаев', email: 'petr@example.com', phone: '+7 900 345 67 89', city: 'Москва', school: 'Школа №1' },
+  { id: 'g4', name: 'Анна Смирнова', email: 'anna@example.com', phone: '+7 900 456 78 90', city: 'Казань', school: 'Гимназия №3' },
+];
+
 // ─── Add Student Modal ────────────────────────────────────────────────────────
 
 function AddStudentModal({
@@ -701,14 +719,6 @@ function AddStudentModal({
   const [filterCity, setFilterCity] = useState<string[]>(['All']);
   const [filterSchool, setFilterSchool] = useState<string[]>(['All']);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Mock global students
-  const ALL_GLOBAL_STUDENTS = [
-    { id: 'g1', name: 'Иван Сергеев', email: 'ivan@example.com', phone: '+7 900 123 45 67', city: 'Москва', school: 'Школа №1' },
-    { id: 'g2', name: 'Мария Власова', email: 'maria@example.com', phone: '+7 900 234 56 78', city: 'Санкт-Петербург', school: 'Лицей №2' },
-    { id: 'g3', name: 'Петр Николаев', email: 'petr@example.com', phone: '+7 900 345 67 89', city: 'Москва', school: 'Школа №1' },
-    { id: 'g4', name: 'Анна Смирнова', email: 'anna@example.com', phone: '+7 900 456 78 90', city: 'Казань', school: 'Гимназия №3' },
-  ];
 
   const filtered = ALL_GLOBAL_STUDENTS.filter(s => {
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -1240,6 +1250,20 @@ export default function CourseDetailPage() {
     return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatDateTwoLines = (dateStr: string | null) => {
+    if (!dateStr) return <span className="text-neutral-300 font-normal">—</span>;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return <span className="text-neutral-300 font-normal">—</span>;
+    const datePart = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    return (
+      <div className="flex flex-col min-w-0">
+        <span className="text-[11px] text-neutral-800 font-semibold truncate">{datePart}</span>
+        <span className="text-[10px] text-neutral-400 font-medium truncate mt-0.5">{timePart}</span>
+      </div>
+    );
+  };
+
   const toggleSort = (key: string) => {
     setStudentSort(prev => ({ key, dir: prev.key === key && prev.dir === 'asc' ? 'desc' : 'asc' }));
     setStudentPage(0);
@@ -1576,7 +1600,7 @@ export default function CourseDetailPage() {
                             <ArrowUpDown className={`w-3 h-3 ${studentSort.key === 'name' ? 'text-neutral-700' : 'text-neutral-300'}`} />
                           </button>
                         </th>
-                        <th className="text-left px-2 py-2.5 w-[80px]">
+                        <th className="text-left px-2 py-2.5 w-[110px]">
                           <button onClick={() => toggleSort('progress')} className="flex items-center gap-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider hover:text-neutral-600 transition-colors">
                             Прогресс
                             <ArrowUpDown className={`w-3 h-3 ${studentSort.key === 'progress' ? 'text-neutral-700' : 'text-neutral-300'}`} />
@@ -1606,7 +1630,19 @@ export default function CourseDetailPage() {
                     <tbody>
                       {pagedStudents.map((student, idx) => {
                         const globalIdx = studentPage * studentsPerPage + idx + 1;
-                        const progressTextColor = student.progress === 100 ? 'text-emerald-600' : student.progress >= 50 ? 'text-blue-600' : student.progress > 0 ? 'text-amber-600' : 'text-neutral-400';
+                        const globalInfo = ALL_GLOBAL_STUDENTS.find(gs => gs.name === student.name);
+                        const initials = student.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                        const avatar = globalInfo?.avatar;
+                        const email = globalInfo?.email || (student.name.toLowerCase().replace(/[^a-zа-яё]/gi, '') + '@osnova.uz');
+                        
+                        const isCompleted = student.progress === 100;
+                        const hasProgress = student.progress > 0;
+                        const progressBadgeClass = isCompleted
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-150'
+                          : hasProgress
+                            ? 'bg-blue-50 text-blue-700 border-blue-150'
+                            : 'bg-neutral-50 text-neutral-500 border-neutral-200';
+
                         return (
                           <tr 
                             key={student.id} 
@@ -1617,19 +1653,37 @@ export default function CourseDetailPage() {
                               <span className="text-[11px] text-neutral-300 tabular-nums">{globalIdx}</span>
                             </td>
                             <td className="px-2 py-2.5">
-                              <span className="text-[13px] font-medium text-neutral-800 truncate block">{student.name}</span>
+                              <div className="flex items-center gap-3">
+                                {avatar ? (
+                                  <img src={avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-neutral-150 shadow-sm shrink-0" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                    {initials}
+                                  </div>
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-neutral-800 text-[13px] truncate" title={student.name}>
+                                    {student.name}
+                                  </span>
+                                  <span className="text-[11px] text-neutral-400 font-medium truncate" title={email}>
+                                    {email}
+                                  </span>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-2 py-2.5">
-                              <span className={`text-[12px] font-semibold tabular-nums ${progressTextColor}`}>{student.progress}%</span>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border shadow-sm ${progressBadgeClass}`}>
+                                {student.progress}%
+                              </span>
                             </td>
                             <td className="px-2 py-2.5">
-                              <span className="text-[11px] text-neutral-500 tabular-nums">{formatDate(student.assignedDate)}</span>
+                              {formatDateTwoLines(student.assignedDate)}
                             </td>
                             <td className="px-2 py-2.5">
-                              <span className="text-[11px] text-neutral-500 tabular-nums">{formatDate(student.lastActivity)}</span>
+                              {formatDateTwoLines(student.lastActivity)}
                             </td>
                             <td className="px-2 py-2.5">
-                              <span className="text-[11px] text-neutral-500 tabular-nums">{formatDate(student.completedDate)}</span>
+                              {formatDateTwoLines(student.completedDate)}
                             </td>
                             <td className="pr-4 py-2.5" onClick={e => e.stopPropagation()}>
                               <button

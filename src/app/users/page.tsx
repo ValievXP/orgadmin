@@ -344,15 +344,15 @@ export default function UsersPage() {
 
   const renderDateTime = (dateTimeStr: string | null) => {
     if (!dateTimeStr) {
-      return <span className="text-[13px] font-medium text-neutral-400">-</span>;
+      return <span className="text-neutral-300 font-normal">—</span>;
     }
     const parts = dateTimeStr.split(' ');
     const date = parts[0];
     const time = parts[1] || '';
     return (
       <div className="flex flex-col min-w-0">
-        <span className="text-[13px] font-medium text-neutral-900 truncate">{date}</span>
-        <span className="text-[11px] text-neutral-500 truncate">{time}</span>
+        <span className="text-[11px] text-neutral-800 font-semibold truncate">{date}</span>
+        <span className="text-[10px] text-neutral-400 font-medium truncate mt-0.5">{time}</span>
       </div>
     );
   };
@@ -414,16 +414,16 @@ export default function UsersPage() {
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col">
           <div className="w-full">
             <table className="w-full text-left whitespace-nowrap table-fixed">
-              <thead className="bg-neutral-50/80 border-b border-neutral-200">
+              <thead className="bg-neutral-50/80 border-b border-neutral-100">
                 <tr>
-                  <th className="px-3 py-4 w-10 text-[12px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
-                  <th className="px-3 py-4 w-[20%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Пользователь</th>
-                  <th className="px-3 py-4 w-[12%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Филиал</th>
-                  <th className="px-3 py-4 w-[14%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Департамент</th>
-                  <th className="px-3 py-4 w-[12%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Отдел</th>
-                  <th className="px-3 py-4 w-[12%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Должность</th>
-                  <th className="px-3 py-4 w-[8%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider truncate">Статус</th>
-                  <th className="px-3 py-4 w-[11%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('activity')}>
+                  <th className="px-3 py-2.5 w-10 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                  <th className="px-3 py-2.5 w-[20%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Пользователь</th>
+                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Филиал</th>
+                  <th className="px-3 py-2.5 w-[14%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Департамент</th>
+                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Отдел</th>
+                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Должность</th>
+                  <th className="px-3 py-2.5 w-[8%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Статус</th>
+                  <th className="px-3 py-2.5 w-[11%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('activity')}>
                     <div className="flex items-center gap-1.5">
                       Посл. визит
                       {activitySort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
@@ -431,7 +431,7 @@ export default function UsersPage() {
                        <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
                     </div>
                   </th>
-                  <th className="px-3 py-4 w-[11%] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('reg')}>
+                  <th className="px-3 py-2.5 w-[11%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('reg')}>
                     <div className="flex items-center gap-1.5">
                       Регистрация
                       {regSort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
@@ -448,37 +448,41 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   filteredUsers.map((user, index) => (
-                    <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="hover:bg-neutral-50/60 transition-colors group cursor-pointer">
+                    <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="group border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60 transition-colors cursor-pointer">
                       <td className="px-3 py-3 text-center">
-                        <span className="text-[12px] font-medium text-neutral-400 tabular-nums">
+                        <span className="text-[11px] text-neutral-300 tabular-nums">
                           {String(index + 1).padStart(2, '0')}
                         </span>
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[11px] font-bold text-indigo-600 shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
                             {user.initials}
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
-                            <MarqueeText text={user.name} className="text-[13px] font-semibold text-neutral-900" />
-                            <MarqueeText text={user.email} className="text-[11px] text-neutral-500" />
+                            <span className="font-semibold text-neutral-800 text-[13px] truncate" title={user.name}>
+                              {user.name}
+                            </span>
+                            <span className="text-[11px] text-neutral-400 font-medium truncate" title={user.email}>
+                              {user.email}
+                            </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.branch} className="text-[12px] font-medium text-neutral-800" />
+                        <MarqueeText text={user.branch} className="text-[12px] font-medium text-neutral-850" />
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.dept} className="text-[12px] font-medium text-neutral-800" />
+                        <MarqueeText text={user.dept} className="text-[12px] font-medium text-neutral-850" />
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-800" />
+                        <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-850" />
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-800" />
+                        <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-850" />
                       </td>
                       <td className="px-3 py-3 overflow-hidden">
-                        <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-800" />
+                        <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-850" />
                       </td>
                       <td className="px-3 py-3 truncate">
                         {renderDateTime(user.visit)}
