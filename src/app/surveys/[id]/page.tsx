@@ -14,6 +14,7 @@ import {
   Clock, 
   Search,
   Check,
+  X,
   Unlock,
   BarChart
 } from 'lucide-react';
@@ -45,7 +46,6 @@ const MOCK_SURVEY = {
       id: 'q1',
       type: 'yes_no',
       text: '1. Довольны ли вы текущим гибридным форматом работы?',
-      options: ['Да', 'Нет'],
       required: true
     },
     {
@@ -84,7 +84,7 @@ const MOCK_SURVEY = {
   ]
 };
 
-// Refined Mock Submissions Database (matching 5 emojis and revised options)
+// Refined Mock Submissions Database
 const MOCK_SUBMISSIONS = [
   {
     id: 'sub1',
@@ -93,7 +93,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-indigo-50 text-indigo-600',
     date: '24.05.2026 14:20',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 5,
       q3: '🤩',
       q4: 'Каждый день',
@@ -108,7 +108,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-emerald-50 text-emerald-600',
     date: '24.05.2026 15:10',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 4,
       q3: '🙂',
       q4: 'Несколько раз в неделю',
@@ -123,7 +123,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-amber-50 text-amber-600',
     date: '25.05.2026 10:05',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 4,
       q3: '🙂',
       q4: 'Каждый день',
@@ -138,7 +138,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-rose-50 text-rose-600',
     date: '25.05.2026 11:30',
     answers: {
-      q1: 'Нет',
+      q1: 'Ложь',
       q2: 3,
       q3: '😐',
       q4: 'Раз в неделю',
@@ -153,7 +153,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-blue-50 text-blue-600',
     date: '25.05.2026 12:15',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 5,
       q3: '🤩',
       q4: 'Несколько раз в неделю',
@@ -168,7 +168,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-purple-50 text-purple-600',
     date: '25.05.2026 13:40',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 4,
       q3: '🙂',
       q4: 'Раз в неделю',
@@ -183,7 +183,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-teal-50 text-teal-600',
     date: '25.05.2026 14:02',
     answers: {
-      q1: 'Нет',
+      q1: 'Ложь',
       q2: 2,
       q3: '🙁',
       q4: 'Раз в месяц или реже',
@@ -198,7 +198,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-pink-50 text-pink-600',
     date: '25.05.2026 15:55',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 4,
       q3: '🙂',
       q4: 'Несколько раз в неделю',
@@ -213,7 +213,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-violet-50 text-violet-600',
     date: '25.05.2026 16:30',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 5,
       q3: '🤩',
       q4: 'Несколько раз в неделю',
@@ -228,7 +228,7 @@ const MOCK_SUBMISSIONS = [
     avatarColor: 'bg-orange-50 text-orange-600',
     date: '25.05.2026 17:12',
     answers: {
-      q1: 'Да',
+      q1: 'Правда',
       q2: 3,
       q3: '😐',
       q4: 'Раз в неделю',
@@ -324,11 +324,11 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
   }, [individualSearch, individualLimit]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F9FAFB] w-full text-neutral-800 pb-16">
+    <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] relative h-full overflow-y-auto pb-16 text-neutral-800">
       
       {/* Top sticky header */}
-      <header className="sticky top-0 z-30 bg-white border-b border-neutral-200 shadow-sm w-full">
-        <div className="flex items-center justify-between h-16 px-6 max-w-7xl mx-auto w-full">
+      <header className="sticky top-0 z-50 bg-white border-b border-neutral-200 shadow-sm w-full">
+        <div className="flex items-center justify-between h-16 px-6 max-w-[1200px] mx-auto w-full">
           
           {/* Breadcrumbs */}
           <div className="flex items-center gap-3 text-xs sm:text-sm text-neutral-500 font-medium">
@@ -383,259 +383,271 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
         </div>
       </header>
 
-      {/* Content wrapper */}
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 animate-in fade-in duration-200">
+      {/* Centered screen content wrapper matching courses element preview */}
+      <main className="flex-1 w-full max-w-[1200px] mx-auto px-6 lg:px-8 py-8 flex flex-col gap-6 animate-in fade-in duration-200">
         
         {/* ========================================================================= */}
         {/* PREVIEW MODE                                                              */}
         {/* ========================================================================= */}
         {activeTab === 'preview' && (
-          <div className="w-full max-w-2xl mx-auto flex flex-col gap-5">
+          <div className="w-full flex flex-col gap-5">
             
-            {/* Top metadata disclaimer banner */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-              <div className="w-9 h-9 bg-neutral-50 border border-neutral-100 text-neutral-500 rounded-lg flex items-center justify-center shrink-0">
-                <Eye className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-xs font-semibold text-neutral-900">Интерактивный предпросмотр</h3>
-                <p className="text-[11px] text-neutral-500 mt-0.5">В этом режиме вы можете проверить прохождение опроса студентами. Ответы не сохраняются.</p>
-              </div>
+            {/* Header info */}
+            <div>
+              <h2 className="text-[14px] font-bold text-neutral-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-neutral-400" />
+                Предпросмотр контента
+              </h2>
             </div>
 
-            {/* Interactive Survey Sheet */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col gap-6">
-              
-              {/* Cover Title */}
-              <div>
-                <h1 className="text-xl font-bold text-neutral-900 leading-tight">{MOCK_SURVEY.title}</h1>
-                <p className="text-xs text-neutral-500 leading-relaxed mt-1.5">{MOCK_SURVEY.description}</p>
-                <div className="flex flex-wrap items-center gap-4 text-[10px] text-neutral-400 font-semibold uppercase tracking-wider mt-3">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-300" /> {MOCK_SURVEY.timerMinutes} минут</span>
-                  <span className="flex items-center gap-1"><Unlock className="w-3 h-3 text-neutral-300" /> Доступ: {MOCK_SURVEY.type}</span>
+            {/* Interactive Survey Sheet (white box matching lesson preview layout) */}
+            <div className="border border-neutral-200 rounded-2xl shadow-sm overflow-hidden flex flex-col bg-white">
+              <div className="p-10 lg:p-14 max-w-[850px] mx-auto w-full flex-1 flex flex-col gap-8">
+                
+                {/* Cover Title */}
+                <div className="pb-6 border-b border-neutral-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Опрос</span>
+                    <span className="text-[13px] font-medium text-neutral-450">{MOCK_SURVEY.lang}</span>
+                  </div>
+                  <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">{MOCK_SURVEY.title}</h1>
+                  <p className="text-[15px] text-neutral-500 leading-relaxed mt-4">{MOCK_SURVEY.description}</p>
                 </div>
+
+                {/* Decor Block: Image (no frame wrapper) */}
+                <div className="space-y-2">
+                  <img 
+                    src={MOCK_SURVEY.content[1].url} 
+                    alt="Decor" 
+                    className="w-full rounded-2xl object-cover shadow-sm" 
+                  />
+                  {MOCK_SURVEY.content[1].caption && (
+                    <p className="text-center text-[13px] text-neutral-500 mt-2 font-medium">
+                      {MOCK_SURVEY.content[1].caption}
+                    </p>
+                  )}
+                </div>
+
+                {/* Text Block intro (simple prose html, no frame) */}
+                <div className="prose prose-neutral max-w-none text-neutral-800 text-[15px] leading-relaxed">
+                  <p>{MOCK_SURVEY.content[0].html}</p>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 1: Да/Нет (True/False check/cross layout cards) */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Да/Нет</span>
+                    <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[2].text}</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <button
+                      onClick={() => setPrevQ1Val('Правда')}
+                      className={`p-5 rounded-xl border-2 text-center transition-all ${
+                        prevQ1Val === 'Правда' 
+                          ? 'border-emerald-400 bg-emerald-50/30' 
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                        prevQ1Val === 'Правда' ? 'bg-emerald-500 text-white' : 'bg-neutral-100 text-neutral-400'
+                      }`}>
+                        <Check className="w-5 h-5" />
+                      </div>
+                      <p className={`text-[14px] font-semibold ${prevQ1Val === 'Правда' ? 'text-emerald-700' : 'text-neutral-600'}`}>Правда</p>
+                    </button>
+
+                    <button
+                      onClick={() => setPrevQ1Val('Ложь')}
+                      className={`p-5 rounded-xl border-2 text-center transition-all ${
+                        prevQ1Val === 'Ложь' 
+                          ? 'border-rose-450 bg-rose-50/30' 
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                        prevQ1Val === 'Ложь' ? 'bg-rose-500 text-white' : 'bg-neutral-100 text-neutral-400'
+                      }`}>
+                        <X className="w-5 h-5" />
+                      </div>
+                      <p className={`text-[14px] font-semibold ${prevQ1Val === 'Ложь' ? 'text-rose-700' : 'text-neutral-600'}`}>Ложь</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 2: Rating Scale 1-5 */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Шкала оценки</span>
+                    <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[3].text}</h3>
+                  <div className="flex gap-3 mt-2 max-w-md">
+                    {[1, 2, 3, 4, 5].map(val => {
+                      const isSelected = prevQ2Val === val;
+                      return (
+                        <button
+                          key={val}
+                          onClick={() => setPrevQ2Val(val)}
+                          className={`w-11 h-11 rounded-xl border-2 text-[15px] font-bold transition-all flex items-center justify-center ${
+                            isSelected
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-900 scale-105'
+                              : 'border-neutral-200 bg-white hover:border-neutral-300'
+                          }`}
+                        >
+                          {val}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 3: Emoji Choice */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Смайлики</span>
+                    <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[4].text}</h3>
+                  <div className="flex gap-3 mt-2 max-w-sm">
+                    {MOCK_SURVEY.content[4].options?.map(emoji => {
+                      const isSelected = prevQ3Val === emoji;
+                      return (
+                        <button
+                          key={emoji}
+                          onClick={() => setPrevQ3Val(emoji)}
+                          className={`w-12 h-12 rounded-xl border-2 text-2xl transition-all flex items-center justify-center hover:scale-105 active:scale-95 ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-50'
+                              : 'border-neutral-200 bg-white hover:border-neutral-350'
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 4: Single choice */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Один выбор</span>
+                    <span className="text-xs text-rose-500 font-bold">* Обязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[5].text}</h3>
+                  <div className="space-y-3 mt-2">
+                    {MOCK_SURVEY.content[5].options?.map(opt => {
+                      const isSelected = prevQ4Val === opt;
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => setPrevQ4Val(opt)}
+                          className={`w-full p-4 rounded-xl border-2 text-left text-[15px] font-medium transition-all flex items-center justify-between ${
+                            isSelected 
+                              ? 'border-emerald-500 bg-emerald-50/30 text-emerald-900' 
+                              : 'border-neutral-200 bg-white hover:border-neutral-300'
+                          }`}
+                        >
+                          {opt}
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-300'
+                          }`}>
+                            {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 5: Multiple choice */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Множественный выбор</span>
+                    <span className="text-xs text-neutral-400 font-bold">Необязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[6].text}</h3>
+                  <div className="space-y-3 mt-2">
+                    {MOCK_SURVEY.content[6].options?.map(opt => {
+                      const isSelected = prevQ5Val.includes(opt);
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => handleQ5Toggle(opt)}
+                          className={`w-full p-4 rounded-xl border-2 text-left text-[15px] font-medium transition-all flex items-center justify-between ${
+                            isSelected 
+                              ? 'border-purple-500 bg-purple-50/30 text-purple-900' 
+                              : 'border-neutral-200 bg-white hover:border-neutral-300'
+                          }`}
+                        >
+                          {opt}
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-purple-500 bg-purple-500' : 'border-neutral-300'
+                          }`}>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-px bg-neutral-100" />
+
+                {/* Question 6: Open question */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">Открытый вопрос</span>
+                    <span className="text-xs text-neutral-400 font-bold">Необязательный</span>
+                  </div>
+                  <h3 className="text-[17px] font-semibold text-neutral-900 leading-relaxed">{MOCK_SURVEY.content[7].text}</h3>
+                  <textarea
+                    value={prevQ6Val}
+                    onChange={(e) => setPrevQ6Val(e.target.value)}
+                    placeholder="Опишите ваши идеи..."
+                    rows={4}
+                    className="w-full mt-2 p-4 border border-neutral-200 bg-neutral-50 rounded-xl text-sm font-medium outline-none focus:border-neutral-300 focus:bg-white transition-all resize-none"
+                  />
+                </div>
+
+                <div className="h-px bg-neutral-100 mt-4" />
+
+                {/* Bottom bar */}
+                <div className="flex justify-end gap-3">
+                  <button 
+                    onClick={() => {
+                      setPrevQ1Val('');
+                      setPrevQ2Val(0);
+                      setPrevQ3Val('');
+                      setPrevQ4Val('');
+                      setPrevQ5Val([]);
+                      setPrevQ6Val('');
+                    }}
+                    className="h-9 px-5 rounded-lg text-xs font-bold text-neutral-600 bg-white border border-neutral-200 hover:bg-neutral-50"
+                  >
+                    Очистить
+                  </button>
+                  <button 
+                    onClick={() => alert('Демо-отправка завершена!')}
+                    className="h-9 px-5 rounded-lg text-xs font-bold text-white bg-neutral-950 hover:bg-neutral-900 transition-colors"
+                  >
+                    Отправить
+                  </button>
+                </div>
+
               </div>
-
-              {/* Decor Block: Image */}
-              <div className="rounded-xl overflow-hidden border border-neutral-150 bg-neutral-50 p-0.5">
-                <img 
-                  src={MOCK_SURVEY.content[1].url} 
-                  alt="Decor" 
-                  className="w-full max-h-56 object-cover rounded-lg" 
-                />
-                <div className="p-2 text-center text-[11px] italic text-neutral-500 font-medium">
-                  {MOCK_SURVEY.content[1].caption}
-                </div>
-              </div>
-
-              {/* Text Block intro */}
-              <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-150 text-xs font-medium leading-relaxed text-neutral-700">
-                {MOCK_SURVEY.content[0].html}
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 1: Yes / No */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-[var(--color-admin-primary-600)] uppercase tracking-wider bg-[var(--color-admin-primary-50)] px-2 py-0.5 rounded">Логический вопрос</span>
-                  <span className="text-[10px] text-rose-500 font-semibold">* Обязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[2].text}</h3>
-                <div className="flex gap-3 mt-1">
-                  {['Да', 'Нет'].map(option => {
-                    const isSelected = prevQ1Val === option;
-                    return (
-                      <button
-                        key={option}
-                        onClick={() => setPrevQ1Val(option)}
-                        className={`flex-1 py-2 px-4 rounded-lg border text-xs font-semibold transition-all flex items-center justify-between ${
-                          isSelected 
-                            ? 'border-[var(--color-admin-primary-500)] bg-[var(--color-admin-primary-50)] text-neutral-900'
-                            : 'border-neutral-200 bg-white hover:bg-neutral-50'
-                        }`}
-                      >
-                        {option}
-                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-[var(--color-admin-primary-500)] bg-[var(--color-admin-primary-500)]' : 'border-neutral-300'
-                        }`}>
-                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 2: Rating Scale 1-5 */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded">Шкала оценки</span>
-                  <span className="text-[10px] text-rose-500 font-semibold">* Обязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[3].text}</h3>
-                <div className="flex gap-2.5 mt-1 max-w-sm">
-                  {[1, 2, 3, 4, 5].map(val => {
-                    const isSelected = prevQ2Val === val;
-                    return (
-                      <button
-                        key={val}
-                        onClick={() => setPrevQ2Val(val)}
-                        className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${
-                          isSelected
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-                            : 'border-neutral-200 bg-white hover:bg-neutral-50'
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 3: Emoji Choice */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider bg-amber-50 px-2 py-0.5 rounded">Смайлики</span>
-                  <span className="text-[10px] text-rose-500 font-semibold">* Обязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[4].text}</h3>
-                <div className="flex gap-2.5 mt-1 max-w-xs">
-                  {MOCK_SURVEY.content[4].options?.map(emoji => {
-                    const isSelected = prevQ3Val === emoji;
-                    return (
-                      <button
-                        key={emoji}
-                        onClick={() => setPrevQ3Val(emoji)}
-                        className={`w-10 h-10 rounded-xl border text-xl transition-all flex items-center justify-center hover:scale-105 active:scale-95 ${
-                          isSelected
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-neutral-200 bg-white hover:bg-neutral-50'
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 4: Single choice */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded">Один выбор</span>
-                  <span className="text-[10px] text-rose-500 font-semibold">* Обязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[5].text}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {MOCK_SURVEY.content[5].options?.map(opt => {
-                    const isSelected = prevQ4Val === opt;
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => setPrevQ4Val(opt)}
-                        className={`p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between ${
-                          isSelected 
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900' 
-                            : 'border-neutral-200 bg-white hover:bg-neutral-50/50'
-                        }`}
-                      >
-                        {opt}
-                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-300'
-                        }`}>
-                          {isSelected && <div className="w-1 h-1 bg-white rounded-full" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 5: Multiple choice */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-purple-600 uppercase tracking-wider bg-purple-50 px-2 py-0.5 rounded">Множественный выбор</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Необязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[6].text}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {MOCK_SURVEY.content[6].options?.map(opt => {
-                    const isSelected = prevQ5Val.includes(opt);
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => handleQ5Toggle(opt)}
-                        className={`p-3 rounded-lg border text-left text-xs font-semibold transition-all flex items-center justify-between ${
-                          isSelected 
-                            ? 'border-purple-500 bg-purple-50 text-purple-900' 
-                            : 'border-neutral-200 bg-white hover:bg-neutral-50/50'
-                        }`}
-                      >
-                        {opt}
-                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-purple-500 bg-purple-500' : 'border-neutral-300'
-                        }`}>
-                          {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="h-px bg-neutral-150" />
-
-              {/* Question 6: Open question */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-rose-600 uppercase tracking-wider bg-rose-50 px-2 py-0.5 rounded">Открытый вопрос</span>
-                  <span className="text-[10px] text-neutral-400 font-semibold">Необязательный</span>
-                </div>
-                <h3 className="text-sm font-semibold text-neutral-900">{MOCK_SURVEY.content[7].text}</h3>
-                <textarea
-                  value={prevQ6Val}
-                  onChange={(e) => setPrevQ6Val(e.target.value)}
-                  placeholder="Опишите ваши идеи..."
-                  rows={3}
-                  className="w-full mt-1 p-3 border border-neutral-200 bg-neutral-50 rounded-xl text-xs font-medium outline-none focus:border-neutral-300 focus:bg-white transition-all resize-none"
-                />
-              </div>
-
-              <div className="h-px bg-neutral-150 mt-2" />
-
-              {/* Bottom bar */}
-              <div className="flex justify-end gap-2.5">
-                <button 
-                  onClick={() => {
-                    setPrevQ1Val('');
-                    setPrevQ2Val(0);
-                    setPrevQ3Val('');
-                    setPrevQ4Val('');
-                    setPrevQ5Val([]);
-                    setPrevQ6Val('');
-                  }}
-                  className="h-8 px-4 rounded-lg text-xs font-bold text-neutral-600 bg-white border border-neutral-200 hover:bg-neutral-50"
-                >
-                  Очистить
-                </button>
-                <button 
-                  onClick={() => alert('Демо-отправка завершена!')}
-                  className="h-8 px-4 rounded-lg text-xs font-bold text-white bg-neutral-900 hover:bg-neutral-800 transition-colors"
-                >
-                  Отправить
-                </button>
-              </div>
-
             </div>
           </div>
         )}
@@ -691,7 +703,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 onClick={() => setResultsMode('individual')}
                 className={`py-3 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-all -mb-px flex items-center gap-2 ${
                   resultsMode === 'individual' 
-                    ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' 
+                    ? 'border-[var(--color-admin-primary-50)] text-[var(--color-admin-primary-600)]' 
                     : 'border-transparent text-neutral-400 hover:text-neutral-800'
                 }`}
               >
@@ -707,7 +719,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Visual Analysis Question 1 (Yes/No) */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
                   <div>
-                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 1 • ЛОГИЧЕСКИЙ</span>
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 1 • ДА/НЕТ</span>
                     <h3 className="text-sm font-semibold text-neutral-800 mt-0.5">{MOCK_SURVEY.content[2].text}</h3>
                   </div>
 
@@ -900,7 +912,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                     )}
                   </div>
 
-                  {/* Clean Aligned Pagination (User-friendly matching event participants) */}
+                  {/* Clean Aligned Pagination */}
                   {filteredOpenTextResponses.length > 0 && (
                     <div className="flex items-center justify-between pt-4 border-t border-neutral-150 text-[11px] font-semibold text-neutral-500 mt-2">
                       <div className="flex items-center gap-4">
@@ -1042,7 +1054,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                           >
                             Назад
                           </button>
-                          <span className="text-[9px] text-neutral-450">Стр. {individualPage} из {individualTotalPages}</span>
+                          <span className="text-[9px] text-neutral-455">Стр. {individualPage} из {individualTotalPages}</span>
                           <button
                             onClick={() => setIndividualPage(p => Math.min(p + 1, individualTotalPages))}
                             disabled={individualPage === individualTotalPages}
@@ -1077,33 +1089,47 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   {/* Submission Answers lists */}
                   <div className="space-y-5">
                     
-                    {/* Q1 Answer (Logical Yes/No) */}
+                    {/* Q1 Answer (Правда/Ложь cards, highlighting selected) */}
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 1 • ЛОГИЧЕСКИЙ</span>
+                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 1 • ДА/НЕТ</span>
                       <h4 className="font-semibold text-neutral-700 text-xs">{MOCK_SURVEY.content[2].text}</h4>
                       
-                      <div className="flex gap-2 mt-1">
-                        {['Да', 'Нет'].map(option => {
-                          const active = selectedSubmission.answers.q1 === option;
-                          return (
-                            <div 
-                              key={option} 
-                              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold ${
-                                active
-                                  ? 'bg-emerald-50 border-emerald-400 text-emerald-700'
-                                  : 'bg-neutral-50/50 border-neutral-150 text-neutral-400'
-                              }`}
-                            >
-                              {option}
-                            </div>
-                          );
-                        })}
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div
+                          className={`p-5 rounded-xl border-2 text-center transition-all ${
+                            selectedSubmission.answers.q1 === 'Правда' 
+                              ? 'border-emerald-500 bg-emerald-50 text-emerald-900' 
+                              : 'border-neutral-200 bg-white opacity-40'
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            selectedSubmission.answers.q1 === 'Правда' ? 'bg-emerald-500 text-white' : 'bg-neutral-100 text-neutral-400'
+                          }`}>
+                            <Check className="w-5 h-5" />
+                          </div>
+                          <p className="text-sm font-semibold">Правда</p>
+                        </div>
+
+                        <div
+                          className={`p-5 rounded-xl border-2 text-center transition-all ${
+                            selectedSubmission.answers.q1 === 'Ложь' 
+                              ? 'border-rose-500 bg-rose-50 text-rose-900' 
+                              : 'border-neutral-200 bg-white opacity-40'
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            selectedSubmission.answers.q1 === 'Ложь' ? 'bg-rose-500 text-white' : 'bg-neutral-100 text-neutral-400'
+                          }`}>
+                            <X className="w-5 h-5" />
+                          </div>
+                          <p className="text-sm font-semibold">Ложь</p>
+                        </div>
                       </div>
                     </div>
 
                     <div className="h-px bg-neutral-150" />
 
-                    {/* Q2 Answer (Scale 1-5, HIGHLIGHT ONLY SELECTED VALUE) */}
+                    {/* Q2 Answer (Scale 1-5) */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 2 • ШКАЛА ОЦЕНКИ</span>
                       <h4 className="font-semibold text-neutral-700 text-xs">{MOCK_SURVEY.content[3].text}</h4>
@@ -1128,7 +1154,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                     <div className="h-px bg-neutral-150" />
 
-                    {/* Q3 Answer (Emoji Choice, HIGHLIGHT ONLY SELECTED EMOJI) */}
+                    {/* Q3 Answer (Emoji Choice) */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 3 • СМАЙЛИКИ</span>
                       <h4 className="font-semibold text-neutral-700 text-xs">{MOCK_SURVEY.content[4].text}</h4>
@@ -1153,7 +1179,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                     <div className="h-px bg-neutral-150" />
 
-                    {/* Q4 Answer (Single Choice, SHOW ALL OPTIONS AND HIGHLIGHT SELECTED) */}
+                    {/* Q4 Answer (Single Choice) */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 4 • ОДИН ВЫБОР</span>
                       <h4 className="font-semibold text-neutral-700 text-xs">{MOCK_SURVEY.content[5].text}</h4>
@@ -1170,10 +1196,10 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                               }`}
                             >
                               <span>{opt}</span>
-                              <div className={`w-3 h-3 rounded-full border flex items-center justify-center shrink-0 ${
+                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                                 isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-neutral-200'
                               }`}>
-                                {isSelected && <div className="w-1 h-1 bg-white rounded-full" />}
+                                {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                               </div>
                             </div>
                           );
@@ -1183,7 +1209,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                     <div className="h-px bg-neutral-150" />
 
-                    {/* Q5 Answer (Multiple Choice, SHOW ALL OPTIONS AND HIGHLIGHT SELECTED) */}
+                    {/* Q5 Answer (Multiple Choice) */}
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">ВОПРОС 5 • МНОЖЕСТВЕННЫЙ ВЫБОР</span>
                       <h4 className="font-semibold text-neutral-700 text-xs">{MOCK_SURVEY.content[6].text}</h4>
