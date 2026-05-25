@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
-import { Search, Filter, Plus, Users, BookOpen, MoreVertical, LayoutGrid, List, Folder, Globe, Layers, Edit3, Move, Trash2, Check, Unlock, Lock, CalendarDays, Clock } from 'lucide-react';
+import { Search, Filter, Plus, Users, BookOpen, MoreVertical, LayoutGrid, List, Folder, Globe, Layers, Edit3, Move, Trash2, Check, Unlock, Lock, CalendarDays, Clock, FileText } from 'lucide-react';
 import { DndContext, DragOverlay, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragOverEvent, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -171,6 +171,31 @@ function SortableFolder({ folder, isDraggingCourse, onClick, onMenuClick, openMe
   );
 }
 
+const getAssignedStudentsCount = (surveyId: string, directUsers: number) => {
+  const coursesList = [
+    { id: 'COR-821', studentCount: 142, surveyIds: ['SRV-821'] },
+    { id: 'COR-612', studentCount: 89, surveyIds: ['SRV-612'] },
+  ];
+  let count = directUsers;
+  coursesList.forEach(c => {
+    if (c.surveyIds.includes(surveyId)) {
+      count += c.studentCount;
+    }
+  });
+  return count;
+};
+
+const getAnswersCount = (surveyId: string) => {
+  const answersMap: Record<string, number> = {
+    'SRV-821': 118,
+    'SRV-724': 0,
+    'SRV-612': 54,
+    'SRV-509': 342,
+    'SRV-990': 850
+  };
+  return answersMap[surveyId] !== undefined ? answersMap[surveyId] : 0;
+};
+
 function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenuId, setOpenMenuId }: { course: any, index?: number, viewMode: 'grid' | 'list', onMenuClick?: (action: 'edit' | 'move' | 'duplicate' | 'delete', courseId: string) => void, openMenuId?: string | null, setOpenMenuId?: (id: string | null) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: course.id,
@@ -216,25 +241,27 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
     </div>
   );
 
+  const totalStudents = getAssignedStudentsCount(course.id, course.users);
+  const answersCount = getAnswersCount(course.id);
+
   if (viewMode === 'list') {
     return (
       <div 
         ref={setNodeRef} style={style}
-        className={`grid grid-cols-12 gap-4 px-6 py-4 items-center bg-white transition-all group ${
+        onClick={(e) => { if (!menuOpen) router?.push(`/surveys/${course.id}`); }}
+        className={`grid grid-cols-12 gap-4 px-6 py-4 items-center bg-white transition-all group cursor-pointer ${
           isDragging ? 'opacity-30 bg-neutral-50 shadow-inner' : 'hover:bg-[var(--color-admin-primary-50)]/30'
         }`}
       >
-        <div className="col-span-5 flex items-center gap-3 pr-4 min-w-0">
+        <div className="col-span-4 flex items-center gap-3 pr-4 min-w-0">
           <div className="w-5 text-neutral-400 font-semibold text-[13px] text-center shrink-0">{index + 1}</div>
           <div className="relative group/tooltip flex items-center justify-center shrink-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 course.type === 'Открытый' ? 'bg-emerald-50 text-emerald-600' :
-                
                 course.type === 'По расписанию' ? 'bg-blue-50 text-blue-600' :
                 'bg-orange-50 text-orange-600'
               }`}>
                {course.type === 'Открытый' ? <Unlock className="w-4 h-4" /> :
-                
                 course.type === 'По расписанию' ? <CalendarDays className="w-4 h-4" /> :
                 <Clock className="w-4 h-4" />}
             </div>
@@ -245,7 +272,6 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
                 {course.type === 'По расписанию' && <div className="text-neutral-400">Откроется: 25 апр 2026, 09:00</div>}
                 {course.type === 'Ограниченное время' && <div className="text-neutral-400">Доступен до: 30 апр 2026</div>}
                 {course.type === 'Открытый' && <div className="text-neutral-400">Доступен всем без ограничений</div>}
-                
               </div>
               <div className="w-2 h-2 bg-[#1A1A1A] rotate-45 -mt-1 border-b border-r border-white/10" />
             </div>
@@ -262,7 +288,8 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
             {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Завершен'}
           </span>
         </div>
-        <div className="col-span-1 text-right text-neutral-900 font-semibold text-[13px]">{course.users}</div>
+        <div className="col-span-1 text-right text-neutral-900 font-semibold text-[13px]">{totalStudents}</div>
+        <div className="col-span-1 text-right text-neutral-900 font-semibold text-[13px]">{answersCount}</div>
         <div className="col-span-2 text-right pr-6 flex justify-end flex-col text-[12px]"><span className="text-neutral-900 font-medium leading-none mb-1">12.05.2026</span><span className="text-neutral-400 leading-none">14:30</span></div>
         <div className="col-span-1 text-right relative" ref={menuRef}>
           {menuOpen && (
@@ -285,7 +312,8 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
   return (
     <div 
       ref={setNodeRef} style={style}
-      className={`group bg-white border border-neutral-200 rounded-2xl flex flex-col transition-all duration-200 relative ${menuOpen ? 'z-50 ring-2 ring-[var(--color-admin-primary-500)] border-[var(--color-admin-primary-500)]' : 'z-10'} ${
+      onClick={(e) => { if (!menuOpen) router?.push(`/surveys/${course.id}`); }}
+      className={`group bg-white border border-neutral-200 rounded-2xl flex flex-col transition-all duration-200 relative cursor-pointer ${menuOpen ? 'z-50 ring-2 ring-[var(--color-admin-primary-500)] border-[var(--color-admin-primary-500)]' : 'z-10'} ${
         isDragging ? 'opacity-30 scale-[0.98] shadow-inner bg-neutral-100' : 'hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-neutral-300'
       }`}
     >
@@ -312,14 +340,12 @@ function SortableCourseCard({ course, index = 0, viewMode, onMenuClick, openMenu
           <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm ${course.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : course.status === 'Draft' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
             {course.status === 'Active' ? 'Активен' : course.status === 'Draft' ? 'Черновик' : 'Завершен'}
           </span>
-          
         </div>
         <MarqueeText text={course.title} className="text-lg font-bold text-neutral-900 leading-snug mb-5" />
-        <div className="mt-auto grid grid-cols-4 gap-2 pt-5 border-t border-neutral-100">
+        <div className="mt-auto grid grid-cols-3 gap-2 pt-5 border-t border-neutral-100">
           <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><Globe className="w-3 h-3 mr-1" /> Язык</div><span className="text-neutral-900 font-semibold text-sm">{course.lang}</span></div>
-          <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><Users className="w-3 h-3 mr-1" /> Студ.</div><span className="text-neutral-900 font-semibold text-sm">{course.users}</span></div>
-          <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><BookOpen className="w-3 h-3 mr-1" /> Модули</div><span className="text-neutral-900 font-semibold text-sm">{course.modules}</span></div>
-          <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><Layers className="w-3.5 h-3.5 mr-1" /> Элементы</div><span className="text-neutral-900 font-semibold text-sm">{course.lessons}</span></div>
+          <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><Users className="w-3 h-3 mr-1" /> Студенты</div><span className="text-neutral-900 font-semibold text-sm">{totalStudents}</span></div>
+          <div className="flex flex-col gap-1.5"><div className="flex items-center text-neutral-400 text-[10px] uppercase font-semibold"><FileText className="w-3 h-3 mr-1" /> Ответов</div><span className="text-neutral-900 font-semibold text-sm">{answersCount}</span></div>
         </div>
       </div>
     </div>
@@ -657,9 +683,10 @@ export default function CoursesPage() {
                     ) : (
                       <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col">
                         <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 rounded-t-2xl text-[11px] font-bold text-neutral-400 uppercase tracking-wider items-center">
-                          <div className="col-span-5">Опрос</div>
+                          <div className="col-span-4">Опрос</div>
                           <div className="col-span-1">Язык</div>
                           <div className="col-span-2">Статус</div>
+                          <div className="col-span-1 text-right">Студенты</div>
                           <div className="col-span-1 text-right">Ответов</div>
                           <div className="col-span-2 text-right pr-6">Создан</div>
                           <div className="col-span-1"></div>

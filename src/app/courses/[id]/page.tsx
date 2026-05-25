@@ -95,6 +95,7 @@ const COURSES_DB: Record<string, any> = {
         { id: 'l1', type: 'lesson' as ItemType, title: 'Что такое корпоративная безопасность', status: 'open' as AccessStatus },
         { id: 'l2', type: 'homework' as ItemType, title: 'Основные угрозы и риски', status: 'open' as AccessStatus },
         { id: 'l3', type: 'test' as ItemType, title: 'Тест: Основные понятия', status: 'closed' as AccessStatus },
+        { id: 'SRV-821', type: 'survey' as ItemType, title: 'Опрос удовлетворенности сотрудников', status: 'open' as AccessStatus },
       ]},
       { id: 'm2', title: 'Защита информации', collapsed: false, status: 'scheduled' as AccessStatus, scheduledDate: '25 апреля 2026, 09:00', items: [
         { id: 'l4', type: 'lesson' as ItemType, title: 'Классификация конфиденциальной информации', status: 'scheduled' as AccessStatus, scheduledDate: '25 апреля 2026, 09:00' },
@@ -129,6 +130,7 @@ const COURSES_DB: Record<string, any> = {
       { id: 'm20', title: 'Основы дизайн-систем', collapsed: false, status: 'open' as AccessStatus, items: [
         { id: 'l30', type: 'lesson' as ItemType, title: 'Что такое дизайн-система', status: 'open' as AccessStatus },
         { id: 'l31', type: 'lesson' as ItemType, title: 'Атомарный дизайн', status: 'closed' as AccessStatus },
+        { id: 'SRV-612', type: 'survey' as ItemType, title: 'Оценка качества обучения', status: 'open' as AccessStatus },
       ]},
     ]
   },
