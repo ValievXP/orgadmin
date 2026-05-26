@@ -714,19 +714,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                 {/* Bottom bar */}
                 <div className="flex justify-end gap-3">
                   <button 
-                    onClick={() => {
-                      setPrevQ1Val('');
-                      setPrevQ2Val(0);
-                      setPrevQ3Val('');
-                      setPrevQ4Val('');
-                      setPrevQ5Val([]);
-                      setPrevQ6Val('');
-                    }}
-                    className="h-9 px-5 rounded-lg text-xs font-bold text-neutral-600 bg-white border border-neutral-200 hover:bg-neutral-50"
-                  >
-                    Очистить
-                  </button>
-                  <button 
                     onClick={() => alert('Демо-отправка завершена!')}
                     className="h-9 px-5 rounded-lg text-xs font-bold text-white bg-neutral-955 hover:bg-neutral-900 transition-colors"
                   >
