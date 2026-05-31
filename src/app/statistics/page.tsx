@@ -235,11 +235,14 @@ export default function StatisticsPage() {
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent, region: RegionData) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltipPos({
-      x: e.clientX - rect.left + 15,
-      y: e.clientY - rect.top - 45,
-    });
+    const container = e.currentTarget.closest('.map-container');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      setTooltipPos({
+        x: e.clientX - rect.left + 15,
+        y: e.clientY - rect.top + 15,
+      });
+    }
     setHoveredRegion(region);
   };
 
@@ -351,13 +354,12 @@ export default function StatisticsPage() {
                 </div>
                 
                 {/* SVG Outline Map container */}
-                <div className="flex-1 flex items-center justify-center min-h-[380px] relative bg-neutral-50/50 rounded-xl border border-neutral-100 p-4">
-                  <svg viewBox="0 0 1000 652" className="w-full h-full max-w-[800px] select-none">
+                <div className="map-container flex-1 flex items-center justify-center min-h-[380px] relative bg-neutral-50/50 rounded-xl border border-neutral-100 p-4">
+                  <svg viewBox="0 0 1000 652" className="w-full h-auto max-w-[800px] select-none" preserveAspectRatio="xMidYMid meet">
                     
                     {/* SVG Map Regions */}
                     {UZ_REGIONS.map((region) => {
                       const isHovered = hoveredRegion?.id === region.id;
-                      const hasHighDensity = region.users > 1000;
                       return (
                         <g key={region.id}>
                           {/* Map path block */}
@@ -371,35 +373,6 @@ export default function StatisticsPage() {
                             onMouseMove={(e) => handleMouseMove(e, region)}
                             onMouseLeave={() => setHoveredRegion(null)}
                           />
-
-                          {/* Glowing node in the center of regions */}
-                          {hasHighDensity && (
-                            <circle 
-                              cx={region.labelX} 
-                              cy={region.labelY} 
-                              r="10" 
-                              className="fill-indigo-500/20 animate-ping origin-center pointer-events-none"
-                              style={{ animationDuration: region.users > 3000 ? '1.8s' : '2.8s' }}
-                            />
-                          )}
-
-                          {/* City indicator dot */}
-                          <circle 
-                            cx={region.labelX} 
-                            cy={region.labelY} 
-                            r={region.users > 3000 ? '6' : '4.5'} 
-                            className="fill-indigo-600 stroke-white stroke-1.5 transition-colors pointer-events-none"
-                          />
-
-                          {/* Labels */}
-                          <text 
-                            x={region.labelX} 
-                            y={region.labelY - 10} 
-                            textAnchor="middle" 
-                            className="fill-neutral-500 font-bold text-[9px] pointer-events-none select-none opacity-80"
-                          >
-                            {region.name}
-                          </text>
                         </g>
                       );
                     })}
