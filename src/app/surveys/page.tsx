@@ -635,8 +635,8 @@ export default function CoursesPage() {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="h-9 gap-2 bg-white shadow-sm border-neutral-200 rounded-xl px-4 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors">
-              <Filter className="w-4 h-4 text-neutral-500" />
+            <Button variant="outline" size="sm" className="h-9 gap-2 bg-white shadow-sm border-neutral-200 font-semibold text-neutral-700">
+              <Filter className="w-4 h-4 text-neutral-400" />
               Фильтры
             </Button>
           </div>
