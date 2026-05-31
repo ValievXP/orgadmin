@@ -456,13 +456,6 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                     <FileText className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Скачать Excel (.xls)</span>
                   </button>
-                  <button 
-                    onClick={handleExportCSV}
-                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Скачать CSV (.csv)</span>
-                  </button>
                 </div>
               )}
             </div>

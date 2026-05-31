@@ -18,6 +18,46 @@ function PreviewContent({ courseId, elementId }: { courseId: string, elementId: 
   const isTest = typeParam === 'test' || elementId.includes('test') || elementId.startsWith('t');
 
   const [questionLimit, setQuestionLimit] = useState<number | 'all'>(10);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
+  const handleExportCSV = () => {
+    setIsExportOpen(false);
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+    csvContent += "Параметр;Значение\n";
+    csvContent += `Название;"${isTest ? 'Тест: Защита данных' : 'Урок: Методы защиты данных'}"\n`;
+    csvContent += "Студентов прошло;1248\n";
+    csvContent += `Успешность;${isTest ? '85%' : '1120 завершили'}\n`;
+    csvContent += "Среднее время;12 мин\n";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `report_${isTest ? 'test' : 'lesson'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportXLS = () => {
+    setIsExportOpen(false);
+    let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/></head><body><table border="1">';
+    htmlTable += '<tr><th style="background-color:#F2F2F2">Параметр</th><th style="background-color:#F2F2F2">Значение</th></tr>';
+    htmlTable += `<tr><td>Название</td><td>${isTest ? 'Тест: Защита данных' : 'Урок: Методы защиты данных'}</td></tr>`;
+    htmlTable += '<tr><td>Студентов прошло</td><td>1248</td></tr>';
+    htmlTable += `<tr><td>Успешность</td><td>${isTest ? '85%' : '1120 завершили'}</td></tr>`;
+    htmlTable += '<tr><td>Среднее время</td><td>12 мин</td></tr>';
+    htmlTable += '</table></body></html>';
+    
+    const blob = new Blob([`\uFEFF${htmlTable}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `report_${isTest ? 'test' : 'lesson'}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   
   return (
     <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)]">
@@ -42,10 +82,40 @@ function PreviewContent({ courseId, elementId }: { courseId: string, elementId: 
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-9 px-4 font-medium text-[13px] bg-white text-neutral-700">
-              <Download className="w-4 h-4 mr-2" />
-              Отчет
-            </Button>
+            {/* Combined export button "Отчет" with dropdown format selector */}
+            <div className="relative">
+              {isExportOpen && (
+                <div className="fixed inset-0 z-[190]" onClick={() => setIsExportOpen(false)} />
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => setIsExportOpen(!isExportOpen)}
+                className="h-9 px-4 font-medium text-[13px] bg-white text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 border-neutral-200 shadow-sm"
+              >
+                <Download className="w-4 h-4 text-neutral-500" />
+                <span>Отчет</span>
+              </Button>
+
+              {/* Format selection popover */}
+              {isExportOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-neutral-200 rounded-xl shadow-xl py-1 z-[200] animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button 
+                    onClick={handleExportXLS}
+                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Скачать Excel (.xls)</span>
+                  </button>
+                  <button 
+                    onClick={handleExportCSV}
+                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Скачать CSV (.csv)</span>
+                  </button>
+                </div>
+              )}
+            </div>
             <Button 
               onClick={() => router.push(`/courses/${courseId}/${isTest ? 'test' : 'lesson'}/${elementId}`)}
               variant="primary" 
