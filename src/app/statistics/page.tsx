@@ -365,13 +365,21 @@ export default function StatisticsPage() {
                           {/* Map path block */}
                           <path 
                             d={region.path} 
-                            fill={isHovered ? "var(--color-admin-primary-50, #E6FFFA)" : region.users > 3000 ? "#E2E8F0" : region.users > 1000 ? "#F1F5F9" : "#F8FAFC"} 
-                            stroke={isHovered ? "var(--color-admin-primary-500, #1E3932)" : "#CBD5E1"} 
+                            fill={isHovered ? "var(--color-admin-primary-100, #CCFBF1)" : region.users > 3000 ? "#94A3B8" : region.users > 1000 ? "#CBD5E1" : "#E2E8F0"} 
+                            stroke={isHovered ? "var(--color-admin-primary-500, #1E3932)" : "#FFFFFF"} 
                             strokeWidth={isHovered ? "2.5" : "1.5"} 
                             strokeLinejoin="round"
                             className="transition-all duration-150 cursor-pointer"
                             onMouseMove={(e) => handleMouseMove(e, region)}
                             onMouseLeave={() => setHoveredRegion(null)}
+                          />
+                          
+                          {/* Region indicator dot */}
+                          <circle 
+                            cx={region.labelX} 
+                            cy={region.labelY} 
+                            r="5" 
+                            className="fill-indigo-600 stroke-white stroke-[1.5] pointer-events-none"
                           />
                         </g>
                       );
