@@ -839,7 +839,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                         { val: 1, pct: 3, count: 4, color: 'bg-rose-500' }
                       ].map((item) => (
                         <div key={item.val} className="flex items-center gap-3">
-                          <span className="w-12 text-[11px] font-semibold text-neutral-500">{item.val} баллов</span>
+                          <span className="min-w-[64px] whitespace-nowrap text-[11px] font-semibold text-neutral-500">{item.val} баллов</span>
                           <div className="flex-1 h-2 bg-neutral-100 rounded-full overflow-hidden border border-neutral-200/50">
                             <div style={{ width: `${item.pct}%` }} className={`h-full ${item.color} rounded-full`} />
                           </div>
@@ -860,18 +860,20 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                   <div className="grid grid-cols-5 gap-3 max-w-xl">
                     {[
-                      { emoji: '🤩', pct: 35, color: 'bg-amber-500' },
-                      { emoji: '🙂', pct: 40, color: 'bg-emerald-500' },
-                      { emoji: '😐', pct: 15, color: 'bg-blue-500' },
-                      { emoji: '🙁', pct: 7, color: 'bg-orange-500' },
-                      { emoji: '😞', pct: 3, color: 'bg-rose-500' }
+                      { emoji: '🤩', pct: 35, count: 41, color: 'bg-amber-500' },
+                      { emoji: '🙂', pct: 40, count: 47, color: 'bg-emerald-500' },
+                      { emoji: '😐', pct: 15, count: 18, color: 'bg-blue-500' },
+                      { emoji: '🙁', pct: 7, count: 8, color: 'bg-orange-500' },
+                      { emoji: '😞', pct: 3, count: 4, color: 'bg-rose-500' }
                     ].map(item => (
                       <div key={item.emoji} className="bg-neutral-50 border border-neutral-150 rounded-xl p-3 flex flex-col items-center">
                         <span className="text-2xl">{item.emoji}</span>
                         <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden mt-3">
                           <div style={{ width: `${item.pct}%` }} className={`h-full ${item.color}`} />
                         </div>
-                        <span className="text-[10px] font-bold text-neutral-400 mt-1">{item.pct}%</span>
+                        <span className="text-[10px] font-bold text-neutral-400 mt-1 text-center whitespace-nowrap">
+                          {item.pct}% ({item.count} отв.)
+                        </span>
                       </div>
                     ))}
                   </div>
