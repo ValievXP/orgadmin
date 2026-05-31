@@ -9,7 +9,7 @@ import {
   UserCheck, Sparkles, Play, FileText, BookOpen, Layers, MousePointer, 
   Code, Table, Columns, ChevronDown, ChevronUp, Info, Zap, 
   AlertTriangle, HelpCircle, Lightbulb, Shield, XCircle, 
-  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight, ArrowUpDown
+  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight, ArrowUpDown, Eye
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -689,11 +689,29 @@ function RenderSingleBlock({ block }: { block: ContentBlock }) {
             <FileText className={`w-6 h-6 ${colors.text}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-bold text-neutral-900 truncate leading-tight mb-0.5">{fileName}</p>
+            <p 
+              className="text-[14px] font-bold text-neutral-900 overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] leading-tight mb-0.5"
+              title={fileName}
+            >
+              {fileName}
+            </p>
             <p className="text-[12px] text-neutral-500 font-medium">{ext} Документ • {block.data?.size || '0 KB'}</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-neutral-100 transition-colors">
-            <Download className="w-4 h-4 text-neutral-600" />
+          <div className="flex items-center gap-2 shrink-0">
+            <div 
+              className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center hover:bg-neutral-100 transition-colors cursor-pointer"
+              title="Предпросмотр"
+              onClick={(e) => { e.stopPropagation(); alert('Предпросмотр файла: ' + fileName); }}
+            >
+              <Eye className="w-4 h-4 text-neutral-600" />
+            </div>
+            <div 
+              className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center hover:bg-neutral-100 transition-colors cursor-pointer"
+              title="Скачать"
+              onClick={(e) => { e.stopPropagation(); alert('Скачивание файла: ' + fileName); }}
+            >
+              <Download className="w-4 h-4 text-neutral-600" />
+            </div>
           </div>
         </div>
       );
