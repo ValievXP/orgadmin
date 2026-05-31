@@ -383,22 +383,28 @@ function PreviewContent({ courseId, elementId }: { courseId: string, elementId: 
                       Дополнительные материалы к уроку
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-start gap-3 p-4 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:border-neutral-300 hover:shadow transition-all group cursor-pointer">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
-                          <FileText className="w-5 h-5 text-blue-500" />
+                      <div className="flex items-center gap-4 p-4 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:border-neutral-300 hover:shadow transition-all group cursor-pointer">
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                          <FileText className="w-6 h-6 text-blue-500" />
                         </div>
-                        <div className="flex-1 min-w-0 pr-2">
-                          <p className="text-[14px] font-bold text-neutral-900 truncate leading-tight mb-1 group-hover:text-blue-600 transition-colors">Презентация_к_уроку.pptx</p>
-                          <p className="text-[12px] text-neutral-500 font-medium">PowerPoint • 15.1 MB</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-neutral-900 truncate">Презентация_к_уроку.pptx</p>
+                          <p className="text-[12px] text-neutral-500 font-medium mt-0.5">PowerPoint • 15.1 MB</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-neutral-100 transition-colors shrink-0">
+                          <Download className="w-4 h-4 text-neutral-600" />
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-4 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:border-neutral-300 hover:shadow transition-all group cursor-pointer">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
-                          <FileText className="w-5 h-5 text-emerald-500" />
+                      <div className="flex items-center gap-4 p-4 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:border-neutral-300 hover:shadow transition-all group cursor-pointer">
+                        <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                          <FileText className="w-6 h-6 text-emerald-500" />
                         </div>
-                        <div className="flex-1 min-w-0 pr-2">
-                          <p className="text-[14px] font-bold text-neutral-900 truncate leading-tight mb-1 group-hover:text-emerald-600 transition-colors">Чек_лист_рабочего_места.xlsx</p>
-                          <p className="text-[12px] text-neutral-500 font-medium">Excel • 1.2 MB</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-neutral-900 truncate">Чек_лист_рабочего_места.xlsx</p>
+                          <p className="text-[12px] text-neutral-500 font-medium mt-0.5">Excel • 1.2 MB</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-neutral-100 transition-colors shrink-0">
+                          <Download className="w-4 h-4 text-neutral-600" />
                         </div>
                       </div>
                     </div>

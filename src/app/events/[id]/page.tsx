@@ -689,7 +689,7 @@ function RenderSingleBlock({ block }: { block: ContentBlock }) {
             <FileText className={`w-6 h-6 ${colors.text}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[14px] font-bold text-neutral-900 truncate leading-tight mb-0.5 ${colors.hoverText} transition-colors`}>{fileName}</p>
+            <p className="text-[14px] font-bold text-neutral-900 truncate leading-tight mb-0.5">{fileName}</p>
             <p className="text-[12px] text-neutral-500 font-medium">{ext} Документ • {block.data?.size || '0 KB'}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-neutral-100 transition-colors">
