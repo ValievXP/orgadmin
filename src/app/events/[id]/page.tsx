@@ -9,7 +9,7 @@ import {
   UserCheck, Sparkles, Play, FileText, BookOpen, Layers, MousePointer, 
   Code, Table, Columns, ChevronDown, ChevronUp, Info, Zap, 
   AlertTriangle, HelpCircle, Lightbulb, Shield, XCircle, 
-  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight
+  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight, ArrowUpDown
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -1435,11 +1435,10 @@ export default function EventDetailsPage() {
                     {importExportOpen && <div className="fixed inset-0 z-[90]" onClick={() => setimportExportOpen(false)} />}
                     <button
                       onClick={() => setimportExportOpen(!importExportOpen)}
-                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors shadow-sm h-9"
+                      className="flex items-center justify-center w-9 h-9 text-neutral-700 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors shadow-sm"
+                      title="Импорт / Экспорт"
                     >
-                      <Download className="w-4 h-4 text-neutral-400" />
-                      <span>Импорт / Экспорт</span>
-                      <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+                      <ArrowUpDown className="w-4 h-4 text-neutral-500" />
                     </button>
                     {importExportOpen && (
                       <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-neutral-200 rounded-xl shadow-lg py-1.5 z-[100] animate-in fade-in zoom-in-95 duration-150">
@@ -1451,7 +1450,7 @@ export default function EventDetailsPage() {
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                         >
                           <Download className="w-4 h-4 text-neutral-400" />
-                          Экспортировать CSV
+                          Экспортировать Excel
                         </button>
                         <button
                           onClick={() => {
@@ -1461,7 +1460,7 @@ export default function EventDetailsPage() {
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
                         >
                           <Upload className="w-4 h-4 text-neutral-400" />
-                          Импортировать Excel/CSV
+                          Импортировать Excel
                         </button>
                       </div>
                     )}
