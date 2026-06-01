@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TestResultsModal } from '@/components/modals/TestResultsModal';
@@ -26,17 +26,79 @@ import {
   Download,
   Eye,
   User as UserIcon,
-  Check
+  Check,
+  X,
+  ChevronDown,
+  EyeOff
 } from 'lucide-react';
+
+const getUserFIO = (u: any, patronymicEnabled: boolean = true) => {
+  return [u.lastName, u.firstName, patronymicEnabled ? u.patronymic : ''].filter(Boolean).join(' ');
+};
+
+const getUserInitials = (u: any) => {
+  return ((u.lastName?.[0] || '') + (u.firstName?.[0] || '')).toUpperCase();
+};
+
+function MarqueeText({ text, className }: { text: string, className?: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState(0);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isAnimating, setIsAnimating] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      textRef.current.style.width = 'max-content';
+      const diff = textRef.current.offsetWidth - containerRef.current.clientWidth;
+      textRef.current.style.width = '';
+      if (diff > 0) {
+        setOffset(diff + 2);
+      }
+    } else {
+      setOffset(0);
+    }
+  }, [isHovered, text]);
+
+  const active = isHovered || isAnimating;
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => { setIsHovered(true); setIsAnimating(true); }}
+      onMouseLeave={() => { 
+        setIsHovered(false);
+        if (offset === 0) setIsAnimating(false);
+      }}
+      title={text}
+    >
+      <div 
+        ref={textRef}
+        onTransitionEnd={() => { if (!isHovered) setIsAnimating(false); }}
+        className={`transition-transform ease-linear origin-left ${active ? 'w-max pr-1' : 'w-full truncate'}`}
+        style={{ 
+          transform: `translateX(-${offset}px)`,
+          transitionDuration: isHovered && offset > 0 ? `${offset / 25}s` : '0.4s',
+          transitionDelay: isHovered ? '0.3s' : '0s'
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
 
 const mockUser = {
   id: 1,
-  initials: 'АС',
-  name: 'Алексей Смирнов',
+  firstName: 'Алексей',
+  lastName: 'Смирнов',
+  patronymic: 'Иванович',
   email: 'a.smirnov@osnova.uz',
   phone: '+998 90 123-45-67',
   birthDate: '12/05/1990',
   gender: 'Мужской',
+  roles: ['Студент', 'Куратор'],
   customFields: [
     { label: 'Роль', value: 'Студент' },
     { label: 'Филиал', value: 'Ташкент (ГК)' },
@@ -61,6 +123,97 @@ const mockUser = {
   ]
 };
 
+const branchesList = ['Ташкент (ГК)', 'Самарканд', 'Бухара', 'Фергана'];
+const deptsList = ['Коммерческий департамент', 'Маркетинг', 'Служба поддержки', 'HR', 'IT', 'Финансы', 'Руководство', 'Продуктовая аналитика'];
+const divsList = ['Отдел продаж B2B', 'PR и коммуникации', 'Первая линия', 'Подбор персонала', 'Разработка ПО', 'Бухгалтерия', 'Совет директоров', 'Отдел продаж B2C', 'Аналитика'];
+const statusesList = ['Работает', 'Отпуск', 'Уволен'];
+
+function FormSelect({ label, placeholder, options, value, onChange, showSearch = true }: { label: string, placeholder: string, options: string[], value: string, onChange: (val: string) => void, showSearch?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!showSearch || !searchQuery) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [options, searchQuery, showSearch]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayValue = value === "" ? placeholder : value;
+
+  return (
+    <div className="relative group" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full text-left px-4 py-3 bg-neutral-50/50 hover:bg-neutral-50 border ${open ? 'border-[var(--color-admin-primary-500)] ring-2 ring-[var(--color-admin-primary-100)]' : 'border-neutral-200'} rounded-xl text-[14px] ${value === "" ? 'text-neutral-400' : 'text-neutral-900'} focus:outline-none transition-all flex items-center justify-between min-h-[46px]`}
+      >
+        <span className="truncate">{displayValue}</span>
+        <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 w-full min-w-[200px] bg-white border border-neutral-200 shadow-xl rounded-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[250px]">
+          {showSearch && (
+            <div className="px-2 pb-1.5 border-b border-neutral-100 mb-1">
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-md px-3 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--color-admin-primary-500)] focus:border-[var(--color-admin-primary-500)] placeholder:text-neutral-400"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto">
+            {(!searchQuery && placeholder) && (
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+              >
+                <span className={value === "" ? "font-semibold text-neutral-900" : ""}>{placeholder}</span>
+                {value === "" && <Check className="w-4 h-4 text-neutral-900" />}
+              </button>
+            )}
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-[13px] text-neutral-400 text-center">Нет результатов</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <button
+                  type="button"
+                  key={opt}
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+                >
+                  <span className={value === opt ? "font-semibold text-neutral-900" : ""}>{opt}</span>
+                  {value === opt && <Check className="w-4 h-4 text-neutral-900" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'courses' | 'testings' | 'certificates'>('courses');
@@ -68,12 +221,140 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [testResultsOpen, setTestResultsOpen] = useState<string | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   // In a real app, you would fetch user data using params.id
   const [user, setUser] = useState(mockUser); 
 
+  // Modal edit states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [formFirstName, setFormFirstName] = useState(user.firstName);
+  const [formLastName, setFormLastName] = useState(user.lastName);
+  const [formPatronymic, setFormPatronymic] = useState(user.patronymic);
+  const [formRegion, setFormRegion] = useState((user as any).region || 'Ташкент');
+  const [formBirthDate, setFormBirthDate] = useState(user.birthDate);
+  const [formGender, setFormGender] = useState(user.gender);
+  const [formRoles, setFormRoles] = useState<string[]>(user.roles);
+  const [formBranch, setFormBranch] = useState('');
+  const [formDept, setFormDept] = useState('');
+  const [formDiv, setFormDiv] = useState('');
+  const [formPosition, setFormPosition] = useState('');
+  const [formStatus, setFormStatus] = useState('');
+  const [formPhone, setFormPhone] = useState(user.phone);
+  const [formEmail, setFormEmail] = useState(user.email);
+  const [formPassword, setFormPassword] = useState('');
+  const [formConfirmPassword, setFormConfirmPassword] = useState('');
+
+  useEffect(() => {
+    if (isEditModalOpen) {
+      setFormFirstName(user.firstName);
+      setFormLastName(user.lastName);
+      setFormPatronymic(user.patronymic);
+      setFormRegion((user as any).region || 'Ташкент');
+      setFormBirthDate(user.birthDate);
+      setFormGender(user.gender);
+      setFormRoles(user.roles);
+      const branchField = user.customFields.find(f => f.label === 'Филиал')?.value || '';
+      const deptField = user.customFields.find(f => f.label === 'Департамент')?.value || '';
+      const divField = user.customFields.find(f => f.label === 'Отдел')?.value || '';
+      const positionField = user.customFields.find(f => f.label === 'Должность')?.value || '';
+      setFormBranch(branchField);
+      setFormDept(deptField);
+      setFormDiv(divField);
+      setFormPosition(positionField);
+      setFormStatus(user.status);
+      setFormPhone(user.phone);
+      setFormEmail(user.email);
+      setFormPassword('');
+      setFormConfirmPassword('');
+    }
+  }, [isEditModalOpen, user]);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUser(prev => ({
+      ...prev,
+      firstName: formFirstName,
+      lastName: formLastName,
+      patronymic: formPatronymic,
+      region: formRegion,
+      birthDate: formBirthDate,
+      gender: formGender,
+      roles: formRoles,
+      phone: formPhone,
+      email: formEmail,
+      status: formStatus,
+      customFields: [
+        { label: 'Роль', value: formRoles.join(', ') },
+        { label: 'Филиал', value: formBranch },
+        { label: 'Департамент', value: formDept },
+        { label: 'Отдел', value: formDiv },
+        { label: 'Должность', value: formPosition }
+      ]
+    }));
+    setIsEditModalOpen(false);
+    setToastMessage('Профиль успешно обновлен');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const [settings, setSettings] = useState<any>(null);
+  useEffect(() => {
+    const saved = localStorage.getItem('osnova_user_settings');
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    } else {
+      setSettings({
+        patronymicEnabled: true,
+        patronymicRequired: false,
+        regionEnabled: false,
+        regionRequired: false,
+        priorityFields: [
+          { id: 'p_branch', label: 'Филиал' },
+          { id: 'p_dept', label: 'Департамент' },
+          { id: 'p_div', label: 'Отдел' },
+          { id: 'p_role', label: 'Должность' },
+          { id: 'p_status', label: 'Статус' }
+        ],
+        secondaryFields: [
+          { id: 's_gender', label: 'Пол' },
+          { id: 's_age', label: 'Возраст' }
+        ]
+      });
+    }
+  }, []);
+
+  const activePriorityFields = settings?.priorityFields || [
+    { id: 'p_branch', label: 'Филиал' },
+    { id: 'p_dept', label: 'Департамент' },
+    { id: 'p_div', label: 'Отдел' },
+    { id: 'p_role', label: 'Должность' },
+    { id: 'p_status', label: 'Статус' }
+  ];
+
+  const getPriorityFieldValue = (fieldId: string) => {
+    if (fieldId === 'p_branch') return user.customFields.find(f => f.label === 'Филиал')?.value || 'Ташкент (ГК)';
+    if (fieldId === 'p_dept') return user.customFields.find(f => f.label === 'Департамент')?.value || 'Коммерческий департамент';
+    if (fieldId === 'p_div') return user.customFields.find(f => f.label === 'Отдел')?.value || 'Отдел продаж B2B';
+    if (fieldId === 'p_role') return user.customFields.find(f => f.label === 'Должность')?.value || 'Руководитель отдела';
+    if (fieldId === 'p_status') return user.status || 'Работает';
+    return 'Не заполнено';
+  };
+
+  const getSecondaryFieldValue = (fieldId: string) => {
+    if (fieldId === 's_gender') return user.gender;
+    if (fieldId === 's_age') return '36 лет';
+    return '—';
+  };
+
   return (
-    <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] pb-12">
+    <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] pb-0">
       <div className="bg-white border-b border-neutral-200 sticky top-0 z-10">
         <div className="px-6 lg:px-8 py-4 max-w-[1800px] mx-auto flex items-center gap-4">
           <button 
@@ -89,24 +370,24 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <Button variant="outline" className="flex items-center gap-2 font-medium shadow-sm bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50 h-9">
               <Download className="w-4 h-4" /> Результаты
             </Button>
-            <Button variant="primary" className="flex items-center gap-2 font-medium shadow-sm h-9">
+            <Button onClick={() => setIsEditModalOpen(true)} variant="primary" className="flex items-center gap-2 font-medium shadow-sm h-9">
               <Edit3 className="w-4 h-4" /> Редактировать
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 w-full max-w-[1800px] mx-auto px-6 lg:px-8 mt-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+      <div className="flex-1 w-full max-w-[1800px] mx-auto px-6 lg:px-8 mt-8 pb-16">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
           
           {/* Left Column: User Info */}
-          <div className="xl:col-span-4 flex flex-col gap-6">
+          <div className="w-full lg:w-[360px] shrink-0 flex flex-col gap-6">
             <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
               <div className="flex flex-col items-center text-center border-b border-neutral-100 pb-6 mb-6">
                 <div className="w-24 h-24 rounded-full bg-neutral-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl font-bold text-neutral-700 mb-4">
-                  {user.initials}
+                  {getUserInitials(user)}
                 </div>
-                <h2 className="text-xl font-bold text-neutral-900 mb-2">{user.name}</h2>
+                <h2 className="text-xl font-bold text-neutral-900 mb-2">{getUserFIO(user, settings?.patronymicEnabled ?? true)}</h2>
               </div>
 
               <div className="flex flex-col gap-4">
@@ -114,60 +395,119 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4 text-neutral-400" />
                   </div>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-[12px] text-neutral-500 font-medium">Телефон</span>
-                    <span className="text-[14px] text-neutral-900">{user.phone}</span>
+                    <MarqueeText text={user.phone} className="text-[14px] text-neutral-900" />
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4 text-neutral-400" />
                   </div>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-[12px] text-neutral-500 font-medium">Email</span>
-                    <span className="text-[14px] text-neutral-900">{user.email}</span>
+                    <MarqueeText text={user.email} className="text-[14px] text-neutral-900" />
                   </div>
                 </div>
+
+                {/* Roles (Multiple) */}
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
-                    <Calendar className="w-4 h-4 text-neutral-400" />
+                    <Briefcase className="w-4 h-4 text-neutral-400" />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[12px] text-neutral-500 font-medium">Дата рождения</span>
-                    <span className="text-[14px] text-neutral-900">{user.birthDate}</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
-                    <UserIcon className="w-4 h-4 text-neutral-400" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[12px] text-neutral-500 font-medium">Пол</span>
-                    <span className="text-[14px] text-neutral-900">{user.gender}</span>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-[12px] text-neutral-500 font-medium">Роль</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {user.roles.map(role => (
+                        <span key={role} className="text-[11px] font-bold px-2.5 py-0.5 bg-neutral-100 text-neutral-600 rounded-md">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {(settings?.birthDateEnabled ?? true) && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                      <Calendar className="w-4 h-4 text-neutral-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[12px] text-neutral-500 font-medium">Дата рождения</span>
+                      <MarqueeText text={user.birthDate} className="text-[14px] text-neutral-900" />
+                    </div>
+                  </div>
+                )}
+                {(settings?.genderEnabled ?? true) && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                      <UserIcon className="w-4 h-4 text-neutral-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[12px] text-neutral-500 font-medium">Пол</span>
+                      <MarqueeText text={user.gender} className="text-[14px] text-neutral-900" />
+                    </div>
+                  </div>
+                )}
+                {settings?.regionEnabled && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-neutral-400" />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[12px] text-neutral-500 font-medium">Регион</span>
+                      <MarqueeText text={(user as any).region || 'Ташкент'} className="text-[14px] text-neutral-900" />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {user.customFields && user.customFields.length > 0 && (
-                <>
-                  <div className="h-px bg-neutral-100 my-6" />
-                  <div className="flex flex-col gap-4">
-                    <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Дополнительная информация</h4>
-                    {user.customFields.map((field, idx) => (
-                      <div key={idx} className="flex flex-col">
-                        <span className="text-[12px] text-neutral-500 font-medium">{field.label}</span>
-                        <span className="text-[14px] text-neutral-900">{field.value}</span>
+              {isSidebarExpanded && (
+                <div className="animate-in fade-in duration-300">
+                  {activePriorityFields.length > 0 && (
+                    <>
+                      <div className="h-px bg-neutral-100 my-6" />
+                      <div className="flex flex-col gap-4">
+                        <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Приоритетные поля</h4>
+                        {activePriorityFields.map((field: any) => (
+                          <div key={field.id} className="flex flex-col min-w-0">
+                            <span className="text-[12px] text-neutral-500 font-medium">{field.label}</span>
+                            <MarqueeText text={getPriorityFieldValue(field.id)} className="text-[14px] text-neutral-900" />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </>
+                    </>
+                  )}
+
+                  {settings?.secondaryFields && settings.secondaryFields.length > 0 && (
+                    <>
+                      <div className="h-px bg-neutral-100 my-6" />
+                      <div className="flex flex-col gap-4">
+                        <h4 className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Дополнительная информация</h4>
+                        {settings.secondaryFields.map((field: any) => (
+                          <div key={field.id} className="flex flex-col min-w-0">
+                            <span className="text-[12px] text-neutral-500 font-medium">{field.label}</span>
+                            <MarqueeText text={getSecondaryFieldValue(field.id)} className="text-[14px] text-neutral-900" />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
+
+              <button 
+                onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+                className="w-full mt-6 py-2.5 px-4 border border-neutral-200 hover:bg-neutral-50 rounded-xl text-xs font-bold text-neutral-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isSidebarExpanded ? 'Свернуть' : 'Развернуть данные'}
+              </button>
             </div>
 
           </div>
 
           {/* Right Column: Content Tabs */}
-          <div className="xl:col-span-8 flex flex-col">
+          <div className="flex-1 w-full min-w-0 flex flex-col">
             
             {/* Statistics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -472,6 +812,258 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-100 shrink-0">
+              <h2 className="text-xl font-bold text-neutral-900">Редактировать профиль</h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <form onSubmit={handleSave} className="flex flex-col gap-10">
+                
+                {/* Personal Information */}
+                <div className="flex flex-col gap-5">
+                  <h3 className="text-lg font-bold text-neutral-900">Персональная информация</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Имя <span className="text-rose-500">*</span></label>
+                      <input 
+                        type="text" 
+                        required
+                        value={formFirstName}
+                        onChange={(e) => setFormFirstName(e.target.value)}
+                        className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Фамилия <span className="text-rose-500">*</span></label>
+                      <input 
+                        type="text" 
+                        required
+                        value={formLastName}
+                        onChange={(e) => setFormLastName(e.target.value)}
+                        className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                      />
+                    </div>
+
+                    {(settings?.patronymicEnabled ?? true) && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">
+                          Отчество {settings?.patronymicRequired && <span className="text-rose-500">*</span>}
+                        </label>
+                        <input 
+                          type="text" 
+                          required={settings?.patronymicRequired}
+                          placeholder="Отчество"
+                          value={formPatronymic}
+                          onChange={(e) => setFormPatronymic(e.target.value)}
+                          className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        />
+                      </div>
+                    )}
+
+                    {settings?.regionEnabled && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">
+                          Регион {settings?.regionRequired && <span className="text-rose-500">*</span>}
+                        </label>
+                        <input 
+                          type="text" 
+                          required={settings?.regionRequired}
+                          placeholder="Регион проживания / работы"
+                          value={formRegion}
+                          onChange={(e) => setFormRegion(e.target.value)}
+                          className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Дата рождения</label>
+                        <input 
+                          type="text" 
+                          placeholder="ДД/ММ/ГГГГ"
+                          value={formBirthDate}
+                          onChange={(e) => setFormBirthDate(e.target.value)}
+                          className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Пол</label>
+                        <FormSelect 
+                          label="Пол" 
+                          placeholder="" 
+                          options={["Мужской", "Женский"]} 
+                          value={formGender} 
+                          onChange={setFormGender}
+                          showSearch={false}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Data */}
+                <div className="flex flex-col gap-5 pt-2 border-t border-neutral-100">
+                  <h3 className="text-lg font-bold text-neutral-900">Дополнительные данные</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Роль <span className="text-rose-500">*</span></label>
+                      <FormSelect 
+                        label="Роль" 
+                        placeholder="" 
+                        options={["Студент", "Куратор", "Гость"]} 
+                        value={formRoles.includes('Студент') ? 'Студент' : formRoles.includes('Куратор') ? 'Куратор' : 'Гость'} 
+                        onChange={(val) => {
+                          if (val === 'Студент') setFormRoles(['Студент']);
+                          else if (val === 'Куратор') setFormRoles(['Куратор']);
+                          else if (val === 'Гость') setFormRoles(['Гость']);
+                        }}
+                        showSearch={false}
+                      />
+                    </div>
+
+                    {activePriorityFields.map((field: any, idx: number) => {
+                      let val = '';
+                      let onChg = (v: string) => {};
+                      let opts: string[] = [];
+
+                      if (field.id === 'p_branch') {
+                        val = formBranch;
+                        onChg = setFormBranch;
+                        opts = branchesList;
+                      } else if (field.id === 'p_dept') {
+                        val = formDept;
+                        onChg = setFormDept;
+                        opts = deptsList;
+                      } else if (field.id === 'p_div') {
+                        val = formDiv;
+                        onChg = setFormDiv;
+                        opts = divsList;
+                      } else if (field.id === 'p_role') {
+                        val = formPosition;
+                        onChg = setFormPosition;
+                        opts = ['Руководитель отдела', 'Специалист', 'Менеджер'];
+                      } else if (field.id === 'p_status') {
+                        val = formStatus;
+                        onChg = setFormStatus;
+                        opts = statusesList;
+                      }
+
+                      return (
+                        <div key={field.id} className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-medium text-neutral-700">{field.label}</label>
+                          <FormSelect 
+                            label={field.label} 
+                            placeholder={field.label} 
+                            options={opts} 
+                            value={val} 
+                            onChange={onChg} 
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Auth Data */}
+                <div className="flex flex-col gap-5 pt-2 border-t border-neutral-100">
+                  <h3 className="text-lg font-bold text-neutral-900">Данные для авторизации</h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Номер телефона <span className="text-rose-500">*</span></label>
+                      <input 
+                        type="tel" 
+                        required
+                        value={formPhone}
+                        onChange={(e) => setFormPhone(e.target.value)}
+                        className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        placeholder="+998" 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-neutral-700">Почта</label>
+                      <input 
+                        type="email" 
+                        value={formEmail}
+                        onChange={(e) => setFormEmail(e.target.value)}
+                        className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        placeholder="example@ex.com" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Пароль</label>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            value={formPassword}
+                            onChange={(e) => setFormPassword(e.target.value)}
+                            className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl pl-4 pr-11 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">Подтвердите пароль</label>
+                        <div className="relative">
+                          <input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            value={formConfirmPassword}
+                            onChange={(e) => setFormConfirmPassword(e.target.value)}
+                            className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl pl-4 pr-11 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 shrink-0 pt-4">
+                  <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+                    Отмена
+                  </Button>
+                  <Button type="submit" variant="primary" className="px-8 bg-black hover:bg-neutral-800 text-white rounded-xl">
+                    Сохранить
+                  </Button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Test Results Modal */}
       <TestResultsModal

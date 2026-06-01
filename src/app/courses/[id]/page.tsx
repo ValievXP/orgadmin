@@ -1468,7 +1468,7 @@ export default function CourseDetailPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="max-w-6xl mx-auto w-full px-6 py-6 pb-12">
+        <div className="max-w-6xl mx-auto w-full px-6 py-6 pb-16">
           {activeTab === 'materials' && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center justify-between mb-5">

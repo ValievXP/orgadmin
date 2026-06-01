@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Filter, Download, MoreHorizontal, ChevronDown, ChevronLeft, ChevronRight, Users, User, ArrowUpRight, BarChart2, Calendar, Eraser, Info } from 'lucide-react';
@@ -845,6 +845,45 @@ export default function StatisticsPage() {
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
+  // Load settings
+  const [settings, setSettings] = useState<any>(null);
+  useEffect(() => {
+    const saved = localStorage.getItem('osnova_user_settings');
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    } else {
+      setSettings({
+        patronymicEnabled: true,
+        patronymicRequired: false,
+        regionEnabled: false,
+        regionRequired: false,
+        priorityFields: [
+          { id: 'p_branch', label: 'Филиал' },
+          { id: 'p_dept', label: 'Департамент' },
+          { id: 'p_div', label: 'Отдел' },
+          { id: 'p_role', label: 'Должность' },
+          { id: 'p_status', label: 'Статус' }
+        ],
+        secondaryFields: [
+          { id: 's_gender', label: 'Пол' },
+          { id: 's_age', label: 'Возраст' }
+        ]
+      });
+    }
+  }, []);
+
+  const activePriorityFields = settings?.priorityFields || [
+    { id: 'p_branch', label: 'Филиал' },
+    { id: 'p_dept', label: 'Департамент' },
+    { id: 'p_div', label: 'Отдел' },
+    { id: 'p_role', label: 'Должность' },
+    { id: 'p_status', label: 'Статус' }
+  ];
+
   // ── Global Filters & States ──
   const [globalStartStr, setGlobalStartStr] = useState('');
   const [globalEndStr, setGlobalEndStr] = useState('');
@@ -854,6 +893,25 @@ export default function StatisticsPage() {
   const [selectedDept, setSelectedDept] = useState<string[]>([]);
   const [selectedDivision, setSelectedDivision] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<string[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+
+  const getFilterData = (fieldId: string, idx: number) => {
+    if (fieldId === 'p_branch') return { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'филиалы'}`, options: ["Ташкентский филиал", "Самаркандский филиал", "Бухарский филиал"], selectedValues: selectedBranch, onChange: setSelectedBranch };
+    if (fieldId === 'p_dept') return { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'департаменты'}`, options: ["Разработка", "Маркетинг", "Продажи", "Поддержка"], selectedValues: selectedDept, onChange: setSelectedDept };
+    if (fieldId === 'p_div') return { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'отделы'}`, options: ["Frontend", "Backend", "UI/UX", "SEO"], selectedValues: selectedDivision, onChange: setSelectedDivision };
+    if (fieldId === 'p_role') return { label: settings?.priorityFields?.[idx]?.label || 'Должность', options: ["Junior Developer", "Middle Developer", "Senior Developer", "Team Lead"], selectedValues: selectedRole, onChange: setSelectedRole };
+    if (fieldId === 'p_status') return { label: settings?.priorityFields?.[idx]?.label || 'Статус', options: ["Работает", "Отпуск", "Уволен"], selectedValues: selectedStatus, onChange: setSelectedStatus };
+    
+    // fallbacks by index
+    const fallbacks = [
+      { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'филиалы'}`, options: ["Ташкентский филиал", "Самаркандский филиал", "Бухарский филиал"], selectedValues: selectedBranch, onChange: setSelectedBranch },
+      { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'департаменты'}`, options: ["Разработка", "Маркетинг", "Продажи", "Поддержка"], selectedValues: selectedDept, onChange: setSelectedDept },
+      { label: `Все ${settings?.priorityFields?.[idx]?.label?.toLowerCase() || 'отделы'}`, options: ["Frontend", "Backend", "UI/UX", "SEO"], selectedValues: selectedDivision, onChange: setSelectedDivision },
+      { label: settings?.priorityFields?.[idx]?.label || 'Должность', options: ["Junior Developer", "Middle Developer", "Senior Developer", "Team Lead"], selectedValues: selectedRole, onChange: setSelectedRole },
+      { label: settings?.priorityFields?.[idx]?.label || 'Статус', options: ["Работает", "Отпуск", "Уволен"], selectedValues: selectedStatus, onChange: setSelectedStatus }
+    ];
+    return fallbacks[idx % fallbacks.length];
+  };
 
   // ── Course Tab Filters States ──
   const [selectedCourse, setSelectedCourse] = useState<string[]>([]);
@@ -997,7 +1055,7 @@ export default function StatisticsPage() {
   const sortedRegions = [...dynamicRegions].sort((a, b) => b.users - a.users);
 
   return (
-    <div className="flex flex-col h-full w-full bg-[var(--bg-app)] overflow-y-auto pb-12">
+    <div className="flex flex-col h-full w-full bg-[var(--bg-app)] overflow-y-auto pb-32">
       <PageHeader 
         title="Статистика" 
         actions={
@@ -1098,6 +1156,7 @@ export default function StatisticsPage() {
                 setSelectedDept([]);
                 setSelectedDivision([]);
                 setSelectedRole([]);
+                setSelectedStatus([]);
               }}
               className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
               title="Очистить организационные фильтры"
@@ -1110,30 +1169,18 @@ export default function StatisticsPage() {
             </div>
           </div>
           
-          <MultiSelectFilterDropdownWithSearch 
-            label="Все филиалы" 
-            options={["Ташкентский филиал", "Самаркандский филиал", "Бухарский филиал"].map(o => ({ id: o, title: o }))}
-            selectedValues={selectedBranch}
-            onChange={setSelectedBranch}
-          />
-          <MultiSelectFilterDropdownWithSearch 
-            label="Все департаменты" 
-            options={["Разработка", "Маркетинг", "Продажи", "Поддержка"].map(o => ({ id: o, title: o }))}
-            selectedValues={selectedDept}
-            onChange={setSelectedDept}
-          />
-          <MultiSelectFilterDropdownWithSearch 
-            label="Все отделы" 
-            options={["Frontend", "Backend", "UI/UX", "SEO"].map(o => ({ id: o, title: o }))}
-            selectedValues={selectedDivision}
-            onChange={setSelectedDivision}
-          />
-          <MultiSelectFilterDropdownWithSearch 
-            label="Должность" 
-            options={["Junior Developer", "Middle Developer", "Senior Developer", "Team Lead"].map(o => ({ id: o, title: o }))}
-            selectedValues={selectedRole}
-            onChange={setSelectedRole}
-          />
+          {activePriorityFields.map((field: any, idx: number) => {
+            const data = getFilterData(field.id, idx);
+            return (
+              <MultiSelectFilterDropdownWithSearch 
+                key={field.id}
+                label={data.label} 
+                options={data.options.map(o => ({ id: o, title: o }))}
+                selectedValues={data.selectedValues}
+                onChange={data.onChange}
+              />
+            );
+          })}
         </div>
 
         {/* Course-Specific Filters (Second island/box) */}

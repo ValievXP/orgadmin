@@ -25,18 +25,19 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const mockUsers = [
-  { id: 1, initials: 'АС', name: 'Алексей Смирнов', email: 'a.smirnov@osnova.uz', phone: '+998 90 123-45-67', branch: 'Ташкент (ГК)', dept: 'Коммерческий департамент', div: 'Отдел продаж B2B', role: 'Руководитель отдела', status: 'Работает', visit: '24/04/2026 10:30', reg: '15/01/2025 09:00', activityMs: 1777000000000, regMs: 1736920000000 },
-  { id: 2, initials: 'МВ', name: 'Мария Волкова', email: 'm.volkova@osnova.uz', phone: '+998 91 234-56-78', branch: 'Ташкент (ГК)', dept: 'Маркетинг', div: 'PR и коммуникации', role: 'PR-менеджер', status: 'Работает', visit: '24/04/2026 09:15', reg: '03/03/2025 11:20', activityMs: 1776990000000, regMs: 1740980000000 },
-  { id: 3, initials: 'ДТ', name: 'Дмитрий Тарасов', email: 'd.tarasov@osnova.uz', phone: '+998 93 345-67-89', branch: 'Самарканд', dept: 'Служба поддержки', div: 'Первая линия', role: 'Специалист поддержки', status: 'Отпуск', visit: '20/04/2026 18:00', reg: '10/02/2025 15:45', activityMs: 1776600000000, regMs: 1739150000000 },
-  { id: 4, initials: 'ЕК', name: 'Елена Кузнецова', email: 'e.kuznecova@osnova.uz', phone: '+998 94 456-78-90', branch: 'Ташкент (ГК)', dept: 'HR', div: 'Подбор персонала', role: 'HR Бизнес-партнер', status: 'Работает', visit: '24/04/2026 11:45', reg: '01/08/2024 10:10', activityMs: 1777010000000, regMs: 1722480000000 },
-  { id: 5, initials: 'ТИ', name: 'Тимур Ибрагимов', email: 't.ibragimov@osnova.uz', phone: '+998 99 567-89-01', branch: 'Бухара', dept: 'IT', div: 'Разработка ПО', role: 'Frontend Разработчик', status: 'Работает', visit: '24/04/2026 12:20', reg: '12/11/2025 09:30', activityMs: 1777050000000, regMs: 1762950000000 },
-  { id: 6, initials: 'ОС', name: 'Ольга Сидорова', email: 'o.sidorova@osnova.uz', phone: '+998 97 678-90-12', branch: 'Ташкент (ГК)', dept: 'Финансы', div: 'Бухгалтерия', role: 'Главный бухгалтер', status: 'Работает', visit: '23/04/2026 17:30', reg: '05/05/2024 14:15', activityMs: 1776900000000, regMs: 1714870000000 },
-  { id: 7, initials: 'АМ', name: 'Алишер Махмудов', email: 'a.mahmudov@osnova.uz', phone: '+998 90 789-01-23', branch: 'Ташкент (ГК)', dept: 'Руководство', div: 'Совет директоров', role: 'Операционный директор', status: 'Работает', visit: '24/04/2026 08:50', reg: '10/01/2024 08:00', activityMs: 1776980000000, regMs: 1704850000000 },
-  { id: 8, initials: 'ИН', name: 'Ирина Новикова', email: 'i.novikova@osnova.uz', phone: '+998 91 890-12-34', branch: 'Фергана', dept: 'Логистика', div: 'Складской учет', role: 'Менеджер по логистике', status: 'Уволен', visit: '15/03/2026 14:10', reg: '22/09/2025 16:20', activityMs: 1773000000000, regMs: 1758500000000 },
-  { id: 9, initials: 'РК', name: 'Рустам Каримов', email: 'r.karimov@osnova.uz', phone: '+998 93 901-23-45', branch: 'Самарканд', dept: 'Коммерческий департамент', div: 'Отдел продаж B2C', role: 'Старший менеджер', status: 'Работает', visit: null, reg: '18/06/2025 11:00', activityMs: 0, regMs: 1750200000000 },
-  { id: 10, initials: 'СЛ', name: 'Светлана Лебедева', email: 's.lebedeva@osnova.uz', phone: '+998 94 012-34-56', branch: 'Ташкент (ГК)', dept: 'Продуктовая аналитика', div: 'Аналитика', role: 'Data Analyst', status: 'Работает', visit: '24/04/2026 10:15', reg: '30/10/2025 13:45', activityMs: 1776995000000, regMs: 1761800000000 },
+  { id: 1, initials: 'АС', name: 'Смирнов Алексей Иванович', email: 'a.smirnov@osnova.uz', phone: '+998 90 123-45-67', branch: 'Ташкент (ГК)', dept: 'Коммерческий департамент', div: 'Отдел продаж B2B', role: 'Руководитель отдела', status: 'Работает', visit: '24/04/2026 10:30', reg: '15/01/2025 09:00', activityMs: 1777000000000, regMs: 1736920000000 },
+  { id: 2, initials: 'МВ', name: 'Волкова Мария Сергеевна', email: 'm.volkova@osnova.uz', phone: '+998 91 234-56-78', branch: 'Ташкент (ГК)', dept: 'Маркетинг', div: 'PR и коммуникации', role: 'PR-менеджер', status: 'Работает', visit: '24/04/2026 09:15', reg: '03/03/2025 11:20', activityMs: 1776990000000, regMs: 1740980000000 },
+  { id: 3, initials: 'ДТ', name: 'Тарасов Дмитрий Андреевич', email: 'd.tarasov@osnova.uz', phone: '+998 93 345-67-89', branch: 'Самарканд', dept: 'Служба поддержки', div: 'Первая линия', role: 'Специалист поддержки', status: 'Отпуск', visit: '20/04/2026 18:00', reg: '10/02/2025 15:45', activityMs: 1776600000000, regMs: 1739150000000 },
+  { id: 4, initials: 'ЕК', name: 'Кузнецова Елена Александровна', email: 'e.kuznecova@osnova.uz', phone: '+998 94 456-78-90', branch: 'Ташкент (ГК)', dept: 'HR', div: 'Подбор персонала', role: 'HR Бизнес-партнер', status: 'Работает', visit: '24/04/2026 11:45', reg: '01/08/2024 10:10', activityMs: 1777010000000, regMs: 1722480000000 },
+  { id: 5, initials: 'ТИ', name: 'Ибрагимов Тимур Бахтиярович', email: 't.ibragimov@osnova.uz', phone: '+998 99 567-89-01', branch: 'Бухара', dept: 'IT', div: 'Разработка ПО', role: 'Frontend Разработчик', status: 'Работает', visit: '24/04/2026 12:20', reg: '12/11/2025 09:30', activityMs: 1777050000000, regMs: 1762950000000 },
+  { id: 6, initials: 'ОС', name: 'Сидорова Ольга Петровна', email: 'o.sidorova@osnova.uz', phone: '+998 97 678-90-12', branch: 'Ташкент (ГК)', dept: 'Финансы', div: 'Бухгалтерия', role: 'Главный бухгалтер', status: 'Работает', visit: '23/04/2026 17:30', reg: '05/05/2024 14:15', activityMs: 1776900000000, regMs: 1714870000000 },
+  { id: 7, initials: 'АМ', name: 'Махмудов Алишер Рустамович', email: 'a.mahmudov@osnova.uz', phone: '+998 90 789-01-23', branch: 'Ташкент (ГК)', dept: 'Руководство', div: 'Совет директоров', role: 'Операционный директор', status: 'Работает', visit: '24/04/2026 08:50', reg: '10/01/2024 08:00', activityMs: 1776980000000, regMs: 1704850000000 },
+  { id: 8, initials: 'ИН', name: 'Новикова Ирина Владимировна', email: 'i.novikova@osnova.uz', phone: '+998 91 890-12-34', branch: 'Фергана', dept: 'Логистика', div: 'Складской учет', role: 'Менеджер по логистике', status: 'Уволен', visit: '15/03/2026 14:10', reg: '22/09/2025 16:20', activityMs: 1773000000000, regMs: 1758500000000 },
+  { id: 9, initials: 'РК', name: 'Каримов Рустам Маратович', email: 'r.karimov@osnova.uz', phone: '+998 93 901-23-45', branch: 'Самарканд', dept: 'Коммерческий департамент', div: 'Отдел продаж B2C', role: 'Старший менеджер', status: 'Работает', visit: null, reg: '18/06/2025 11:00', activityMs: 0, regMs: 1750200000000 },
+  { id: 10, initials: 'СЛ', name: 'Лебедева Светлана Сергеевна', email: 's.lebedeva@osnova.uz', phone: '+998 94 012-34-56', branch: 'Ташкент (ГК)', dept: 'Продуктовая аналитика', div: 'Аналитика', role: 'Data Analyst', status: 'Работает', visit: '24/04/2026 10:15', reg: '30/10/2025 13:45', activityMs: 1776995000000, regMs: 1761800000000 },
 ];
 
 function MarqueeText({ text, className }: { text: string, className?: string }) {
@@ -260,6 +261,55 @@ type SortOrder = 'asc' | 'desc' | null;
 export default function UsersPage() {
   const router = useRouter();
   
+  // Load settings
+  const [settings, setSettings] = useState<any>(null);
+  useEffect(() => {
+    const saved = localStorage.getItem('osnova_user_settings');
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    } else {
+      setSettings({
+        patronymicEnabled: true,
+        patronymicRequired: false,
+        regionEnabled: false,
+        regionRequired: false,
+        priorityFields: [
+          { id: 'p_branch', label: 'Филиал' },
+          { id: 'p_dept', label: 'Департамент' },
+          { id: 'p_div', label: 'Отдел' },
+          { id: 'p_role', label: 'Должность' },
+          { id: 'p_status', label: 'Статус' }
+        ],
+        secondaryFields: [
+          { id: 's_gender', label: 'Пол' },
+          { id: 's_age', label: 'Возраст' }
+        ]
+      });
+    }
+  }, []);
+
+  const activePriorityFields = settings?.priorityFields || [
+    { id: 'p_branch', label: 'Филиал' },
+    { id: 'p_dept', label: 'Департамент' },
+    { id: 'p_div', label: 'Отдел' },
+    { id: 'p_role', label: 'Должность' },
+    { id: 'p_status', label: 'Статус' }
+  ];
+
+  const getUserFullName = (fullName: string) => {
+    if (settings && !settings.patronymicEnabled) {
+      const parts = fullName.split(' ');
+      if (parts.length >= 3) {
+        return `${parts[0]} ${parts[1]}`;
+      }
+    }
+    return fullName;
+  };
+
   // Filters state
   const [search, setSearch] = useState("");
   const [branchFilter, setBranchFilter] = useState("");
@@ -286,7 +336,180 @@ export default function UsersPage() {
   // Form states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
+  const handleDownloadTemplate = () => {
+    const getColumnLetter = (colIndex: number): string => {
+      let letter = '';
+      let temp = colIndex;
+      while (temp >= 0) {
+        letter = String.fromCharCode((temp % 26) + 65) + letter;
+        temp = Math.floor(temp / 26) - 1;
+      }
+      return letter;
+    };
+
+    const headers = ['ФИО', 'Телефон', 'Email'];
+    let birthDateColIdx = -1;
+    let genderColIdx = -1;
+    let regionColIdx = -1;
+
+    if (settings?.birthDateEnabled ?? true) {
+      headers.push('Дата рождения');
+      birthDateColIdx = headers.length - 1;
+    }
+    if (settings?.genderEnabled ?? true) {
+      headers.push('Пол');
+      genderColIdx = headers.length - 1;
+    }
+    if (settings?.regionEnabled ?? false) {
+      headers.push('Регион');
+      regionColIdx = headers.length - 1;
+    }
+
+    const priorityFields = settings?.priorityFields || [
+      { id: 'p_branch', label: 'Филиал' },
+      { id: 'p_dept', label: 'Департамент' },
+      { id: 'p_div', label: 'Отдел' },
+      { id: 'p_role', label: 'Должность' },
+      { id: 'p_status', label: 'Статус' }
+    ];
+    priorityFields.forEach((field: any) => {
+      headers.push(field.label);
+    });
+
+    const secondaryFields = settings?.secondaryFields || [];
+    const addedSecondaryFields: any[] = [];
+    secondaryFields.forEach((field: any) => {
+      if (!headers.includes(field.label)) {
+        headers.push(field.label);
+        addedSecondaryFields.push(field);
+      }
+    });
+
+    const sampleRow: string[] = ['Смирнов Алексей Иванович', '+998901234567', 'a.smirnov@osnova.uz'];
+    if (settings?.birthDateEnabled ?? true) {
+      sampleRow.push('12/05/1990');
+    }
+    if (settings?.genderEnabled ?? true) {
+      sampleRow.push('M');
+    }
+    if (settings?.regionEnabled ?? false) {
+      sampleRow.push('Ташкент');
+    }
+    priorityFields.forEach((field: any) => {
+      if (field.id === 'p_branch') sampleRow.push('Ташкент (ГК)');
+      else if (field.id === 'p_dept') sampleRow.push('Коммерческий департамент');
+      else if (field.id === 'p_div') sampleRow.push('Отдел продаж B2B');
+      else if (field.id === 'p_role') sampleRow.push('Руководитель отдела');
+      else if (field.id === 'p_status') sampleRow.push('Работает');
+      else sampleRow.push('Значение');
+    });
+    addedSecondaryFields.forEach((field: any) => {
+      if (field.label === 'Пол') sampleRow.push('M');
+      else if (field.label === 'Возраст') sampleRow.push('36');
+      else sampleRow.push('Значение');
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+    const validations: any[] = [];
+
+    if (genderColIdx !== -1) {
+      const colLetter = getColumnLetter(genderColIdx);
+      validations.push({
+        sqref: `${colLetter}2:${colLetter}1000`,
+        type: 'list',
+        formula1: '"M,F"'
+      });
+    }
+
+    if (regionColIdx !== -1) {
+      const colLetter = getColumnLetter(regionColIdx);
+      validations.push({
+        sqref: `${colLetter}2:${colLetter}1000`,
+        type: 'list',
+        formula1: '"Ташкент,Ташкентская область,Самаркандская область,Андижанская область,Бухарская область,Джизакская область,Кашкадарьинская область,Навоийская область,Наманганская область,Сурхандарьинская область,Сырдарьинская область,Ферганская область,Хорезмская область,Республика Каракалпакстан"'
+      });
+    }
+
+    if (validations.length > 0) {
+      ws['!dataValidation'] = validations;
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Шаблон загрузки');
+    XLSX.writeFile(wb, 'osnova_users_template.xlsx');
+  };
+
+  const handleExportToExcel = () => {
+    const headers = ['ФИО', 'Телефон', 'Email'];
+    if (settings?.birthDateEnabled ?? true) headers.push('Дата рождения');
+    if (settings?.genderEnabled ?? true) headers.push('Пол');
+    if (settings?.regionEnabled ?? false) headers.push('Регион');
+
+    const priorityFields = settings?.priorityFields || [
+      { id: 'p_branch', label: 'Филиал' },
+      { id: 'p_dept', label: 'Департамент' },
+      { id: 'p_div', label: 'Отдел' },
+      { id: 'p_role', label: 'Должность' },
+      { id: 'p_status', label: 'Статус' }
+    ];
+    priorityFields.forEach((field: any) => {
+      headers.push(field.label);
+    });
+
+    const secondaryFields = settings?.secondaryFields || [];
+    const addedSecondaryFields: any[] = [];
+    secondaryFields.forEach((field: any) => {
+      if (!headers.includes(field.label)) {
+        headers.push(field.label);
+        addedSecondaryFields.push(field);
+      }
+    });
+
+    headers.push('Последний визит', 'Регистрация');
+
+    const rows = filteredUsers.map(user => {
+      const rowData: string[] = [
+        getUserFullName(user.name),
+        user.phone,
+        user.email
+      ];
+
+      if (settings?.birthDateEnabled ?? true) {
+        rowData.push((user as any).birthDate || '12/05/1990');
+      }
+      if (settings?.genderEnabled ?? true) {
+        rowData.push((user as any).gender || 'M');
+      }
+      if (settings?.regionEnabled ?? false) {
+        rowData.push((user as any).region || 'Ташкент');
+      }
+
+      priorityFields.forEach((field: any) => {
+        if (field.id === 'p_branch') rowData.push(user.branch);
+        else if (field.id === 'p_dept') rowData.push(user.dept);
+        else if (field.id === 'p_div') rowData.push(user.div);
+        else if (field.id === 'p_role') rowData.push(user.role);
+        else if (field.id === 'p_status') rowData.push(user.status);
+        else rowData.push('—');
+      });
+
+      addedSecondaryFields.forEach((field: any) => {
+        if (field.label === 'Пол') rowData.push((user as any).gender || 'M');
+        else if (field.label === 'Возраст') rowData.push('36');
+        else rowData.push('—');
+      });
+
+      rowData.push(user.visit || '—', user.reg);
+      return rowData;
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Пользователи');
+    XLSX.writeFile(wb, 'osnova_users.xlsx');
+  };
+
   // Form dropdown states
   const [formGender, setFormGender] = useState("");
   const [formRole, setFormRole] = useState("Студент");
@@ -294,6 +517,25 @@ export default function UsersPage() {
   const [formDept, setFormDept] = useState("");
   const [formDiv, setFormDiv] = useState("");
   const [formPosition, setFormPosition] = useState("");
+  const [formStatus, setFormStatus] = useState("Работает");
+
+  // Helper for mapping priority custom fields to their state
+  const getFilterState = (fieldId: string, idx: number) => {
+    if (fieldId === 'p_branch') return { value: branchFilter, onChange: setBranchFilter, options: branches };
+    if (fieldId === 'p_dept') return { value: deptFilter, onChange: setDeptFilter, options: depts };
+    if (fieldId === 'p_div') return { value: divFilter, onChange: setDivFilter, options: divs };
+    if (fieldId === 'p_role') return { value: roleFilter, onChange: setRoleFilter, options: roles };
+    if (fieldId === 'p_status') return { value: statusFilter, onChange: setStatusFilter, options: statuses };
+    
+    const fallbacks = [
+      { value: branchFilter, onChange: setBranchFilter, options: branches },
+      { value: deptFilter, onChange: setDeptFilter, options: depts },
+      { value: divFilter, onChange: setDivFilter, options: divs },
+      { value: roleFilter, onChange: setRoleFilter, options: roles },
+      { value: statusFilter, onChange: setStatusFilter, options: statuses }
+    ];
+    return fallbacks[idx % fallbacks.length];
+  };
 
   // Extract unique options
   const branches = useMemo(() => Array.from(new Set(mockUsers.map(u => u.branch))), []);
@@ -371,7 +613,7 @@ export default function UsersPage() {
     const date = parts[0];
     const time = parts[1] || '';
     return (
-      <div className="flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0 items-end">
         <span className="text-[11px] text-neutral-800 font-semibold truncate">{date}</span>
         <span className="text-[10px] text-neutral-400 font-medium truncate mt-0.5">{time}</span>
       </div>
@@ -379,7 +621,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)]">
+    <div className="flex flex-col min-h-full w-full bg-[var(--bg-app)] pb-0">
       <PageHeader 
         title="Пользователи" 
         actions={
@@ -401,7 +643,7 @@ export default function UsersPage() {
           </div>
         }
       />
-      <div className="flex-1 w-full max-w-[1800px] mx-auto p-6 lg:p-8">
+      <div className="flex-1 w-full max-w-[1800px] mx-auto p-6 lg:p-8 pb-16">
         
         {/* Toolbar */}
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-6 p-5">
@@ -420,106 +662,132 @@ export default function UsersPage() {
             </div>
 
             {/* Filters Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              <CustomSelect label="Филиал" options={branches} value={branchFilter} onChange={setBranchFilter} />
-              <CustomSelect label="Департамент" options={depts} value={deptFilter} onChange={setDeptFilter} />
-              <CustomSelect label="Отдел" options={divs} value={divFilter} onChange={setDivFilter} />
-              <CustomSelect label="Должность" options={roles} value={roleFilter} onChange={setRoleFilter} />
-              <CustomSelect label="Статус" options={statuses} value={statusFilter} onChange={setStatusFilter} />
+            <div 
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${Math.max(1, activePriorityFields.length)}, minmax(0, 1fr))`
+              }}
+            >
+              {activePriorityFields.map((field: any, idx: number) => {
+                const state = getFilterState(field.id, idx);
+                return (
+                  <CustomSelect 
+                    key={field.id}
+                    label={field.label} 
+                    options={state.options} 
+                    value={state.value} 
+                    onChange={state.onChange} 
+                  />
+                );
+              })}
             </div>
 
           </div>
         </div>
 
         {/* Data Table */}
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col">
-          <div className="w-full">
-            <table className="w-full text-left whitespace-nowrap table-fixed">
-              <thead className="bg-neutral-50/80 border-b border-neutral-100">
-                <tr>
-                  <th className="px-3 py-2.5 w-10 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
-                  <th className="px-3 py-2.5 w-[20%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Пользователь</th>
-                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Филиал</th>
-                  <th className="px-3 py-2.5 w-[14%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Департамент</th>
-                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Отдел</th>
-                  <th className="px-3 py-2.5 w-[12%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Должность</th>
-                  <th className="px-3 py-2.5 w-[8%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">Статус</th>
-                  <th className="px-3 py-2.5 w-[11%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('activity')}>
-                    <div className="flex items-center gap-1.5">
-                      Посл. визит
-                      {activitySort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
-                       activitySort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
-                       <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
-                    </div>
-                  </th>
-                  <th className="px-3 py-2.5 w-[11%] text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('reg')}>
-                    <div className="flex items-center gap-1.5">
-                      Регистрация
-                      {regSort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
-                       regSort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
-                       <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {pagedUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="py-16 text-center text-neutral-400 text-[14px]">Пользователи не найдены</td>
-                  </tr>
-                ) : (
-                  pagedUsers.map((user, index) => {
-                    const globalIdx = pageSize === 'all' ? (index + 1) : ((currentPage - 1) * Number(pageSize) + index + 1);
-                    return (
-                      <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="group border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60 transition-colors cursor-pointer">
-                        <td className="px-3 py-3 text-center">
-                          <span className="text-[11px] text-neutral-300 tabular-nums">
-                            {String(globalIdx).padStart(2, '0')}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
-                              {user.initials}
-                            </div>
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="font-semibold text-neutral-800 text-[13px] truncate" title={user.name}>
-                                {user.name}
-                              </span>
-                              <span className="text-[11px] text-neutral-400 font-medium truncate" title={user.email}>
-                                {user.email}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <MarqueeText text={user.branch} className="text-[12px] font-medium text-neutral-850" />
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <MarqueeText text={user.dept} className="text-[12px] font-medium text-neutral-850" />
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <MarqueeText text={user.div} className="text-[12px] font-medium text-neutral-850" />
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <MarqueeText text={user.role} className="text-[12px] font-medium text-neutral-850" />
-                        </td>
-                        <td className="px-3 py-3 overflow-hidden">
-                          <MarqueeText text={user.status} className="text-[12px] font-medium text-neutral-850" />
-                        </td>
-                        <td className="px-3 py-3 truncate">
-                          {renderDateTime(user.visit)}
-                        </td>
-                        <td className="px-3 py-3 truncate">
-                          {renderDateTime(user.reg)}
-                        </td>
+        {(() => {
+          const totalPriorityWidth = activePriorityFields.reduce((sum: number, _: any, idx: number) => {
+            const widths = [12, 14, 12, 12, 8];
+            return sum + widths[idx % widths.length];
+          }, 0);
+
+          return (
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col">
+              <div className="w-full overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left whitespace-nowrap table-fixed" style={{ minWidth: '1100px' }}>
+                  <thead className="bg-neutral-50/80 border-b border-neutral-100">
+                    <tr>
+                      <th style={{ width: '48px' }} className="px-3 py-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                      <th 
+                        style={{ width: '28%' }}
+                        className="px-3 py-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate"
+                      >
+                        Пользователь
+                      </th>
+                      {activePriorityFields.map((field: any, idx: number) => {
+                        const widths = [12, 14, 12, 12, 8];
+                        const wVal = widths[idx % widths.length];
+                        return (
+                          <th key={field.id} style={{ width: `${wVal}%` }} className="px-3 py-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">
+                            {field.label}
+                          </th>
+                        );
+                      })}
+                      <th style={{ width: '130px' }} className="px-3 py-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('activity')}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          Посл. визит
+                          {activitySort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
+                           activitySort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
+                           <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th style={{ width: '130px' }} className="px-3 py-2.5 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors truncate" onClick={() => toggleSort('reg')}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          Регистрация
+                          {regSort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
+                           regSort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
+                           <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {pagedUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={4 + activePriorityFields.length} className="py-16 text-center text-neutral-400 text-[14px]">Пользователи не найдены</td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ) : (
+                      pagedUsers.map((user, index) => {
+                        const globalIdx = pageSize === 'all' ? (index + 1) : ((currentPage - 1) * Number(pageSize) + index + 1);
+                        return (
+                          <tr key={user.id} onClick={() => router.push(`/users/${user.id}`)} className="group border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60 transition-colors cursor-pointer">
+                            <td className="px-3 py-3 text-center">
+                              <span className="text-[11px] text-neutral-300 tabular-nums">
+                                {String(globalIdx).padStart(2, '0')}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 overflow-hidden">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                  {user.initials}
+                                </div>
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <MarqueeText 
+                                    text={getUserFullName(user.name)} 
+                                    className="font-semibold text-neutral-800 text-[13px]" 
+                                  />
+                                  <MarqueeText 
+                                    text={user.email} 
+                                    className="text-[11px] text-neutral-400 font-medium" 
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            {activePriorityFields.map((field: any, idx: number) => {
+                              const keys = ['branch', 'dept', 'div', 'role', 'status'] as const;
+                              const key = keys[idx % keys.length];
+                              const val = (user as any)[key] || '';
+                              return (
+                                <td key={field.id} className="px-3 py-3 overflow-hidden">
+                                  <MarqueeText text={val} className="text-[12px] font-medium text-neutral-850" />
+                                </td>
+                              );
+                            })}
+                            <td className="px-3 py-3 truncate text-right">
+                              {renderDateTime(user.visit)}
+                            </td>
+                            <td className="px-3 py-3 truncate text-right">
+                              {renderDateTime(user.reg)}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
 
           {/* Pagination */}
           <div className="border-t border-neutral-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-neutral-50/20 rounded-b-2xl">
@@ -545,44 +813,56 @@ export default function UsersPage() {
               </span>
             </div>
 
-            {pageSize !== 'all' && totalPages > 1 && (
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  const isActive = page === currentPage;
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center ${
-                        isActive
-                          ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
-                          : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto sm:ml-auto">
+              {pageSize !== 'all' && totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    const isActive = page === currentPage;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center ${
+                          isActive
+                            ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+                            : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
 
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                onClick={handleExportToExcel}
+                className="flex items-center gap-2 font-semibold text-neutral-700 bg-white border border-neutral-200 hover:bg-neutral-50 h-9 rounded-xl shadow-sm text-xs shrink-0 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" /> Скачать Excel
+              </Button>
+            </div>
           </div>
         </div>
+          );
+        })()}
       </div>
 
       {/* Mass Upload Modal */}
@@ -603,9 +883,12 @@ export default function UsersPage() {
             <div className="p-6 flex flex-col gap-6">
               <div className="flex flex-col gap-2">
                 <p className="text-[14px] text-neutral-600 leading-relaxed">
-                  Загрузите список пользователей из Excel-файла (.xlsx, .csv).
+                  Загрузите список пользователей из Excel-файла.
                 </p>
-                <button className="flex items-center gap-2 text-[14px] font-medium text-[var(--color-admin-primary-500)] hover:underline self-start mt-1">
+                <button 
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-2 text-[14px] font-medium text-[var(--color-admin-primary-500)] hover:underline self-start mt-1"
+                >
                   <Download className="w-4 h-4" /> Скачать шаблон
                 </button>
               </div>
@@ -712,10 +995,33 @@ export default function UsersPage() {
                       <input type="text" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[13px] font-medium text-neutral-700">Отчество</label>
-                      <input type="text" className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" />
-                    </div>
+                    {(settings?.patronymicEnabled ?? true) && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">
+                          Отчество {settings?.patronymicRequired && <span className="text-rose-500">*</span>}
+                        </label>
+                        <input 
+                          type="text" 
+                          required={settings?.patronymicRequired}
+                          placeholder="Отчество"
+                          className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        />
+                      </div>
+                    )}
+
+                    {settings?.regionEnabled && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] font-medium text-neutral-700">
+                          Регион {settings?.regionRequired && <span className="text-rose-500">*</span>}
+                        </label>
+                        <input 
+                          type="text" 
+                          required={settings?.regionRequired}
+                          placeholder="Регион проживания / работы"
+                          className="w-full bg-neutral-50/50 hover:bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)] focus:border-transparent transition-all placeholder:text-neutral-400" 
+                        />
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
@@ -754,49 +1060,29 @@ export default function UsersPage() {
                       />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[13px] font-medium text-neutral-700">Филиал</label>
-                      <FormSelect 
-                        label="Филиал" 
-                        placeholder="Филиал" 
-                        options={branches} 
-                        value={formBranch} 
-                        onChange={setFormBranch} 
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[13px] font-medium text-neutral-700">Департамент</label>
-                      <FormSelect 
-                        label="Департамент" 
-                        placeholder="Департамент" 
-                        options={depts} 
-                        value={formDept} 
-                        onChange={setFormDept} 
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[13px] font-medium text-neutral-700">Отдел</label>
-                      <FormSelect 
-                        label="Отдел" 
-                        placeholder="Отдел" 
-                        options={divs} 
-                        value={formDiv} 
-                        onChange={setFormDiv} 
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[13px] font-medium text-neutral-700">Должность</label>
-                      <FormSelect 
-                        label="Должность" 
-                        placeholder="Должность" 
-                        options={roles} 
-                        value={formPosition} 
-                        onChange={setFormPosition} 
-                      />
-                    </div>
+                    {activePriorityFields.map((field: any, idx: number) => {
+                      const state = getFilterState(field.id, idx);
+                      const formValues = [
+                        { value: formBranch, onChange: setFormBranch },
+                        { value: formDept, onChange: setFormDept },
+                        { value: formDiv, onChange: setFormDiv },
+                        { value: formPosition, onChange: setFormPosition },
+                        { value: formStatus, onChange: setFormStatus }
+                      ];
+                      const formState = formValues[idx % formValues.length];
+                      return (
+                        <div key={field.id} className="flex flex-col gap-1.5">
+                          <label className="text-[13px] font-medium text-neutral-700">{field.label}</label>
+                          <FormSelect 
+                            label={field.label} 
+                            placeholder={field.label} 
+                            options={state.options} 
+                            value={formState.value} 
+                            onChange={formState.onChange} 
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

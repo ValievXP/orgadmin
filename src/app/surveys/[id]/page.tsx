@@ -21,6 +21,55 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
+function MarqueeText({ text, className }: { text: string, className?: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState(0);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isAnimating, setIsAnimating] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      textRef.current.style.width = 'max-content';
+      const diff = textRef.current.offsetWidth - containerRef.current.clientWidth;
+      textRef.current.style.width = '';
+      if (diff > 0) {
+        setOffset(diff + 2);
+      }
+    } else {
+      setOffset(0);
+    }
+  }, [isHovered, text]);
+
+  const active = isHovered || isAnimating;
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => { setIsHovered(true); setIsAnimating(true); }}
+      onMouseLeave={() => { 
+        setIsHovered(false);
+        if (offset === 0) setIsAnimating(false);
+      }}
+      title={text}
+    >
+      <div 
+        ref={textRef}
+        onTransitionEnd={() => { if (!isHovered) setIsAnimating(false); }}
+        className={`transition-transform ease-linear origin-left ${active ? 'w-max pr-1' : 'w-full truncate'}`}
+        style={{ 
+          transform: `translateX(-${offset}px)`,
+          transitionDuration: isHovered && offset > 0 ? `${offset / 25}s` : '0.4s',
+          transitionDelay: isHovered ? '0.3s' : '0s'
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
 // Refined Mock Survey Definition with statements fitting Правда/Ложь choice layouts
 const MOCK_SURVEY = {
   id: 'SRV-821',
@@ -86,10 +135,14 @@ const MOCK_SURVEY = {
 };
 
 // Refined Mock Submissions Database
+// Refined Mock Submissions Database
 const MOCK_SUBMISSIONS = [
   {
     id: 'sub1',
     studentName: 'Иван Сергеев',
+    firstName: 'Иван',
+    lastName: 'Сергеев',
+    patronymic: 'Сергеевич',
     email: 'ivan@example.com',
     avatarColor: 'bg-indigo-50 text-indigo-600',
     date: '24.05.2026 14:20',
@@ -105,6 +158,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub2',
     studentName: 'Мария Власова',
+    firstName: 'Мария',
+    lastName: 'Власова',
+    patronymic: 'Игоревна',
     email: 'maria@example.com',
     avatarColor: 'bg-emerald-50 text-emerald-600',
     date: '24.05.2026 15:10',
@@ -120,6 +176,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub3',
     studentName: 'Петр Николаев',
+    firstName: 'Петр',
+    lastName: 'Николаев',
+    patronymic: 'Васильевич',
     email: 'petr@example.com',
     avatarColor: 'bg-amber-50 text-amber-600',
     date: '25.05.2026 10:05',
@@ -135,6 +194,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub4',
     studentName: 'Анна Смирнова',
+    firstName: 'Анна',
+    lastName: 'Смирнова',
+    patronymic: '',
     email: 'anna@example.com',
     avatarColor: 'bg-rose-50 text-rose-600',
     date: '25.05.2026 11:30',
@@ -150,6 +212,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub5',
     studentName: 'Дмитрий Козлов',
+    firstName: 'Дмитрий',
+    lastName: 'Козлов',
+    patronymic: 'Александрович',
     email: 'dmitry@example.com',
     avatarColor: 'bg-blue-50 text-blue-600',
     date: '25.05.2026 12:15',
@@ -165,6 +230,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub6',
     studentName: 'Елена Кузнецова',
+    firstName: 'Елена',
+    lastName: 'Кузнецова',
+    patronymic: 'Дмитриевна',
     email: 'elena@example.com',
     avatarColor: 'bg-purple-50 text-purple-600',
     date: '25.05.2026 13:40',
@@ -180,6 +248,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub7',
     studentName: 'Алексей Петров',
+    firstName: 'Алексей',
+    lastName: 'Петров',
+    patronymic: 'Николаевич',
     email: 'alexey@example.com',
     avatarColor: 'bg-teal-50 text-teal-600',
     date: '25.05.2026 14:02',
@@ -195,6 +266,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub8',
     studentName: 'Ольга Соколова',
+    firstName: 'Ольга',
+    lastName: 'Соколова',
+    patronymic: 'Сергеевна',
     email: 'olga@example.com',
     avatarColor: 'bg-pink-50 text-pink-600',
     date: '25.05.2026 15:55',
@@ -210,6 +284,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub9',
     studentName: 'Владимир Морозов',
+    firstName: 'Владимир',
+    lastName: 'Морозов',
+    patronymic: 'Павлович',
     email: 'vladimir@example.com',
     avatarColor: 'bg-violet-50 text-violet-600',
     date: '25.05.2026 16:30',
@@ -225,6 +302,9 @@ const MOCK_SUBMISSIONS = [
   {
     id: 'sub10',
     studentName: 'Екатерина Павлова',
+    firstName: 'Екатерина',
+    lastName: 'Павлова',
+    patronymic: 'Михайловна',
     email: 'katerina@example.com',
     avatarColor: 'bg-orange-50 text-orange-600',
     date: '25.05.2026 17:12',
@@ -238,6 +318,26 @@ const MOCK_SUBMISSIONS = [
     }
   }
 ];
+
+const getUserFIO = (user: { firstName?: string; lastName?: string; patronymic?: string; studentName?: string }) => {
+  if (user.lastName && user.firstName) {
+    return user.patronymic
+      ? `${user.lastName} ${user.firstName} ${user.patronymic}`
+      : `${user.lastName} ${user.firstName}`;
+  }
+  return user.studentName || '';
+};
+
+const getUserInitials = (user: { firstName?: string; lastName?: string; studentName?: string }) => {
+  if (user.lastName && user.firstName) {
+    return `${user.lastName[0]}${user.firstName[0]}`.toUpperCase();
+  }
+  if (user.studentName) {
+    return user.studentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+  return '??';
+};
+
 
 export default function SurveyDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -283,11 +383,14 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
   // Filter open-ended responses
   const filteredOpenTextResponses = useMemo(() => {
     const raw = MOCK_SUBMISSIONS.map(s => ({
-      name: s.studentName,
+      name: getUserFIO(s),
       email: s.email,
       date: s.date,
       avatarColor: s.avatarColor,
-      text: s.answers.q6
+      text: s.answers.q6,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      patronymic: s.patronymic
     })).filter(r => r.text);
     
     if (!openTextSearch.trim()) return raw;
@@ -305,7 +408,7 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
   const filteredSubmissions = useMemo(() => {
     if (!individualSearch.trim()) return MOCK_SUBMISSIONS;
     const query = individualSearch.toLowerCase();
-    return MOCK_SUBMISSIONS.filter(s => s.studentName.toLowerCase().includes(query) || s.email.toLowerCase().includes(query));
+    return MOCK_SUBMISSIONS.filter(s => getUserFIO(s).toLowerCase().includes(query) || s.email.toLowerCase().includes(query));
   }, [individualSearch]);
 
   const individualTotalPages = Math.ceil(filteredSubmissions.length / individualLimit);
@@ -968,9 +1071,9 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${item.avatarColor}`}>
                                 {item.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-bold text-neutral-800 truncate leading-tight">{item.name}</span>
-                                <span className="text-[9px] text-neutral-400 font-semibold truncate leading-tight">{item.email}</span>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <MarqueeText text={item.name} className="text-xs font-bold text-neutral-800 leading-tight" />
+                                <MarqueeText text={item.email} className="text-[9px] text-neutral-400 font-semibold leading-tight" />
                               </div>
                             </div>
                             <span className="text-[10px] text-neutral-400 font-semibold shrink-0">{item.date}</span>
@@ -1083,11 +1186,11 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${sub.avatarColor}`}>
-                                {sub.studentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                                {getUserInitials(sub)}
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-neutral-800 truncate">{sub.studentName}</span>
-                                <span className="text-[9px] text-neutral-400 truncate">{sub.email}</span>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <MarqueeText text={getUserFIO(sub)} className="text-xs font-semibold text-neutral-800" />
+                                <MarqueeText text={sub.email} className="text-[9px] text-neutral-400 font-medium" />
                               </div>
                             </div>
                           </button>
@@ -1145,10 +1248,10 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
                     <div className="flex items-center gap-2.5">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${selectedSubmission.avatarColor}`}>
-                        {selectedSubmission.studentName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                        {getUserInitials(selectedSubmission)}
                       </div>
                       <div className="flex flex-col">
-                        <h4 className="font-bold text-neutral-800 text-xs leading-tight">{selectedSubmission.studentName}</h4>
+                        <h4 className="font-bold text-neutral-800 text-xs leading-tight">{getUserFIO(selectedSubmission)}</h4>
                         <span className="text-[10px] text-neutral-400 mt-0.5 leading-tight">{selectedSubmission.email}</span>
                       </div>
                     </div>

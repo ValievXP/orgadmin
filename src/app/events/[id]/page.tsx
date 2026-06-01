@@ -62,6 +62,9 @@ interface EventData {
 interface Participant {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  patronymic?: string;
   email: string;
   phone: string;
   avatar?: string;
@@ -178,50 +181,119 @@ const INITIAL_EVENT: EventData = {
 };
 
 const INITIAL_PARTICIPANTS: Participant[] = [
-  { id: 'p1', name: 'Иван Сергеев', email: 'ivan@example.com', phone: '+7 900 123 45 67', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', role: 'Ведущий аналитик', status: 'present', registeredAt: '20.03.2026 14:30', arrivalTime: '28.03.2026 10:15', city: 'Москва', school: 'Школа №1', attendance: { d1: { status: 'present', arrivalTime: '28.03.2026 10:15' }, d2: { status: 'present', arrivalTime: '29.03.2026 10:05' }, d3: { status: 'registered' } } },
-  { id: 'p2', name: 'Мария Власова', email: 'maria@example.com', phone: '+7 900 234 56 78', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', role: 'Менеджер проектов', status: 'registered', registeredAt: '21.03.2026 09:15', city: 'Санкт-Петербург', school: 'Лицей №2', attendance: { d1: { status: 'registered' }, d2: { status: 'present', arrivalTime: '29.03.2026 10:12' }, d3: { status: 'registered' } } },
-  { id: 'p3', name: 'Петр Николаев', email: 'petr@example.com', phone: '+7 900 345 67 89', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Senior Python Developer', status: 'absent', registeredAt: '25.03.2026 18:45', city: 'Москва', school: 'Школа №1', attendance: { d1: { status: 'absent' }, d2: { status: 'absent' }, d3: { status: 'absent' } } },
-  { id: 'p4', name: 'Анна Смирнова', email: 'anna@example.com', phone: '+7 900 456 78 90', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60', role: 'Финансовый директор', status: 'present', registeredAt: '22.03.2026 11:20', arrivalTime: '28.03.2026 09:55', city: 'Казань', school: 'Гимназия №3', attendance: { d1: { status: 'present', arrivalTime: '28.03.2026 09:55' }, d2: { status: 'present', arrivalTime: '29.03.2026 09:50' }, d3: { status: 'present', arrivalTime: '30.03.2026 09:58' } } },
-  { id: 'p5', name: 'Дмитрий Орлов', email: 'dmitry@example.com', phone: '+7 900 567 89 01', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', role: 'Бухгалтер', status: 'registered', registeredAt: '26.03.2026 10:05', city: 'Москва', school: 'МГУ', attendance: { d1: { status: 'registered' }, d2: { status: 'registered' }, d3: { status: 'registered' } } },
-  { id: 'p6', name: 'Елена Соколова', email: 'elena.s@example.com', phone: '+7 900 678 90 12', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60', role: 'Data Scientist', status: 'present', registeredAt: '21.03.2026 11:40', arrivalTime: '28.03.2026 10:02', city: 'Самара', school: 'СГАУ' },
-  { id: 'p7', name: 'Сардор Каримов', email: 'sardor@example.com', phone: '+998 90 123 45 67', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60', role: 'ML Engineer', status: 'present', registeredAt: '22.03.2026 16:10', arrivalTime: '28.03.2026 09:45', city: 'Ташкент', school: 'ТАТУ' },
-  { id: 'p8', name: 'Лола Умарова', email: 'lola@example.com', phone: '+998 90 234 56 78', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60', role: 'UI/UX Designer', status: 'registered', registeredAt: '23.03.2026 09:30', city: 'Самарканд', school: 'СамГУ' },
-  { id: 'p9', name: 'Алексей Козлов', email: 'a.kozlov@example.com', phone: '+7 905 111 22 33', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=60', role: 'QA Lead', status: 'present', registeredAt: '24.03.2026 14:15', arrivalTime: '28.03.2026 10:11', city: 'Москва', school: 'Школа №1' },
-  { id: 'p10', name: 'Мадина Саидова', email: 'm.saidova@example.com', phone: '+998 93 111 22 33', avatar: 'https://images.unsplash.com/photo-1534751516642-a131fed10495?w=100&auto=format&fit=crop&q=60', role: 'Python Developer', status: 'registered', registeredAt: '25.03.2026 10:50', city: 'Ташкент', school: 'ТАТУ' },
-  { id: 'p11', name: 'Рустам Валиев', email: 'r.valiev@example.com', phone: '+998 94 444 55 66', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60', role: 'System Analyst', status: 'present', registeredAt: '25.03.2026 17:22', arrivalTime: '28.03.2026 09:59', city: 'Самарканд', school: 'СамГУ' },
-  { id: 'p12', name: 'Ольга Петрова', email: 'olga.p@example.com', phone: '+7 909 333 44 55', avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=100&auto=format&fit=crop&q=60', role: 'Product Owner', status: 'registered', registeredAt: '20.03.2026 10:00', city: 'Новосибирск', school: 'НГУ' },
-  { id: 'p13', name: 'Сергей Иванов', email: 'sergey.i@example.com', phone: '+7 916 222 33 44', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=60', role: 'Backend Engineer', status: 'present', registeredAt: '21.03.2026 12:35', arrivalTime: '28.03.2026 10:08', city: 'Москва', school: 'МГТУ' },
-  { id: 'p14', name: 'Наталья Кузнецова', email: 'nataly@example.com', phone: '+7 925 555 66 77', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=60', role: 'HR Business Partner', status: 'registered', registeredAt: '22.03.2026 15:40', city: 'Екатеринбург', school: 'УрФУ' },
-  { id: 'p15', name: 'Артем Васильев', email: 'artem.v@example.com', phone: '+7 985 777 88 99', avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&auto=format&fit=crop&q=60', role: 'DevOps Engineer', status: 'present', registeredAt: '23.03.2026 08:20', arrivalTime: '28.03.2026 09:50', city: 'Санкт-Петербург', school: 'ИТМО' },
-  { id: 'p16', name: 'Татьяна Морозова', email: 'tanya.m@example.com', phone: '+7 911 888 99 00', avatar: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=100&auto=format&fit=crop&q=60', role: 'Business Analyst', status: 'registered', registeredAt: '23.03.2026 11:15', city: 'Нижний Новгород', school: 'ННГУ' },
-  { id: 'p17', name: 'Михаил Федоров', email: 'mikhail@example.com', phone: '+7 902 444 33 22', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&auto=format&fit=crop&q=60', role: 'Fullstack Dev', status: 'present', registeredAt: '24.03.2026 16:30', arrivalTime: '28.03.2026 10:04', city: 'Казань', school: 'КФУ' },
-  { id: 'p18', name: 'Ирина Волкова', email: 'irina.v@example.com', phone: '+7 903 555 44 33', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&auto=format&fit=crop&q=60', role: 'Marketing Manager', status: 'registered', registeredAt: '24.03.2026 18:10', city: 'Москва', school: 'НИУ ВШЭ' },
-  { id: 'p19', name: 'Андрей Семенов', email: 'andrey.s@example.com', phone: '+7 905 777 66 55', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60', role: 'Data Engineer', status: 'present', registeredAt: '25.03.2026 09:12', arrivalTime: '28.03.2026 10:15', city: 'Новосибирск', school: 'НГУ' },
-  { id: 'p20', name: 'Екатерина Лебедева', email: 'kate.l@example.com', phone: '+7 906 888 77 66', avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=100&auto=format&fit=crop&q=60', role: 'Content Lead', status: 'registered', registeredAt: '25.03.2026 13:45', city: 'Краснодар', school: 'КубГУ' },
-  { id: 'p21', name: 'Николай Павлов', email: 'kolya@example.com', phone: '+7 908 999 88 77', avatar: 'https://images.unsplash.com/photo-1489980508314-941910ded1f4?w=100&auto=format&fit=crop&q=60', role: 'Frontend Dev', status: 'present', registeredAt: '25.03.2026 14:20', arrivalTime: '28.03.2026 09:40', city: 'Самара', school: 'СГАУ' },
-  { id: 'p22', name: 'Светлана Козлова', email: 'svetlana@example.com', phone: '+7 912 111 00 99', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=60', role: 'Legal Counsel', status: 'registered', registeredAt: '26.03.2026 10:15', city: 'Москва', school: 'МГЮА' },
-  { id: 'p23', name: 'Егор Степанов', email: 'egor.s@example.com', phone: '+7 915 222 11 88', avatar: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=100&auto=format&fit=crop&q=60', role: 'Security Specialist', status: 'present', registeredAt: '26.03.2026 11:30', arrivalTime: '28.03.2026 10:12', city: 'Казань', school: 'КНИТУ' },
-  { id: 'p24', name: 'Юлия Семенова', email: 'yulia.s@example.com', phone: '+7 917 333 22 77', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de215f?w=100&auto=format&fit=crop&q=60', role: 'Scrum Master', status: 'registered', registeredAt: '26.03.2026 15:45', city: 'Ростов-на-Дону', school: 'ЮФУ' },
-  { id: 'p25', name: 'Денис Егоров', email: 'denis.e@example.com', phone: '+7 920 444 33 66', avatar: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?w=100&auto=format&fit=crop&q=60', role: 'Solution Architect', status: 'present', registeredAt: '27.03.2026 09:10', arrivalTime: '28.03.2026 09:55', city: 'Санкт-Петербург', school: 'СПбГУ' },
-  { id: 'p26', name: 'Олеся Романова', email: 'olesya@example.com', phone: '+7 926 777 55 44', avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100&auto=format&fit=crop&q=60', role: 'Agile Coach', status: 'registered', registeredAt: '27.03.2026 11:20', city: 'Москва', school: 'МГУ' },
-  { id: 'p27', name: 'Вадим Никитин', email: 'vadim.n@example.com', phone: '+7 930 888 66 55', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=60', role: 'Delivery Manager', status: 'present', registeredAt: '27.03.2026 14:05', arrivalTime: '28.03.2026 10:20', city: 'Воронеж', school: 'ВГУ' },
-  { id: 'p28', name: 'Алина Соболева', email: 'alina.s@example.com', phone: '+7 933 999 77 66', avatar: 'https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?w=100&auto=format&fit=crop&q=60', role: 'UI/UX Researcher', status: 'registered', registeredAt: '27.03.2026 15:30', city: 'Казань', school: 'КФУ' },
-  { id: 'p29', name: 'Тимур Хасанов', email: 'timur.h@example.com', phone: '+998 97 777 11 22', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=60', role: 'Mobile Dev', status: 'present', registeredAt: '27.03.2026 16:50', arrivalTime: '28.03.2026 09:42', city: 'Ташкент', school: 'ТАТУ' },
-  { id: 'p30', name: 'Дильбар Рахимова', email: 'dilbar@example.com', phone: '+998 90 999 44 55', avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=100&auto=format&fit=crop&q=60', role: 'Python Developer', status: 'registered', registeredAt: '27.03.2026 17:10', city: 'Ташкент', school: 'Вестминстерский университет' },
-  { id: 'p31', name: 'Шерзод Усманов', email: 'sherzod@example.com', phone: '+998 91 222 33 44', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Data Analyst', status: 'present', registeredAt: '27.03.2026 17:35', arrivalTime: '28.03.2026 10:05', city: 'Самарканд', school: 'СамГУ' },
-  { id: 'p32', name: 'Камила Юсупова', email: 'kamila@example.com', phone: '+998 92 333 44 55', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de215f?w=100&auto=format&fit=crop&q=60', role: 'Project Manager', status: 'registered', registeredAt: '27.03.2026 18:00', city: 'Бухара', school: 'БухГУ' }
+  { id: 'p1', name: 'Иван Сергеев', firstName: 'Иван', lastName: 'Сергеев', patronymic: 'Сергеевич', email: 'ivan@example.com', phone: '+7 900 123 45 67', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', role: 'Ведущий аналитик', status: 'present', registeredAt: '20.03.2026 14:30', arrivalTime: '28.03.2026 10:15', city: 'Москва', school: 'Школа №1', attendance: { d1: { status: 'present', arrivalTime: '28.03.2026 10:15' }, d2: { status: 'present', arrivalTime: '29.03.2026 10:05' }, d3: { status: 'registered' } } },
+  { id: 'p2', name: 'Мария Власова', firstName: 'Мария', lastName: 'Власова', patronymic: 'Игоревна', email: 'maria@example.com', phone: '+7 900 234 56 78', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', role: 'Менеджер проектов', status: 'registered', registeredAt: '21.03.2026 09:15', city: 'Санкт-Петербург', school: 'Лицей №2', attendance: { d1: { status: 'registered' }, d2: { status: 'present', arrivalTime: '29.03.2026 10:12' }, d3: { status: 'registered' } } },
+  { id: 'p3', name: 'Петр Николаев', firstName: 'Петр', lastName: 'Николаев', patronymic: 'Васильевич', email: 'petr@example.com', phone: '+7 900 345 67 89', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Senior Python Developer', status: 'absent', registeredAt: '25.03.2026 18:45', city: 'Москва', school: 'Школа №1', attendance: { d1: { status: 'absent' }, d2: { status: 'absent' }, d3: { status: 'absent' } } },
+  { id: 'p4', name: 'Анна Смирнова', firstName: 'Анна', lastName: 'Смирнова', patronymic: '', email: 'anna@example.com', phone: '+7 900 456 78 90', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60', role: 'Финансовый директор', status: 'present', registeredAt: '22.03.2026 11:20', arrivalTime: '28.03.2026 09:55', city: 'Казань', school: 'Гимназия №3', attendance: { d1: { status: 'present', arrivalTime: '28.03.2026 09:55' }, d2: { status: 'present', arrivalTime: '29.03.2026 09:50' }, d3: { status: 'present', arrivalTime: '30.03.2026 09:58' } } },
+  { id: 'p5', name: 'Дмитрий Орлов', firstName: 'Дмитрий', lastName: 'Орлов', patronymic: 'Александрович', email: 'dmitry@example.com', phone: '+7 900 567 89 01', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', role: 'Бухгалтер', status: 'registered', registeredAt: '26.03.2026 10:05', city: 'Москва', school: 'МГУ', attendance: { d1: { status: 'registered' }, d2: { status: 'registered' }, d3: { status: 'registered' } } },
+  { id: 'p6', name: 'Елена Соколова', firstName: 'Елена', lastName: 'Соколова', patronymic: 'Дмитриевна', email: 'elena.s@example.com', phone: '+7 900 678 90 12', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60', role: 'Data Scientist', status: 'present', registeredAt: '21.03.2026 11:40', arrivalTime: '28.03.2026 10:02', city: 'Самара', school: 'СГАУ' },
+  { id: 'p7', name: 'Сардор Каримов', firstName: 'Сардор', lastName: 'Каримов', patronymic: 'Алишерович', email: 'sardor@example.com', phone: '+998 90 123 45 67', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60', role: 'ML Engineer', status: 'present', registeredAt: '22.03.2026 16:10', arrivalTime: '28.03.2026 09:45', city: 'Ташкент', school: 'ТАТУ' },
+  { id: 'p8', name: 'Лола Умарова', firstName: 'Лола', lastName: 'Умарова', patronymic: 'Баходировна', email: 'lola@example.com', phone: '+998 90 234 56 78', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60', role: 'UI/UX Designer', status: 'registered', registeredAt: '23.03.2026 09:30', city: 'Самарканд', school: 'СамГУ' },
+  { id: 'p9', name: 'Алексей Козлов', firstName: 'Алексей', lastName: 'Козлов', patronymic: 'Сергеевич', email: 'a.kozlov@example.com', phone: '+7 905 111 22 33', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=60', role: 'QA Lead', status: 'present', registeredAt: '24.03.2026 14:15', arrivalTime: '28.03.2026 10:11', city: 'Москва', school: 'Школа №1' },
+  { id: 'p10', name: 'Мадина Саидова', firstName: 'Мадина', lastName: 'Саидова', patronymic: 'Рустамовна', email: 'm.saidova@example.com', phone: '+998 93 111 22 33', avatar: 'https://images.unsplash.com/photo-1534751516642-a131fed10495?w=100&auto=format&fit=crop&q=60', role: 'Python Developer', status: 'registered', registeredAt: '25.03.2026 10:50', city: 'Ташкент', school: 'ТАТУ' },
+  { id: 'p11', name: 'Рустам Валиев', firstName: 'Рустам', lastName: 'Валиев', patronymic: 'Фарходович', email: 'r.valiev@example.com', phone: '+998 94 444 55 66', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60', role: 'System Analyst', status: 'present', registeredAt: '25.03.2026 17:22', arrivalTime: '28.03.2026 09:59', city: 'Самарканд', school: 'СамГУ' },
+  { id: 'p12', name: 'Ольга Петрова', firstName: 'Ольга', lastName: 'Петрова', patronymic: 'Владимировна', email: 'olga.p@example.com', phone: '+7 909 333 44 55', avatar: 'https://images.unsplash.com/photo-1554151228-14d9def656e4?w=100&auto=format&fit=crop&q=60', role: 'Product Owner', status: 'registered', registeredAt: '20.03.2026 10:00', city: 'Новосибирск', school: 'НГУ' },
+  { id: 'p13', name: 'Сергей Иванов', firstName: 'Сергей', lastName: 'Иванов', patronymic: 'Алексеевич', email: 'sergey.i@example.com', phone: '+7 916 222 33 44', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=60', role: 'Backend Engineer', status: 'present', registeredAt: '21.03.2026 12:35', arrivalTime: '28.03.2026 10:08', city: 'Москва', school: 'МГТУ' },
+  { id: 'p14', name: 'Наталья Кузнецова', firstName: 'Наталья', lastName: 'Кузнецова', patronymic: 'Александровна', email: 'nataly@example.com', phone: '+7 925 555 66 77', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=60', role: 'HR Business Partner', status: 'registered', registeredAt: '22.03.2026 15:40', city: 'Екатеринбург', school: 'УрФУ' },
+  { id: 'p15', name: 'Артем Васильев', firstName: 'Артем', lastName: 'Васильев', patronymic: 'Игоревич', email: 'artem.v@example.com', phone: '+7 985 777 88 99', avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100&auto=format&fit=crop&q=60', role: 'DevOps Engineer', status: 'present', registeredAt: '23.03.2026 08:20', arrivalTime: '28.03.2026 09:50', city: 'Санкт-Петербург', school: 'ИТМО' },
+  { id: 'p16', name: 'Татьяна Морозова', firstName: 'Татьяна', lastName: 'Морозова', patronymic: 'Викторовна', email: 'tanya.m@example.com', phone: '+7 911 888 99 00', avatar: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=100&auto=format&fit=crop&q=60', role: 'Business Analyst', status: 'registered', registeredAt: '23.03.2026 11:15', city: 'Нижний Новгород', school: 'ННГУ' },
+  { id: 'p17', name: 'Михаил Федоров', firstName: 'Михаил', lastName: 'Федоров', patronymic: 'Евгеньевич', email: 'mikhail@example.com', phone: '+7 902 444 33 22', avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&auto=format&fit=crop&q=60', role: 'Fullstack Dev', status: 'present', registeredAt: '24.03.2026 16:30', arrivalTime: '28.03.2026 10:04', city: 'Казань', school: 'КФУ' },
+  { id: 'p18', name: 'Ирина Волкова', firstName: 'Ирина', lastName: 'Волкова', patronymic: 'Сергеевна', email: 'irina.v@example.com', phone: '+7 903 555 44 33', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&auto=format&fit=crop&q=60', role: 'Marketing Manager', status: 'registered', registeredAt: '24.03.2026 18:10', city: 'Москва', school: 'НИУ ВШЭ' },
+  { id: 'p19', name: 'Андрей Семенов', firstName: 'Андрей', lastName: 'Семенов', patronymic: 'Николаевич', email: 'andrey.s@example.com', phone: '+7 905 777 66 55', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=60', role: 'Data Engineer', status: 'present', registeredAt: '25.03.2026 09:12', arrivalTime: '28.03.2026 10:15', city: 'Новосибирск', school: 'НГУ' },
+  { id: 'p20', name: 'Екатерина Лебедева', firstName: 'Екатерина', lastName: 'Лебедева', patronymic: 'Олеговна', email: 'kate.l@example.com', phone: '+7 906 888 77 66', avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=100&auto=format&fit=crop&q=60', role: 'Content Lead', status: 'registered', registeredAt: '25.03.2026 13:45', city: 'Краснодар', school: 'КубГУ' },
+  { id: 'p21', name: 'Николай Павлов', firstName: 'Николай', lastName: 'Павлов', patronymic: 'Владимирович', email: 'kolya@example.com', phone: '+7 908 999 88 77', avatar: 'https://images.unsplash.com/photo-1489980508314-941910ded1f4?w=100&auto=format&fit=crop&q=60', role: 'Frontend Dev', status: 'present', registeredAt: '25.03.2026 14:20', arrivalTime: '28.03.2026 09:40', city: 'Самара', school: 'СГАУ' },
+  { id: 'p22', name: 'Светлана Козлова', firstName: 'Светлана', lastName: 'Козлова', patronymic: 'Дмитриевна', email: 'svetlana@example.com', phone: '+7 912 111 00 99', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=60', role: 'Legal Counsel', status: 'registered', registeredAt: '26.03.2026 10:15', city: 'Москва', school: 'МГЮА' },
+  { id: 'p23', name: 'Егор Степанов', firstName: 'Егор', lastName: 'Степанов', patronymic: 'Павлович', email: 'egor.s@example.com', phone: '+7 915 222 11 88', avatar: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=100&auto=format&fit=crop&q=60', role: 'Security Specialist', status: 'present', registeredAt: '26.03.2026 11:30', arrivalTime: '28.03.2026 10:12', city: 'Казань', school: 'КНИТУ' },
+  { id: 'p24', name: 'Юлия Семенова', firstName: 'Юлия', lastName: 'Семенова', patronymic: 'Сергеевна', email: 'yulia.s@example.com', phone: '+7 917 333 22 77', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de215f?w=100&auto=format&fit=crop&q=60', role: 'Scrum Master', status: 'registered', registeredAt: '26.03.2026 15:45', city: 'Ростов-на-Дону', school: 'ЮФУ' },
+  { id: 'p25', name: 'Денис Егоров', firstName: 'Денис', lastName: 'Егоров', patronymic: 'Валерьевич', email: 'denis.e@example.com', phone: '+7 920 444 33 66', avatar: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?w=100&auto=format&fit=crop&q=60', role: 'Solution Architect', status: 'present', registeredAt: '27.03.2026 09:10', arrivalTime: '28.03.2026 09:55', city: 'Санкт-Петербург', school: 'СПбГУ' },
+  { id: 'p26', name: 'Олеся Романова', firstName: 'Олеся', lastName: 'Романова', patronymic: 'Ивановна', email: 'olesya@example.com', phone: '+7 926 777 55 44', avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100&auto=format&fit=crop&q=60', role: 'Agile Coach', status: 'registered', registeredAt: '27.03.2026 11:20', city: 'Москва', school: 'МГУ' },
+  { id: 'p27', name: 'Вадим Никитин', firstName: 'Вадим', lastName: 'Никитин', patronymic: 'Евгеньевич', email: 'vadim.n@example.com', phone: '+7 930 888 66 55', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&auto=format&fit=crop&q=60', role: 'Delivery Manager', status: 'present', registeredAt: '27.03.2026 14:05', arrivalTime: '28.03.2026 10:20', city: 'Воронеж', school: 'ВГУ' },
+  { id: 'p28', name: 'Алина Соболева', firstName: 'Алина', lastName: 'Соболева', patronymic: 'Руслановна', email: 'alina.s@example.com', phone: '+7 933 999 77 66', avatar: 'https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?w=100&auto=format&fit=crop&q=60', role: 'UI/UX Researcher', status: 'registered', registeredAt: '27.03.2026 15:30', city: 'Казань', school: 'КФУ' },
+  { id: 'p29', name: 'Тимур Хасанов', firstName: 'Тимур', lastName: 'Хасанов', patronymic: 'Муратович', email: 'timur.h@example.com', phone: '+998 97 777 11 22', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=60', role: 'Mobile Dev', status: 'present', registeredAt: '27.03.2026 16:50', arrivalTime: '28.03.2026 09:42', city: 'Ташкент', school: 'ТАТУ' },
+  { id: 'p30', name: 'Дильбар Рахимова', firstName: 'Дильбар', lastName: 'Рахимова', patronymic: 'Каримовна', email: 'dilbar@example.com', phone: '+998 90 999 44 55', avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=100&auto=format&fit=crop&q=60', role: 'Python Developer', status: 'registered', registeredAt: '27.03.2026 17:10', city: 'Ташкент', school: 'Вестминстерский университет' },
+  { id: 'p31', name: 'Шерзод Усманов', firstName: 'Шерзод', lastName: 'Усманов', patronymic: 'Бахтиерович', email: 'sherzod@example.com', phone: '+998 91 222 33 44', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Data Analyst', status: 'present', registeredAt: '27.03.2026 17:35', arrivalTime: '28.03.2026 10:05', city: 'Самарканд', school: 'СамГУ' },
+  { id: 'p32', name: 'Камила Юсупова', firstName: 'Камила', lastName: 'Юсупова', patronymic: 'Анваровна', email: 'kamila@example.com', phone: '+998 92 333 44 55', avatar: 'https://images.unsplash.com/photo-1594744803329-e58b31de215f?w=100&auto=format&fit=crop&q=60', role: 'Project Manager', status: 'registered', registeredAt: '27.03.2026 18:00', city: 'Бухара', school: 'БухГУ' }
 ];
+
+const getUserFIO = (user: { firstName?: string; lastName?: string; patronymic?: string; name?: string }) => {
+  if (user.lastName && user.firstName) {
+    return user.patronymic
+      ? `${user.lastName} ${user.firstName} ${user.patronymic}`
+      : `${user.lastName} ${user.firstName}`;
+  }
+  return user.name || '';
+};
+
+const getUserInitials = (user: { firstName?: string; lastName?: string; name?: string }) => {
+  if (user.lastName && user.firstName) {
+    return `${user.lastName[0]}${user.firstName[0]}`.toUpperCase();
+  }
+  if (user.name) {
+    return user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+  return '??';
+};
+
+function MarqueeText({ text, className }: { text: string, className?: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState(0);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isAnimating, setIsAnimating] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      textRef.current.style.width = 'max-content';
+      const diff = textRef.current.offsetWidth - containerRef.current.clientWidth;
+      textRef.current.style.width = '';
+      if (diff > 0) {
+        setOffset(diff + 2);
+      }
+    } else {
+      setOffset(0);
+    }
+  }, [isHovered, text]);
+
+  const active = isHovered || isAnimating;
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => { setIsHovered(true); setIsAnimating(true); }}
+      onMouseLeave={() => { 
+        setIsHovered(false);
+        if (offset === 0) setIsAnimating(false);
+      }}
+      title={text}
+    >
+      <div 
+        ref={textRef}
+        onTransitionEnd={() => { if (!isHovered) setIsAnimating(false); }}
+        className={`transition-transform ease-linear origin-left ${active ? 'w-max pr-1' : 'w-full truncate'}`}
+        style={{ 
+          transform: `translateX(-${offset}px)`,
+          transitionDuration: isHovered && offset > 0 ? `${offset / 25}s` : '0.4s',
+          transitionDelay: isHovered ? '0.3s' : '0s'
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
 
 // Mock database for Global Students Selection
 const ALL_GLOBAL_STUDENTS = [
-  { id: 'g1', name: 'Иван Сергеев', email: 'ivan@example.com', phone: '+7 900 123 45 67', city: 'Москва', school: 'Школа №1', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', role: 'Аналитик' },
-  { id: 'g2', name: 'Мария Власова', email: 'maria@example.com', phone: '+7 900 234 56 78', city: 'Санкт-Петербург', school: 'Лицей №2', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', role: 'Менеджер' },
-  { id: 'g3', name: 'Петр Николаев', email: 'petr@example.com', phone: '+7 900 345 67 89', city: 'Москва', school: 'Школа №1', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Разработчик' },
-  { id: 'g4', name: 'Анна Смирнова', email: 'anna@example.com', phone: '+7 900 456 78 90', city: 'Казань', school: 'Гимназия №3', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60', role: 'Директор' },
-  { id: 'g5', name: 'Дмитрий Орлов', email: 'dmitry@example.com', phone: '+7 900 567 89 01', city: 'Москва', school: 'МГУ', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', role: 'Ассистент' },
-  { id: 'g6', name: 'Елена Соколова', email: 'elena.s@example.com', phone: '+7 900 678 90 12', city: 'Самара', school: 'СГАУ', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60', role: 'Инженер' },
-  { id: 'g7', name: 'Сардор Каримов', email: 'sardor@example.com', phone: '+998 90 123 45 67', city: 'Ташкент', school: 'ТАТУ', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60', role: 'Специалист' },
-  { id: 'g8', name: 'Лола Умарова', email: 'lola@example.com', phone: '+998 90 234 56 78', city: 'Самарканд', school: 'СамГУ', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60', role: 'Дизайнер' },
+  { id: 'g1', name: 'Иван Сергеев', firstName: 'Иван', lastName: 'Сергеев', patronymic: 'Сергеевич', email: 'ivan@example.com', phone: '+7 900 123 45 67', city: 'Москва', school: 'Школа №1', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', role: 'Аналитик' },
+  { id: 'g2', name: 'Мария Власова', firstName: 'Мария', lastName: 'Власова', patronymic: 'Игоревна', email: 'maria@example.com', phone: '+7 900 234 56 78', city: 'Санкт-Петербург', school: 'Лицей №2', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60', role: 'Менеджер' },
+  { id: 'g3', name: 'Петр Николаев', firstName: 'Петр', lastName: 'Николаев', patronymic: 'Васильевич', email: 'petr@example.com', phone: '+7 900 345 67 89', city: 'Москва', school: 'Школа №1', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', role: 'Разработчик' },
+  { id: 'g4', name: 'Анна Смирнова', firstName: 'Анна', lastName: 'Смирнова', patronymic: '', email: 'anna@example.com', phone: '+7 900 456 78 90', city: 'Казань', school: 'Гимназия №3', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60', role: 'Директор' },
+  { id: 'g5', name: 'Дмитрий Орлов', firstName: 'Дмитрий', lastName: 'Орлов', patronymic: 'Александрович', email: 'dmitry@example.com', phone: '+7 900 567 89 01', city: 'Москва', school: 'МГУ', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', role: 'Ассистент' },
+  { id: 'g6', name: 'Елена Соколова', firstName: 'Елена', lastName: 'Соколова', patronymic: 'Дмитриевна', email: 'elena.s@example.com', phone: '+7 900 678 90 12', city: 'Самара', school: 'СГАУ', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60', role: 'Инженер' },
+  { id: 'g7', name: 'Сардор Каримов', firstName: 'Сардор', lastName: 'Каримов', patronymic: 'Алишерович', email: 'sardor@example.com', phone: '+998 90 123 45 67', city: 'Ташкент', school: 'ТАТУ', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60', role: 'Специалист' },
+  { id: 'g8', name: 'Лола Умарова', firstName: 'Лола', lastName: 'Умарова', patronymic: 'Баходировна', email: 'lola@example.com', phone: '+998 90 234 56 78', city: 'Самарканд', school: 'СамГУ', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60', role: 'Дизайнер' },
 ];
 
 // ─── Toast Component ────────────────────────────────────────────────────────
@@ -1061,7 +1133,7 @@ export default function EventDetailsPage() {
   };
 
   const filteredParticipants = participants.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
+    getUserFIO(p).toLowerCase().includes(search.toLowerCase()) || 
     p.email.toLowerCase().includes(search.toLowerCase()) || 
     p.phone.includes(search) || 
     (p.role && p.role.toLowerCase().includes(search.toLowerCase()))
@@ -1090,7 +1162,7 @@ export default function EventDetailsPage() {
       const status = getParticipantStatus(p, activeDayId);
       const arrivalTime = getParticipantArrivalTime(p, activeDayId);
       return [
-        p.name,
+        getUserFIO(p),
         p.email,
         p.phone,
         p.role || '',
@@ -1334,7 +1406,7 @@ export default function EventDetailsPage() {
         </div>
 
         {/* Tab Contents */}
-        <div className="max-w-6xl mx-auto w-full px-6 py-6 pb-24">
+        <div className="max-w-6xl mx-auto w-full px-6 py-6 pb-16">
           
           {/* TAB 1: GENERAL INFO */}
           {activeTab === 'general' && (
@@ -1567,16 +1639,12 @@ export default function EventDetailsPage() {
                                 <img src={p.avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-neutral-150 shadow-sm" />
                               ) : (
                                 <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner">
-                                  {(p.name || p.email).charAt(0).toUpperCase()}
+                                  {getUserInitials(p)}
                                 </div>
                               )}
-                              <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-neutral-800 text-[13px] truncate animate-in fade-in duration-300" title={p.name}>
-                                  {p.name || 'Не указано'}
-                                </span>
-                                <span className="text-[11px] text-neutral-400 font-medium truncate animate-in fade-in duration-300" title={p.email}>
-                                  {p.email}
-                                </span>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <MarqueeText text={getUserFIO(p) || 'Не указано'} className="font-semibold text-neutral-800 text-[13px] animate-in fade-in duration-300" />
+                                <MarqueeText text={p.email} className="text-[11px] text-neutral-400 font-medium animate-in fade-in duration-300" />
                               </div>
                             </div>
                           </td>
