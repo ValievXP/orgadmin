@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -686,22 +686,166 @@ function MultiSelectDropdown({ values, options, onChange, placeholder }: { value
   );
 }
 
+function MarqueeText({ text, className }: { text: string, className?: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState(0);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isAnimating, setIsAnimating] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      textRef.current.style.width = 'max-content';
+      const diff = textRef.current.offsetWidth - containerRef.current.clientWidth;
+      textRef.current.style.width = '';
+      if (diff > 0) {
+        setOffset(diff + 2);
+      }
+    } else {
+      setOffset(0);
+    }
+  }, [isHovered, text]);
+
+  const active = isHovered || isAnimating;
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => { setIsHovered(true); setIsAnimating(true); }}
+      onMouseLeave={() => { 
+        setIsHovered(false);
+        if (offset === 0) setIsAnimating(false);
+      }}
+      title={text}
+    >
+      <div 
+        ref={textRef}
+        onTransitionEnd={() => { if (!isHovered) setIsAnimating(false); }}
+        className={`transition-transform ease-linear origin-left ${active ? 'w-max pr-1' : 'w-full truncate'}`}
+        style={{ 
+          transform: `translateX(-${offset}px)`,
+          transitionDuration: isHovered && offset > 0 ? `${offset / 25}s` : '0.4s',
+          transitionDelay: isHovered ? '0.3s' : '0s'
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function CustomSelect({ label, options, value, onChange }: { label: string, options: string[], value: string, onChange: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery) return options;
+    return options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [options, searchQuery]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayValue = value === "" ? label : value;
+
+  return (
+    <div className="relative group w-full" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full text-left pl-3.5 pr-9 py-2 bg-neutral-50/50 border ${open ? 'border-[var(--color-admin-primary-500)] ring-2 ring-[var(--color-admin-primary-100)]' : 'border-neutral-200 hover:border-neutral-300'} rounded-xl text-[13px] text-neutral-800 font-medium transition-all flex items-center justify-between h-[42px]`}
+      >
+        <span className="truncate">{displayValue}</span>
+        <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 w-full min-w-[200px] bg-white border border-neutral-200 shadow-xl rounded-xl py-1.5 z-[150] animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[300px]">
+          <div className="px-2 pb-1.5 border-b border-neutral-100 mb-1">
+            <input
+              type="text"
+              placeholder="Поиск..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-md px-3 py-1.5 text-[13px] text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[var(--color-admin-primary-500)] focus:border-[var(--color-admin-primary-500)] placeholder:text-neutral-400"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="overflow-y-auto">
+            {!searchQuery && (
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors font-medium"
+              >
+                <span>{label} (Все)</span>
+                {value === "" && <Check className="w-4 h-4 text-neutral-900" />}
+              </button>
+            )}
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-[13px] text-neutral-400 text-center">Нет результатов</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <button
+                  type="button"
+                  key={opt}
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[13px] text-neutral-700 hover:bg-neutral-50 flex items-center justify-between transition-colors"
+                >
+                  <span className={value === opt ? "font-semibold text-neutral-900" : ""}>{opt}</span>
+                  {value === opt && <Check className="w-4 h-4 text-neutral-900" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface GlobalStudent {
   id: string;
+  initials: string;
   name: string;
   email: string;
   phone: string;
-  city: string;
-  school: string;
-  avatar?: string;
+  branch: string;
+  dept: string;
+  div: string;
+  role: string;
+  status: string;
+  visit: string | null;
+  reg: string;
 }
 
-// Mock global students
+// Mock global students matching platform users
 const ALL_GLOBAL_STUDENTS: GlobalStudent[] = [
-  { id: 'g1', name: 'Иван Сергеев', email: 'ivan@example.com', phone: '+7 900 123 45 67', city: 'Москва', school: 'Школа №1' },
-  { id: 'g2', name: 'Мария Власова', email: 'maria@example.com', phone: '+7 900 234 56 78', city: 'Санкт-Петербург', school: 'Лицей №2' },
-  { id: 'g3', name: 'Петр Николаев', email: 'petr@example.com', phone: '+7 900 345 67 89', city: 'Москва', school: 'Школа №1' },
-  { id: 'g4', name: 'Анна Смирнова', email: 'anna@example.com', phone: '+7 900 456 78 90', city: 'Казань', school: 'Гимназия №3' },
+  { id: '1', initials: 'АС', name: 'Смирнов Алексей Иванович', email: 'a.smirnov@osnova.uz', phone: '+998 90 123-45-67', branch: 'Ташкент (ГК)', dept: 'Коммерческий департамент', div: 'Отдел продаж B2B', role: 'Руководитель отдела', status: 'Работает', visit: '24/04/2026 10:30', reg: '15/01/2025 09:00' },
+  { id: '2', initials: 'МВ', name: 'Волкова Мария Сергеевна', email: 'm.volkova@osnova.uz', phone: '+998 91 234-56-78', branch: 'Ташкент (ГК)', dept: 'Маркетинг', div: 'PR и коммуникации', role: 'PR-менеджер', status: 'Работает', visit: '24/04/2026 09:15', reg: '03/03/2025 11:20' },
+  { id: '3', initials: 'ДТ', name: 'Тарасов Дмитрий Андреевич', email: 'd.tarasov@osnova.uz', phone: '+998 93 345-67-89', branch: 'Самарканд', dept: 'Служба поддержки', div: 'Первая линия', role: 'Специалист поддержки', status: 'Отпуск', visit: '20/04/2026 18:00', reg: '10/02/2025 15:45' },
+  { id: '4', initials: 'ЕК', name: 'Кузнецова Елена Александровна', email: 'e.kuznecova@osnova.uz', phone: '+998 94 456-78-90', branch: 'Ташкент (ГК)', dept: 'HR', div: 'Подбор персонала', role: 'HR Бизнес-партнер', status: 'Работает', visit: '24/04/2026 11:45', reg: '01/08/2024 10:10' },
+  { id: '5', initials: 'ТИ', name: 'Ибрагимов Тимур Бахтиярович', email: 't.ibragimov@osnova.uz', phone: '+998 99 567-89-01', branch: 'Бухара', dept: 'IT', div: 'Разработка ПО', role: 'Frontend Разработчик', status: 'Работает', visit: '24/04/2026 12:20', reg: '12/11/2025 09:30' },
+  { id: '6', initials: 'ОС', name: 'Сидорова Ольга Петровна', email: 'o.sidorova@osnova.uz', phone: '+998 97 678-90-12', branch: 'Ташкент (ГК)', dept: 'Финансы', div: 'Бухгалтерия', role: 'Главный бухгалтер', status: 'Работает', visit: '23/04/2026 17:30', reg: '05/05/2024 14:15' },
+  { id: '7', initials: 'АМ', name: 'Махмудов Алишер Рустамович', email: 'a.mahmudov@osnova.uz', phone: '+998 90 789-01-23', branch: 'Ташкент (ГК)', dept: 'Руководство', div: 'Совет директоров', role: 'Операционный директор', status: 'Работает', visit: '24/04/2026 08:50', reg: '10/01/2024 08:00' },
+  { id: '8', initials: 'ИН', name: 'Новикова Ирина Владимировна', email: 'i.novikova@osnova.uz', phone: '+998 91 890-12-34', branch: 'Фергана', dept: 'Логистика', div: 'Складской учет', role: 'Менеджер по логистике', status: 'Уволен', visit: '15/03/2026 14:10', reg: '22/09/2025 16:20' },
+  { id: '9', initials: 'РК', name: 'Каримов Рустам Маратович', email: 'r.karimov@osnova.uz', phone: '+998 93 901-23-45', branch: 'Самарканд', dept: 'Коммерческий департамент', div: 'Отдел продаж B2C', role: 'Старший менеджер', status: 'Работает', visit: null, reg: '18/06/2025 11:00' },
+  { id: '10', initials: 'СЛ', name: 'Лебедева Светлана Сергеевна', email: 's.lebedeva@osnova.uz', phone: '+998 94 012-34-56', branch: 'Ташкент (ГК)', dept: 'Продуктовая аналитика', div: 'Аналитика', role: 'Data Analyst', status: 'Работает', visit: '24/04/2026 10:15', reg: '30/10/2025 13:45' },
 ];
 
 // ─── Add Student Modal ────────────────────────────────────────────────────────
@@ -718,18 +862,91 @@ function AddStudentModal({
   onAddAll: (filters: any) => void;
 }) {
   const [search, setSearch] = useState('');
-  const [filterCity, setFilterCity] = useState<string[]>(['All']);
-  const [filterSchool, setFilterSchool] = useState<string[]>(['All']);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const filtered = ALL_GLOBAL_STUDENTS.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
-                       s.email.toLowerCase().includes(search.toLowerCase()) || 
-                       s.phone.includes(search);
-    const matchCity = filterCity.includes('All') || filterCity.includes(s.city);
-    const matchSchool = filterSchool.includes('All') || filterSchool.includes(s.school);
-    return matchSearch && matchCity && matchSchool;
-  });
+  // Settings state
+  const [settings, setSettings] = useState<any>(null);
+  
+  const [branchFilter, setBranchFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
+  const [divFilter, setDivFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('osnova_user_settings');
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    } else {
+      setSettings({
+        patronymicEnabled: true,
+        patronymicRequired: false,
+        regionEnabled: false,
+        regionRequired: false,
+        priorityFields: [
+          { id: 'p_branch', label: 'Филиал' },
+          { id: 'p_dept', label: 'Департамент' },
+          { id: 'p_div', label: 'Отдел' },
+          { id: 'p_role', label: 'Должность' },
+          { id: 'p_status', label: 'Статус' }
+        ],
+        secondaryFields: [
+          { id: 's_gender', label: 'Пол' },
+          { id: 's_age', label: 'Возраст' }
+        ]
+      });
+    }
+  }, []);
+
+  const activePriorityFields = useMemo(() => {
+    return settings?.priorityFields || [
+      { id: 'p_branch', label: 'Филиал' },
+      { id: 'p_dept', label: 'Департамент' },
+      { id: 'p_div', label: 'Отдел' },
+      { id: 'p_role', label: 'Должность' },
+      { id: 'p_status', label: 'Статус' }
+    ];
+  }, [settings]);
+
+  // Extract unique options
+  const branches = useMemo(() => Array.from(new Set(ALL_GLOBAL_STUDENTS.map(u => u.branch))), []);
+  const depts = useMemo(() => Array.from(new Set(ALL_GLOBAL_STUDENTS.map(u => u.dept))), []);
+  const divs = useMemo(() => Array.from(new Set(ALL_GLOBAL_STUDENTS.map(u => u.div))), []);
+  const roles = useMemo(() => Array.from(new Set(ALL_GLOBAL_STUDENTS.map(u => u.role))), []);
+  const statuses = useMemo(() => Array.from(new Set(ALL_GLOBAL_STUDENTS.map(u => u.status))), []);
+
+  const getFilterState = (fieldId: string, idx: number) => {
+    const fallbacks = [
+      { value: branchFilter, onChange: setBranchFilter, options: branches },
+      { value: deptFilter, onChange: setDeptFilter, options: depts },
+      { value: divFilter, onChange: setDivFilter, options: divs },
+      { value: roleFilter, onChange: setRoleFilter, options: roles },
+      { value: statusFilter, onChange: setStatusFilter, options: statuses }
+    ];
+    return fallbacks[idx % fallbacks.length];
+  };
+
+  const filtered = useMemo(() => {
+    return ALL_GLOBAL_STUDENTS.filter(s => {
+      const q = search.toLowerCase();
+      const matchSearch = !q || 
+                          s.name.toLowerCase().includes(q) || 
+                          s.email.toLowerCase().includes(q) || 
+                          s.phone.replace(/[^0-9]/g, '').includes(q.replace(/[^0-9]/g, ''));
+      
+      const matchBranch = !branchFilter || s.branch === branchFilter;
+      const matchDept = !deptFilter || s.dept === deptFilter;
+      const matchDiv = !divFilter || s.div === divFilter;
+      const matchRole = !roleFilter || s.role === roleFilter;
+      const matchStatus = !statusFilter || s.status === statusFilter;
+      
+      return matchSearch && matchBranch && matchDept && matchDiv && matchRole && matchStatus;
+    });
+  }, [search, branchFilter, deptFilter, divFilter, roleFilter, statusFilter]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
@@ -748,7 +965,7 @@ function AddStudentModal({
   };
 
   const handleAddAll = () => {
-    onAddAll({ search, filterCity, filterSchool }); // In a real app this would send filters to backend
+    onAddAll({ search, branchFilter, deptFilter, divFilter, roleFilter, statusFilter });
     const allFiltered = filtered.map(s => ({
       id: s.id, name: s.name, progress: 0, assignedDate: new Date().toISOString(), lastActivity: null, completedDate: null
     }));
@@ -757,13 +974,30 @@ function AddStudentModal({
     onClose();
   };
 
+  const renderDateTime = (dateTimeStr: string | null) => {
+    if (!dateTimeStr) {
+      return <span className="text-neutral-300 font-normal">—</span>;
+    }
+    const parts = dateTimeStr.split(' ');
+    const date = parts[0];
+    const time = parts[1] || '';
+    return (
+      <div className="flex flex-col min-w-0 items-end">
+        <span className="text-[11px] text-neutral-800 font-semibold truncate">{date}</span>
+        <span className="text-[10px] text-neutral-400 font-medium truncate mt-0.5">{time}</span>
+      </div>
+    );
+  };
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+      <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-[1200px] flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-100">
           <div>
             <h2 className="text-lg font-bold text-neutral-900">Добавить студентов</h2>
             <p className="text-[13px] text-neutral-500 mt-0.5">Выберите студентов для зачисления на курс</p>
@@ -771,7 +1005,7 @@ function AddStudentModal({
           <button onClick={onClose} className="p-2 text-neutral-400 hover:bg-neutral-100 rounded-full transition-colors"><X className="w-5 h-5" /></button>
         </div>
         
-        <div className="p-6 flex flex-col gap-4 overflow-y-auto">
+        <div className="p-6 flex flex-col gap-5 overflow-y-auto">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -784,45 +1018,34 @@ function AddStudentModal({
             />
           </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col z-[50]">
-              <label className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Город</label>
-              <MultiSelectDropdown
-                values={filterCity}
-                onChange={setFilterCity}
-                placeholder="Все города"
-                options={[
-                  { value: 'All', label: 'Все города' },
-                  { value: 'Москва', label: 'Москва' },
-                  { value: 'Санкт-Петербург', label: 'Санкт-Петербург' },
-                  { value: 'Казань', label: 'Казань' }
-                ]}
-              />
-            </div>
-            <div className="flex flex-col z-[50]">
-              <label className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 block">Учебное заведение</label>
-              <MultiSelectDropdown
-                values={filterSchool}
-                onChange={setFilterSchool}
-                placeholder="Все заведения"
-                options={[
-                  { value: 'All', label: 'Все' },
-                  { value: 'Школа №1', label: 'Школа №1' },
-                  { value: 'Лицей №2', label: 'Лицей №2' },
-                  { value: 'Гимназия №3', label: 'Гимназия №3' }
-                ]}
-              />
-            </div>
+          {/* Dynamic Filters Row */}
+          <div 
+            className="grid gap-3"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(1, activePriorityFields.length)}, minmax(0, 1fr))`
+            }}
+          >
+            {activePriorityFields.map((field: any, idx: number) => {
+              const state = getFilterState(field.id, idx);
+              return (
+                <CustomSelect 
+                  key={field.id}
+                  label={field.label} 
+                  options={state.options} 
+                  value={state.value} 
+                  onChange={state.onChange} 
+                />
+              );
+            })}
           </div>
 
-          {/* List */}
-          <div className="border border-neutral-200 rounded-xl overflow-hidden mt-2">
-            <div className="max-h-64 overflow-y-auto">
-              <table className="w-full text-left">
+          {/* Table List (Matching the Users Tab layout) */}
+          <div className="border border-neutral-200 rounded-[20px] overflow-hidden mt-2 bg-white flex flex-col">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left whitespace-nowrap table-fixed" style={{ minWidth: '1000px' }}>
                 <thead className="bg-neutral-50 sticky top-0 border-b border-neutral-100 z-10">
                   <tr>
-                    <th className="px-4 py-3 w-10">
+                    <th style={{ width: '48px' }} className="px-3 py-3 text-center">
                       <input 
                         type="checkbox" 
                         checked={selectedIds.size === filtered.length && filtered.length > 0}
@@ -830,54 +1053,104 @@ function AddStudentModal({
                           if (e.target.checked) setSelectedIds(new Set(filtered.map(s => s.id)));
                           else setSelectedIds(new Set());
                         }}
-                        className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900" 
+                        className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 cursor-pointer" 
                       />
                     </th>
-                    <th className="px-4 py-3 text-[11px] font-semibold text-neutral-500 uppercase">Студент</th>
-                    <th className="px-4 py-3 text-[11px] font-semibold text-neutral-500 uppercase">Контакты</th>
-                    <th className="px-4 py-3 text-[11px] font-semibold text-neutral-500 uppercase">Детали</th>
+                    <th style={{ width: '50px' }} className="px-3 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                    <th style={{ width: '25%' }} className="px-3 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Пользователь</th>
+                    {activePriorityFields.map((field: any, idx: number) => {
+                      const widths = [12, 14, 12, 12, 8];
+                      const wVal = widths[idx % widths.length];
+                      return (
+                        <th key={field.id} style={{ width: `${wVal}%` }} className="px-3 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate">
+                          {field.label}
+                        </th>
+                      );
+                    })}
+                    <th style={{ width: '110px' }} className="px-3 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right">Посл. визит</th>
+                    <th style={{ width: '110px' }} className="px-3 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right">Регистрация</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-neutral-400">По вашему запросу студенты не найдены</td>
+                      <td colSpan={5 + activePriorityFields.length} className="px-4 py-12 text-center text-sm text-neutral-400">Пользователи не найдены</td>
                     </tr>
-                  ) : filtered.map(s => (
-                    <tr key={s.id} className="hover:bg-neutral-50/50 cursor-pointer" onClick={() => toggleSelect(s.id)}>
-                      <td className="px-4 py-3">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedIds.has(s.id)}
-                          onChange={() => toggleSelect(s.id)}
-                          onClick={e => e.stopPropagation()}
-                          className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900" 
-                        />
-                      </td>
-                      <td className="px-4 py-3 font-medium text-sm text-neutral-900">{s.name}</td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">
-                        <div className="max-w-[120px] truncate" title={s.email}>{s.email}</div>
-                        <div className="mt-0.5">{s.phone}</div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500">
-                        <div>{s.city}</div>
-                        <div className="mt-0.5">{s.school}</div>
-                      </td>
-                    </tr>
-                  ))}
+                  ) : filtered.map((s, index) => {
+                    return (
+                      <tr 
+                        key={s.id} 
+                        className="hover:bg-neutral-50/60 cursor-pointer border-b border-neutral-50 last:border-0 transition-colors" 
+                        onClick={() => toggleSelect(s.id)}
+                      >
+                        <td className="px-3 py-3 text-center" onClick={e => e.stopPropagation()}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedIds.has(s.id)}
+                            onChange={() => toggleSelect(s.id)}
+                            className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 cursor-pointer" 
+                          />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <span className="text-[11px] text-neutral-300 tabular-nums">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 overflow-hidden">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                              {s.initials}
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <MarqueeText text={s.name} className="font-semibold text-neutral-800 text-[13px]" />
+                              <MarqueeText text={s.email} className="text-[11px] text-neutral-400 font-medium" />
+                            </div>
+                          </div>
+                        </td>
+                        {activePriorityFields.map((field: any) => {
+                          let val = '';
+                          if (field.id === 'p_branch') val = s.branch;
+                          if (field.id === 'p_dept') val = s.dept;
+                          if (field.id === 'p_div') val = s.div;
+                          if (field.id === 'p_role') val = s.role;
+                          if (field.id === 'p_status') val = s.status;
+                          
+                          if (field.id === 'p_status') {
+                            return (
+                              <td key={field.id} className="px-3 py-3 overflow-hidden">
+                                <MarqueeText text={val} className="text-[12px] font-medium text-neutral-800" />
+                              </td>
+                            );
+                          }
+                          return (
+                            <td key={field.id} className="px-3 py-3 overflow-hidden">
+                              <MarqueeText text={val} className="text-[12px] font-medium text-neutral-800" />
+                            </td>
+                          );
+                        })}
+                        <td className="px-3 py-3 truncate text-right">
+                          {renderDateTime(s.visit)}
+                        </td>
+                        <td className="px-3 py-3 truncate text-right">
+                          {renderDateTime(s.reg)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
         
-        <div className="p-4 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between rounded-b-2xl">
-          <button onClick={handleAddAll} className="text-[13px] font-medium text-[var(--color-admin-primary-600)] hover:text-[var(--color-admin-primary-700)] px-3 py-2 rounded-lg hover:bg-[var(--color-admin-primary-50)] transition-colors">
+        {/* Footer */}
+        <div className="p-5 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between rounded-b-[24px]">
+          <button onClick={handleAddAll} className="text-[13px] font-semibold text-[var(--color-admin-primary-600)] hover:text-[var(--color-admin-primary-700)] px-3 py-2 rounded-lg hover:bg-[var(--color-admin-primary-50)] transition-colors">
             Добавить всех ({filtered.length})
           </button>
           <div className="flex items-center gap-3">
-            <button onClick={onClose} className="text-[13px] font-medium text-neutral-500 hover:text-neutral-700 px-4 py-2 hover:bg-neutral-100 rounded-xl transition-colors">Отмена</button>
-            <Button variant="primary" disabled={selectedIds.size === 0} onClick={handleAddSelected} className="text-[13px] font-medium">
+            <button onClick={onClose} className="text-[13px] font-semibold text-neutral-500 hover:text-neutral-700 px-4 py-2 hover:bg-neutral-100 rounded-xl transition-colors">Отмена</button>
+            <Button variant="primary" disabled={selectedIds.size === 0} onClick={handleAddSelected} className="text-[13px] font-semibold">
               Добавить выбранных ({selectedIds.size})
             </Button>
           </div>

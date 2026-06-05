@@ -228,6 +228,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   // Modal edit states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -298,6 +299,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     setIsEditModalOpen(false);
     setToastMessage('Профиль успешно обновлен');
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDeleteProfile = () => {
+    setIsDeleteModalOpen(false);
+    setIsEditModalOpen(false);
+    setToastMessage("Пользователь успешно удален");
+    setTimeout(() => {
+      setToastMessage(null);
+      router.push('/users');
+    }, 1500);
   };
 
   const [settings, setSettings] = useState<any>(null);
@@ -1050,13 +1061,23 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 shrink-0 pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>
-                    Отмена
+                <div className="flex justify-between items-center shrink-0 pt-4 border-t border-neutral-100 mt-6">
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent font-bold cursor-pointer h-10 px-4"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                  >
+                    Удалить профиль
                   </Button>
-                  <Button type="submit" variant="primary" className="px-8 bg-black hover:bg-neutral-800 text-white rounded-xl">
-                    Сохранить
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button type="submit" variant="primary" className="px-8 bg-black hover:bg-neutral-800 text-white rounded-xl">
+                      Сохранить
+                    </Button>
+                  </div>
                 </div>
 
               </form>
@@ -1103,6 +1124,26 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               <Check className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <span className="text-[14px] font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete User Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
+          <div className="bg-white rounded-[24px] w-full max-w-[420px] shadow-2xl relative z-10 p-8 animate-in zoom-in-95 duration-200 text-center flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mb-6">
+              <Trash2 className="w-8 h-8 text-rose-500" />
+            </div>
+            <h2 className="text-[20px] font-bold text-neutral-900 mb-3 tracking-tight">Удалить профиль пользователя?</h2>
+            <p className="text-[14px] text-neutral-500 mb-8 leading-relaxed max-w-[340px]">
+              Вы действительно хотите удалить профиль пользователя <strong className="text-neutral-900 font-semibold">"{user.lastName} {user.firstName}"</strong>? Все связанные данные будут безвозвратно удалены.
+            </p>
+            <div className="flex gap-3 w-full">
+              <Button variant="outline" className="flex-1 font-semibold border-neutral-200 text-neutral-700 h-10" onClick={() => setIsDeleteModalOpen(false)}>Отмена</Button>
+              <Button className="flex-1 font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-transparent h-10" onClick={handleDeleteProfile}>Удалить</Button>
+            </div>
           </div>
         </div>
       )}
