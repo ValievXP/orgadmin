@@ -28,6 +28,7 @@ const navigation = [
   { name: "Команда", href: "/team", icon: UserCog },
   { name: "Инструменты", href: "/tools", icon: Wand2 },
   { name: "Настройки", href: "/settings", icon: Settings },
+  { name: "User View", href: "/user-view", icon: LayoutDashboard },
 ];
 
 export function Sidebar() {
@@ -52,7 +53,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-[var(--bg-surface)] border-r border-[var(--border-default)] flex flex-col h-full shrink-0">
+    <aside className="hidden md:flex w-64 bg-[var(--bg-surface)] border-r border-[var(--border-default)] flex-col h-full shrink-0">
       
       {/* Logo Zone */}
       <div className="p-4 pt-6 shrink-0 flex items-center">
