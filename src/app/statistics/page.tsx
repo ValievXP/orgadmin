@@ -2442,6 +2442,59 @@ export default function StatisticsPage() {
   const visitsTodayVal = Math.round((allVisitsData[visitsEnd]?.value ?? 0) * filterScale);
   const activeTodayVal = Math.round((allActiveData[activeEnd]?.value ?? 0) * filterScale);
 
+  const dynamicDAU = Math.max(0, Math.min(totalUsers, Math.round(142 * filterScale)));
+  const dynamicWAU = Math.max(0, Math.min(totalUsers, Math.round(210 * filterScale)));
+  const dynamicMAU = Math.max(0, Math.min(totalUsers, Math.round(238 * filterScale)));
+
+  const avgProgressSeed = 78 + Math.round((filteredUsers.length % 15) - 7);
+  const dynamicAvgProgress = Math.max(10, Math.min(100, avgProgressSeed));
+
+  const dynamicPopularCourses = useMemo(() => {
+    const base = [
+      { name: "Основы корпоративной безопасности", count: 124 },
+      { name: "Введение в безопасность", count: 89 },
+      { name: "Основы искусственного интеллекта", count: 76 },
+      { name: "Управление проектами", count: 54 },
+      { name: "Анализ данных на Python", count: 45 },
+      { name: "Основы маркетинга", count: 38 },
+      { name: "Лидерство и менеджмент", count: 32 },
+      { name: "Финансовая грамотность", count: 28 },
+      { name: "UX/UI Дизайн", count: 24 },
+      { name: "Разработка веб-приложений", count: 18 }
+    ];
+    return base
+      .map(c => ({
+        ...c,
+        count: Math.round(c.count * filterScale)
+      }))
+      .filter(c => c.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .map((c, idx) => ({ ...c, rank: idx + 1 }));
+  }, [filterScale]);
+
+  const dynamicCompletedCourses = useMemo(() => {
+    const base = [
+      { name: "Основы корпоративной безопасности", count: 82 },
+      { name: "Введение в безопасность", count: 67 },
+      { name: "Управление проектами", count: 43 },
+      { name: "Основы искусственного интеллекта", count: 31 },
+      { name: "Анализ данных на Python", count: 25 },
+      { name: "Лидерство и менеджмент", count: 18 },
+      { name: "Основы маркетинга", count: 12 },
+      { name: "Финансовая грамотность", count: 8 },
+      { name: "UX/UI Дизайн", count: 5 },
+      { name: "Разработка веб-приложений", count: 2 }
+    ];
+    return base
+      .map(c => ({
+        ...c,
+        count: Math.round(c.count * filterScale)
+      }))
+      .filter(c => c.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .map((c, idx) => ({ ...c, rank: idx + 1 }));
+  }, [filterScale]);
+
   const dynamicRegions = UZ_REGIONS.map(reg => {
     const usersCount = filteredUsers.filter(u => u.regionId === reg.id).length;
     return {
@@ -2693,21 +2746,21 @@ export default function StatisticsPage() {
               {/* DAU Card */}
               <StatCard 
                 title="DAU" 
-                value="142" 
+                value={dynamicDAU.toString()} 
                 subtitle={<span className="text-neutral-400">Активные за день</span>}
               />
 
               {/* WAU Card */}
               <StatCard 
                 title="WAU" 
-                value="210" 
+                value={dynamicWAU.toString()} 
                 subtitle={<span className="text-neutral-400">Активные за неделю</span>}
               />
 
               {/* MAU Card */}
               <StatCard 
                 title="MAU" 
-                value="238" 
+                value={dynamicMAU.toString()} 
                 subtitle={<span className="text-neutral-400">Активные за месяц</span>}
               />
 
@@ -2715,11 +2768,11 @@ export default function StatisticsPage() {
               <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
                 <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-1 truncate">Средний прогресс</h3>
                 <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-0.5">
-                  78%
+                  {dynamicAvgProgress}%
                 </div>
                 <div className="mt-auto w-full">
                   <div className="w-full bg-neutral-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '78%' }} />
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${dynamicAvgProgress}%` }} />
                   </div>
                   <span className="text-[10px] text-neutral-400 mt-1 block truncate">Завершение курсов</span>
                 </div>
@@ -3535,24 +3588,19 @@ export default function StatisticsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {[
-                        { rank: 1, name: "Основы корпоративной безопасности", count: 124 },
-                        { rank: 2, name: "Введение в безопасность", count: 89 },
-                        { rank: 3, name: "Основы искусственного интеллекта", count: 76 },
-                        { rank: 4, name: "Управление проектами", count: 54 },
-                        { rank: 5, name: "Анализ данных на Python", count: 45 },
-                        { rank: 6, name: "Основы маркетинга", count: 38 },
-                        { rank: 7, name: "Лидерство и менеджмент", count: 32 },
-                        { rank: 8, name: "Финансовая грамотность", count: 28 },
-                        { rank: 9, name: "UX/UI Дизайн", count: 24 },
-                        { rank: 10, name: "Разработка веб-приложений", count: 18 }
-                      ].map((course) => (
-                        <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                          <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                          <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                      {dynamicPopularCourses.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 font-medium">Нет данных</td>
                         </tr>
-                      ))}
+                      ) : (
+                        dynamicPopularCourses.map((course) => (
+                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
+                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
+                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
+                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3571,24 +3619,19 @@ export default function StatisticsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {[
-                        { rank: 1, name: "Основы корпоративной безопасности", count: 82 },
-                        { rank: 2, name: "Введение в безопасность", count: 67 },
-                        { rank: 3, name: "Управление проектами", count: 43 },
-                        { rank: 4, name: "Основы искусственного интеллекта", count: 31 },
-                        { rank: 5, name: "Анализ данных на Python", count: 25 },
-                        { rank: 6, name: "Лидерство и менеджмент", count: 18 },
-                        { rank: 7, name: "Основы маркетинга", count: 12 },
-                        { rank: 8, name: "Финансовая грамотность", count: 8 },
-                        { rank: 9, name: "UX/UI Дизайн", count: 5 },
-                        { rank: 10, name: "Разработка веб-приложений", count: 2 }
-                      ].map((course) => (
-                        <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                          <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                          <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                      {dynamicCompletedCourses.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 font-medium">Нет данных</td>
                         </tr>
-                      ))}
+                      ) : (
+                        dynamicCompletedCourses.map((course) => (
+                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
+                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
+                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
+                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
