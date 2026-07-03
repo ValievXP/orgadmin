@@ -2441,8 +2441,7 @@ export default function StatisticsPage() {
   const malePct = genderBaseUsers.length > 0 ? Math.round((maleCount / genderBaseUsers.length) * 100) : 0;
   const femalePct = genderBaseUsers.length > 0 ? 100 - malePct : 0;
 
-  const visitsTodayVal = Math.round((allVisitsData[visitsEnd]?.value ?? 0) * filterScale);
-  const activeTodayVal = Math.round((allActiveData[activeEnd]?.value ?? 0) * filterScale);
+  const activeSessionsVal = Math.max(0, Math.min(totalUsers, Math.round(18 * filterScale)));
 
   const getActiveUsersVal = () => {
     const baseline = activeUsersPeriod === 'day' ? 142 : activeUsersPeriod === 'week' ? 210 : activeUsersPeriod === 'month' ? 238 : 248;
@@ -2696,7 +2695,7 @@ export default function StatisticsPage() {
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             
             {/* Top Cards Row 1 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard 
                 title="Всего пользователей" 
                 value={totalUsers.toLocaleString()} 
@@ -2740,12 +2739,9 @@ export default function StatisticsPage() {
               </div>
 
               <StatCard 
-                title="Визиты сегодня" 
-                value={visitsTodayVal.toLocaleString()} 
-              />
-              <StatCard 
-                title="Активные сегодня" 
-                value={activeTodayVal.toLocaleString()} 
+                title="Активные сессии" 
+                value={activeSessionsVal.toLocaleString()} 
+                subtitle={<span className="text-neutral-400">Авторизовано устройств в текущий момент</span>}
               />
             </div>
 
