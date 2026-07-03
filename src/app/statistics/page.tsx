@@ -1514,7 +1514,8 @@ export default function StatisticsPage() {
   const [tableLastActiveSort, setTableLastActiveSort] = useState<'asc' | 'desc' | null>(null);
   const [tableRegSort, setTableRegSort] = useState<'asc' | 'desc' | null>('desc');
   const [selectedGender, setSelectedGender] = useState<'Мужской' | 'Женский' | null>(null);
-  const [uniqueVisitsPeriod, setUniqueVisitsPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [activeUsersPeriod, setActiveUsersPeriod] = useState<'day' | 'week' | 'month' | 'total'>('day');
+  const [uniqueVisitsPeriod, setUniqueVisitsPeriod] = useState<'day' | 'week' | 'month' | 'total'>('day');
 
   // Operations tab states
   const [operationsSearch, setOperationsSearch] = useState('');
@@ -2443,12 +2444,13 @@ export default function StatisticsPage() {
   const visitsTodayVal = Math.round((allVisitsData[visitsEnd]?.value ?? 0) * filterScale);
   const activeTodayVal = Math.round((allActiveData[activeEnd]?.value ?? 0) * filterScale);
 
-  const dynamicDAU = Math.max(0, Math.min(totalUsers, Math.round(142 * filterScale)));
-  const dynamicWAU = Math.max(0, Math.min(totalUsers, Math.round(210 * filterScale)));
-  const dynamicMAU = Math.max(0, Math.min(totalUsers, Math.round(238 * filterScale)));
+  const getActiveUsersVal = () => {
+    const baseline = activeUsersPeriod === 'day' ? 142 : activeUsersPeriod === 'week' ? 210 : activeUsersPeriod === 'month' ? 238 : 248;
+    return Math.max(0, Math.min(totalUsers, Math.round(baseline * filterScale)));
+  };
 
   const getUniqueVisitsVal = () => {
-    const baseline = uniqueVisitsPeriod === 'day' ? 184 : uniqueVisitsPeriod === 'week' ? 228 : 245;
+    const baseline = uniqueVisitsPeriod === 'day' ? 184 : uniqueVisitsPeriod === 'week' ? 228 : uniqueVisitsPeriod === 'month' ? 245 : 250;
     return Math.max(0, Math.min(totalUsers, Math.round(baseline * filterScale)));
   };
 
@@ -2748,38 +2750,75 @@ export default function StatisticsPage() {
             </div>
 
             {/* Top Cards Row 2 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* DAU Card */}
-              <StatCard 
-                title="DAU" 
-                value={dynamicDAU.toString()} 
-                subtitle={<span className="text-neutral-400">Активные за день</span>}
-              />
-
-              {/* WAU Card */}
-              <StatCard 
-                title="WAU" 
-                value={dynamicWAU.toString()} 
-                subtitle={<span className="text-neutral-400">Активные за неделю</span>}
-              />
-
-              {/* MAU Card */}
-              <StatCard 
-                title="MAU" 
-                value={dynamicMAU.toString()} 
-                subtitle={<span className="text-neutral-400">Активные за месяц</span>}
-              />
-
-              {/* Unique Visits Card */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2 whitespace-nowrap">Уникальные визиты</h3>
-                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-1">
-                  {getUniqueVisitsVal().toLocaleString()}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card 1: Активные пользователи */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Активные пользователи</h3>
+                  <div className="flex items-center gap-1 p-0.5 rounded-lg border border-neutral-200 bg-neutral-50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
+                    <button
+                      onClick={() => setActiveUsersPeriod('day')}
+                      title="День"
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        activeUsersPeriod === 'day'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      D
+                    </button>
+                    <button
+                      onClick={() => setActiveUsersPeriod('week')}
+                      title="Неделя"
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        activeUsersPeriod === 'week'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      W
+                    </button>
+                    <button
+                      onClick={() => setActiveUsersPeriod('month')}
+                      title="Месяц"
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        activeUsersPeriod === 'month'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      M
+                    </button>
+                    <button
+                      onClick={() => setActiveUsersPeriod('total')}
+                      title="Все время"
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        activeUsersPeriod === 'total'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      T
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-auto flex items-center justify-start">
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-auto mb-1">
+                  {getActiveUsersVal().toLocaleString()}
+                </div>
+              </div>
+
+              {/* Card 2: Уникальные визиты */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Уникальные визиты</h3>
                   <div className="flex items-center gap-1 p-0.5 rounded-lg border border-neutral-200 bg-neutral-50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                     <button
                       onClick={() => setUniqueVisitsPeriod('day')}
+                      title="День"
                       className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'day'
                           ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
@@ -2787,10 +2826,11 @@ export default function StatisticsPage() {
                       }`}
                       type="button"
                     >
-                      День
+                      D
                     </button>
                     <button
                       onClick={() => setUniqueVisitsPeriod('week')}
+                      title="Неделя"
                       className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'week'
                           ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
@@ -2798,10 +2838,11 @@ export default function StatisticsPage() {
                       }`}
                       type="button"
                     >
-                      Нед
+                      W
                     </button>
                     <button
                       onClick={() => setUniqueVisitsPeriod('month')}
+                      title="Месяц"
                       className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'month'
                           ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
@@ -2809,9 +2850,24 @@ export default function StatisticsPage() {
                       }`}
                       type="button"
                     >
-                      Мес
+                      M
+                    </button>
+                    <button
+                      onClick={() => setUniqueVisitsPeriod('total')}
+                      title="Все время"
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        uniqueVisitsPeriod === 'total'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      T
                     </button>
                   </div>
+                </div>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-auto mb-1">
+                  {getUniqueVisitsVal().toLocaleString()}
                 </div>
               </div>
             </div>
