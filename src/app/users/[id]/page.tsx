@@ -225,11 +225,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   const [activeSessionsModalOpen, setActiveSessionsModalOpen] = useState(false);
   const [sessions, setSessions] = useState([
-    { id: 's1', os: 'Windows', geo: 'Uzbekistan', date: 'May 20', browser: 'Google Chrome, HeyGen', current: false, status: 'Active' },
-    { id: 's2', os: 'Windows', geo: 'Tashkent, Uzbekistan', date: 'Apr 10', browser: 'Google Chrome, OpenAI', status: 'Inactive', inactiveDays: 84, current: false },
-    { id: 's3', os: 'Windows', geo: 'Tashkent, Uzbekistan', date: 'Jan 29', browser: 'Mozilla Firefox, HeyGen', status: 'Inactive', inactiveDays: 155, current: false },
-    { id: 's4', os: 'Mac OS', geo: 'Uzbekistan', date: '1 hour ago', browser: 'Google Chrome, GitHub', current: true, status: 'Active' },
-    { id: 's5', os: 'Mac OS', geo: 'Tashkent, Uzbekistan', date: 'Jul 3', browser: 'Google Chrome, Cloudflare', current: false, status: 'Active' }
+    { id: 's1', os: 'Windows', date: '29.01.2026 14:15', browser: 'Mozilla Firefox', current: false, status: 'Active', deviceType: 'desktop' },
+    { id: 's2', os: 'iPhone', date: 'В сети', browser: 'Safari', status: 'Active', current: false, deviceType: 'mobile' },
+    { id: 's3', os: 'Android', date: '84 дня назад', browser: 'Chrome', status: 'Inactive', inactiveDays: 84, current: false, deviceType: 'mobile' },
+    { id: 's4', os: 'Mac OS', date: '1 час назад', browser: 'Google Chrome', current: true, status: 'Active', deviceType: 'desktop' },
+    { id: 's5', os: 'Windows', date: '03.07.2026 18:22', browser: 'Яндекс.Браузер', current: false, status: 'Active', deviceType: 'desktop' }
   ]);
   const [sessionToTerm, setSessionToTerm] = useState<string | null>(null);
 
@@ -407,11 +407,11 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               <div className="flex flex-col items-center text-center border-b border-neutral-100 pb-6 mb-6 relative">
                 <button
                   onClick={() => setActiveSessionsModalOpen(true)}
-                  className="absolute top-0 right-0 p-2 rounded-xl border border-neutral-200 bg-white text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-all cursor-pointer flex items-center justify-center shadow-sm"
+                  className="absolute top-0 right-0 p-2.5 rounded-xl border border-neutral-200 bg-white text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-all cursor-pointer flex items-center justify-center shadow-sm w-9 h-9"
                   title="Активные сессии"
                   type="button"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-monitor-smartphone"><rect width="14" height="10" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/><rect width="8" height="14" x="14" y="9" rx="2"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 </button>
                 <div className="w-24 h-24 rounded-full bg-neutral-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl font-bold text-neutral-700 mb-4">
                   {getUserInitials(user)}
@@ -1136,7 +1136,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-[300] animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-6 right-6 z-[600] animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="bg-neutral-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3">
             <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -1181,25 +1181,33 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <div className="flex flex-col gap-3 overflow-y-auto max-h-[400px] pr-1">
               {sessions.map((session) => (
                 <div key={session.id} className="flex items-center justify-between p-4 rounded-xl border border-neutral-150 bg-neutral-50/50 hover:bg-neutral-50 transition-colors">
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-neutral-900 text-[15px]">{session.os}</span>
-                      {session.current && (
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
-                          Этот сеанс
-                        </span>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 shrink-0 mt-0.5">
+                      {session.deviceType === 'mobile' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-smartphone"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-monitor"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                       )}
                     </div>
-                    <div className="text-[13px] text-neutral-500 space-y-0.5">
-                      <p>Регион: <span className="text-neutral-700 font-medium">{session.geo}</span></p>
-                      <p>Активность: <span className="text-neutral-700 font-medium">{session.date}</span></p>
-                      <p>Браузер/Приложение: <span className="text-neutral-700 font-medium">{session.browser}</span></p>
-                    </div>
-                    {session.status === 'Inactive' && session.inactiveDays && (
-                      <div className="text-amber-600 text-[12px] font-medium flex items-center gap-1.5 mt-1 bg-amber-50/70 border border-amber-100 px-2.5 py-1 rounded-lg w-fit">
-                        <span>⚠️</span> ! Inactive for {session.inactiveDays} days
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-neutral-900 text-[15px]">{session.os}</span>
+                        {session.current && (
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                            Этот сеанс
+                          </span>
+                        )}
                       </div>
-                    )}
+                      <div className="text-[13px] text-neutral-500 space-y-0.5">
+                        <p>Активность: <span className="text-neutral-700 font-medium">{session.date}</span></p>
+                        <p>Браузер: <span className="text-neutral-700 font-medium">{session.browser}</span></p>
+                      </div>
+                      {session.status === 'Inactive' && session.inactiveDays && (
+                        <div className="text-amber-600 text-[12px] font-medium flex items-center gap-1.5 mt-1 bg-amber-50/70 border border-amber-100 px-2.5 py-1 rounded-lg w-fit">
+                          <span>⚠️</span> Неактивен {session.inactiveDays} дней
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
