@@ -226,9 +226,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [activeSessionsModalOpen, setActiveSessionsModalOpen] = useState(false);
   const [sessions, setSessions] = useState([
     { id: 's1', os: 'Windows', date: '29.01.2026 14:15', browser: 'Mozilla Firefox', current: false, status: 'Active', deviceType: 'desktop' },
-    { id: 's2', os: 'iPhone', date: 'В сети', browser: 'Safari', status: 'Active', current: false, deviceType: 'mobile' },
-    { id: 's3', os: 'Android', date: '84 дня назад', browser: 'Chrome', status: 'Inactive', inactiveDays: 84, current: false, deviceType: 'mobile' },
-    { id: 's4', os: 'Mac OS', date: '1 час назад', browser: 'Google Chrome', current: true, status: 'Active', deviceType: 'desktop' },
+    { id: 's2', os: 'iPhone', date: '03.07.2026 21:04', browser: 'Safari', status: 'Active', current: false, deviceType: 'mobile' },
+    { id: 's3', os: 'Android', date: '10.04.2026 09:30', browser: 'Chrome', status: 'Inactive', inactiveDays: 84, current: false, deviceType: 'mobile' },
+    { id: 's4', os: 'Mac OS', date: '03.07.2026 23:45', browser: 'Google Chrome', current: true, status: 'Active', deviceType: 'desktop' },
     { id: 's5', os: 'Windows', date: '03.07.2026 18:22', browser: 'Яндекс.Браузер', current: false, status: 'Active', deviceType: 'desktop' }
   ]);
   const [sessionToTerm, setSessionToTerm] = useState<string | null>(null);
@@ -1219,7 +1219,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                         className="text-[13px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-rose-100 transition-all cursor-pointer"
                         title="Завершить сеанс"
                       >
-                        Выйти
+                        Завершить
                       </button>
                     )}
                   </div>
