@@ -3576,62 +3576,52 @@ export default function StatisticsPage() {
             {/* Tops widgets */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Топ 10 курсов по популярности */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-neutral-900 mb-4">Топ 10 курсов по популярности</h3>
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Топ 10 курсов по популярности</h3>
                 <div className="overflow-x-auto border border-neutral-100 rounded-xl">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-neutral-100 bg-neutral-50/50">
-                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">№</th>
-                        <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
-                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Студенты (активные)</th>
-                      </tr>
-                    </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {dynamicPopularCourses.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 font-medium">Нет данных</td>
-                        </tr>
-                      ) : (
-                        dynamicPopularCourses.map((course) => (
-                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                      {Array.from({ length: 10 }).map((_, idx) => {
+                        const rank = idx + 1;
+                        const course = dynamicPopularCourses.find(c => c.rank === rank);
+                        return (
+                          <tr key={rank} className="hover:bg-neutral-50/50 transition-colors">
+                            <td className="px-4 py-3 text-center font-bold text-neutral-400 tabular-nums w-[60px]">{rank}</td>
+                            <td className="px-4 py-3 font-semibold text-neutral-800">
+                              {course ? course.name : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-neutral-900 tabular-nums w-[140px]">
+                              {course ? course.count.toLocaleString() : '—'}
+                            </td>
                           </tr>
-                        ))
-                      )}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
 
               {/* Card 2: Топ 10 курсов по завершению */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-neutral-900 mb-4">Топ 10 курсов по завершению</h3>
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Топ 10 курсов по завершению</h3>
                 <div className="overflow-x-auto border border-neutral-100 rounded-xl">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-neutral-100 bg-neutral-50/50">
-                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">№</th>
-                        <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
-                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Завершили (100%)</th>
-                      </tr>
-                    </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {dynamicCompletedCourses.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-neutral-400 font-medium">Нет данных</td>
-                        </tr>
-                      ) : (
-                        dynamicCompletedCourses.map((course) => (
-                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                      {Array.from({ length: 10 }).map((_, idx) => {
+                        const rank = idx + 1;
+                        const course = dynamicCompletedCourses.find(c => c.rank === rank);
+                        return (
+                          <tr key={rank} className="hover:bg-neutral-50/50 transition-colors">
+                            <td className="px-4 py-3 text-center font-bold text-neutral-400 tabular-nums w-[60px]">{rank}</td>
+                            <td className="px-4 py-3 font-semibold text-neutral-800">
+                              {course ? course.name : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-neutral-900 tabular-nums w-[140px]">
+                              {course ? course.count.toLocaleString() : '—'}
+                            </td>
                           </tr>
-                        ))
-                      )}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
