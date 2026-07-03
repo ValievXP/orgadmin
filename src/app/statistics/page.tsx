@@ -2742,7 +2742,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* Top Cards Row 2 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* DAU Card */}
               <StatCard 
                 title="DAU" 
@@ -2763,20 +2763,6 @@ export default function StatisticsPage() {
                 value={dynamicMAU.toString()} 
                 subtitle={<span className="text-neutral-400">Активные за месяц</span>}
               />
-
-              {/* Средний прогресс Card */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-1 truncate">Средний прогресс</h3>
-                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-0.5">
-                  {dynamicAvgProgress}%
-                </div>
-                <div className="mt-auto w-full">
-                  <div className="w-full bg-neutral-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${dynamicAvgProgress}%` }} />
-                  </div>
-                  <span className="text-[10px] text-neutral-400 mt-1 block truncate">Завершение курсов</span>
-                </div>
-              </div>
             </div>
 
             {/* Geographical Distribution: Interactive Map + Top Regions */}
@@ -3541,7 +3527,8 @@ export default function StatisticsPage() {
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">В процессе</span><span className="text-[12px] font-bold text-amber-600">{coursesStatTotals.coursesInProgress.toLocaleString()}</span></div>
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Завершено</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.coursesCompleted.toLocaleString()}</span></div>
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Сертификатов</span><span className="text-[12px] font-bold text-indigo-600">{coursesStatTotals.coursesCertificates.toLocaleString()}</span></div>
-                  <div className="flex justify-between col-span-2"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.coursesAvgTime}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.coursesAvgTime}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Ср. прогресс</span><span className="text-[12px] font-bold text-emerald-600">{dynamicAvgProgress}%</span></div>
                 </div>
               </div>
 
