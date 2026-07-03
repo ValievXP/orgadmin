@@ -223,6 +223,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
+  const [activeSessionsModalOpen, setActiveSessionsModalOpen] = useState(false);
+  const [sessions, setSessions] = useState([
+    { id: 's1', os: 'Windows', geo: 'Uzbekistan', date: 'May 20', browser: 'Google Chrome, HeyGen', current: false, status: 'Active' },
+    { id: 's2', os: 'Windows', geo: 'Tashkent, Uzbekistan', date: 'Apr 10', browser: 'Google Chrome, OpenAI', status: 'Inactive', inactiveDays: 84, current: false },
+    { id: 's3', os: 'Windows', geo: 'Tashkent, Uzbekistan', date: 'Jan 29', browser: 'Mozilla Firefox, HeyGen', status: 'Inactive', inactiveDays: 155, current: false },
+    { id: 's4', os: 'Mac OS', geo: 'Uzbekistan', date: '1 hour ago', browser: 'Google Chrome, GitHub', current: true, status: 'Active' },
+    { id: 's5', os: 'Mac OS', geo: 'Tashkent, Uzbekistan', date: 'Jul 3', browser: 'Google Chrome, Cloudflare', current: false, status: 'Active' }
+  ]);
+  const [sessionToTerm, setSessionToTerm] = useState<string | null>(null);
+
   // In a real app, you would fetch user data using params.id
   const [user, setUser] = useState(mockUser); 
 
@@ -394,7 +404,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           {/* Left Column: User Info */}
           <div className="w-full lg:w-[360px] shrink-0 flex flex-col gap-6">
             <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6">
-              <div className="flex flex-col items-center text-center border-b border-neutral-100 pb-6 mb-6">
+              <div className="flex flex-col items-center text-center border-b border-neutral-100 pb-6 mb-6 relative">
+                <button
+                  onClick={() => setActiveSessionsModalOpen(true)}
+                  className="absolute top-0 right-0 p-2 rounded-xl border border-neutral-200 bg-white text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-all cursor-pointer flex items-center justify-center shadow-sm"
+                  title="Активные сессии"
+                  type="button"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-monitor-smartphone"><rect width="14" height="10" x="2" y="3" rx="2"/><path d="M12 17v4"/><path d="M8 21h8"/><rect width="8" height="14" x="14" y="9" rx="2"/></svg>
+                </button>
                 <div className="w-24 h-24 rounded-full bg-neutral-100 border-4 border-white shadow-sm flex items-center justify-center text-3xl font-bold text-neutral-700 mb-4">
                   {getUserInitials(user)}
                 </div>
@@ -1143,6 +1161,98 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <div className="flex gap-3 w-full">
               <Button variant="outline" className="flex-1 font-semibold border-neutral-200 text-neutral-700 h-10" onClick={() => setIsDeleteModalOpen(false)}>Отмена</Button>
               <Button className="flex-1 font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-transparent h-10" onClick={handleDeleteProfile}>Удалить</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Sessions Modal */}
+      {activeSessionsModalOpen && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setActiveSessionsModalOpen(false)} />
+          <div className="bg-white rounded-[24px] w-full max-w-[550px] shadow-2xl relative z-10 p-6 animate-in zoom-in-95 duration-200 flex flex-col">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-4 mb-4">
+              <h2 className="text-[18px] font-bold text-neutral-900">Активные сессии пользователя</h2>
+              <button onClick={() => setActiveSessionsModalOpen(false)} className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-3 overflow-y-auto max-h-[400px] pr-1">
+              {sessions.map((session) => (
+                <div key={session.id} className="flex items-center justify-between p-4 rounded-xl border border-neutral-150 bg-neutral-50/50 hover:bg-neutral-50 transition-colors">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-neutral-900 text-[15px]">{session.os}</span>
+                      {session.current && (
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                          Этот сеанс
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[13px] text-neutral-500 space-y-0.5">
+                      <p>Регион: <span className="text-neutral-700 font-medium">{session.geo}</span></p>
+                      <p>Активность: <span className="text-neutral-700 font-medium">{session.date}</span></p>
+                      <p>Браузер/Приложение: <span className="text-neutral-700 font-medium">{session.browser}</span></p>
+                    </div>
+                    {session.status === 'Inactive' && session.inactiveDays && (
+                      <div className="text-amber-600 text-[12px] font-medium flex items-center gap-1.5 mt-1 bg-amber-50/70 border border-amber-100 px-2.5 py-1 rounded-lg w-fit">
+                        <span>⚠️</span> ! Inactive for {session.inactiveDays} days
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    {session.current ? (
+                      <span className="text-[12px] text-neutral-400 font-medium px-3 py-1.5">Текущий</span>
+                    ) : (
+                      <button
+                        onClick={() => setSessionToTerm(session.id)}
+                        className="text-[13px] font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-rose-100 transition-all cursor-pointer"
+                        title="Завершить сеанс"
+                      >
+                        Выйти
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Dialog (Missclick protection) */}
+      {sessionToTerm && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm" onClick={() => setSessionToTerm(null)} />
+          <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl relative z-10 p-6 animate-in zoom-in-95 duration-200 text-center flex flex-col items-center">
+            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3 className="text-[18px] font-bold text-neutral-900 mb-2">Завершить сеанс?</h3>
+            <p className="text-[14px] text-neutral-500 mb-6 leading-relaxed">
+              Действительно хотите завершить эту сессию?
+            </p>
+            <div className="flex gap-3 w-full">
+              <Button
+                variant="outline"
+                className="flex-1 font-semibold border-neutral-200 text-neutral-700 h-10"
+                onClick={() => setSessionToTerm(null)}
+              >
+                Отмена
+              </Button>
+              <Button
+                className="flex-1 font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-transparent h-10"
+                onClick={() => {
+                  setSessions(prev => prev.filter(s => s.id !== sessionToTerm));
+                  setToastMessage("Сессия успешно завершена");
+                  setTimeout(() => setToastMessage(null), 3000);
+                  setSessionToTerm(null);
+                }}
+              >
+                Завершить
+              </Button>
             </div>
           </div>
         </div>

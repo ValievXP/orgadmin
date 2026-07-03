@@ -2741,7 +2741,6 @@ export default function StatisticsPage() {
               <StatCard 
                 title="Активные сессии" 
                 value={activeSessionsVal.toLocaleString()} 
-                subtitle={<span className="text-neutral-400">Авторизовано устройств в текущий момент</span>}
               />
             </div>
 
