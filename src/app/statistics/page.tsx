@@ -2771,15 +2771,18 @@ export default function StatisticsPage() {
               />
 
               {/* Unique Visits Card */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Уникальные визиты</h3>
-                  <div className="flex items-center gap-1 p-0.5 rounded-lg border border-neutral-200 bg-neutral-50">
+              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2 whitespace-nowrap">Уникальные визиты</h3>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-1">
+                  {getUniqueVisitsVal().toLocaleString()}
+                </div>
+                <div className="mt-auto flex items-center justify-start">
+                  <div className="flex items-center gap-1 p-0.5 rounded-lg border border-neutral-200 bg-neutral-50 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
                     <button
                       onClick={() => setUniqueVisitsPeriod('day')}
-                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'day'
-                          ? 'bg-white text-neutral-800 shadow-sm'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
                           : 'text-neutral-500 hover:text-neutral-800'
                       }`}
                       type="button"
@@ -2788,9 +2791,9 @@ export default function StatisticsPage() {
                     </button>
                     <button
                       onClick={() => setUniqueVisitsPeriod('week')}
-                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'week'
-                          ? 'bg-white text-neutral-800 shadow-sm'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
                           : 'text-neutral-500 hover:text-neutral-800'
                       }`}
                       type="button"
@@ -2799,9 +2802,9 @@ export default function StatisticsPage() {
                     </button>
                     <button
                       onClick={() => setUniqueVisitsPeriod('month')}
-                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
                         uniqueVisitsPeriod === 'month'
-                          ? 'bg-white text-neutral-800 shadow-sm'
+                          ? 'bg-white text-neutral-800 shadow-sm border border-neutral-200/30'
                           : 'text-neutral-500 hover:text-neutral-800'
                       }`}
                       type="button"
@@ -2809,12 +2812,6 @@ export default function StatisticsPage() {
                       Мес
                     </button>
                   </div>
-                </div>
-                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-1">
-                  {getUniqueVisitsVal().toLocaleString()}
-                </div>
-                <div className="mt-2 text-xs font-semibold text-neutral-400">
-                  Уникальные пользователи за {uniqueVisitsPeriod === 'day' ? 'день' : uniqueVisitsPeriod === 'week' ? 'неделю' : 'месяц'}
                 </div>
               </div>
             </div>
