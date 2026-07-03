@@ -57,6 +57,7 @@ interface EventData {
   dates?: EventDate[];
   registrationDates?: RegistrationPeriod[];
   blocks?: ContentBlock[];
+  scale?: 'Внутреннее' | 'Локальное' | 'Международное';
 }
 
 interface Participant {
@@ -117,6 +118,7 @@ const INITIAL_EVENT: EventData = {
   description: 'Практический воркшоп по внедрению современных AI-инструментов и нейросетей в финансовые процессы компании. Вы разберете реальные кейсы оптимизации аналитики, аудита и подготовки отчетности.',
   lang: 'RUS',
   registrationType: 'open',
+  scale: 'Внутреннее',
   dates: [
     { id: 'd1', date: '2026-03-28', timeStart: '10:00', timeEnd: '13:00' },
     { id: 'd2', date: '2026-03-29', timeStart: '10:00', timeEnd: '13:00' },
@@ -972,7 +974,8 @@ export default function EventDetailsPage() {
         registrationType: targetEvent.registrationType || 'open',
         dates: targetEvent.dates || [],
         registrationDates: targetEvent.registrationDates || [],
-        blocks: targetEvent.blocks || []
+        blocks: targetEvent.blocks || [],
+        scale: targetEvent.scale || 'Внутреннее'
       });
 
       // Load participants unique to this event
@@ -1245,6 +1248,9 @@ export default function EventDetailsPage() {
                   </span>
                   <span className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-violet-50 text-violet-600 border-violet-200">
                     {event.type || 'Воркшоп'}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-blue-50 text-blue-600 border-blue-200">
+                    {event.scale || 'Внутреннее'}
                   </span>
                   <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${
                     event.format === 'offline' ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-cyan-50 text-cyan-600 border-cyan-200'

@@ -53,7 +53,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex w-64 bg-[var(--bg-surface)] border-r border-[var(--border-default)] flex-col h-full shrink-0">
+    <aside className="hidden md:flex w-64 bg-[var(--bg-surface)] border-r border-[var(--border-default)] flex-col h-full shrink-0 z-[300] relative">
       
       {/* Logo Zone */}
       <div className="p-4 pt-6 shrink-0 flex items-center">

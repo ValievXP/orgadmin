@@ -61,6 +61,7 @@ interface EventItem {
   lang?: 'RUS' | 'UZB' | 'ENG';
   registrationType?: 'open' | 'private';
   createdAt?: string;
+  scale?: 'Внутреннее' | 'Локальное' | 'Международное';
 }
 
 const mkId = () => `b-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -818,6 +819,7 @@ function CreateEventPageContent() {
   const [registrationType, setRegistrationType] = useState<'open' | 'private'>('open');
   const [status, setStatus] = useState<'draft' | 'registration' | 'in_progress' | 'completed'>('draft');
   const [createdAt, setCreatedAt] = useState<string>('');
+  const [scale, setScale] = useState<'Внутреннее' | 'Локальное' | 'Международное'>('Внутреннее');
   
   // Multiple event dates (multiple calendar days and times)
   const [dates, setDates] = useState<EventDate[]>([
@@ -868,6 +870,7 @@ function CreateEventPageContent() {
           setRegistrationType(found.registrationType || 'open');
           setStatus(found.status || 'draft');
           setCreatedAt(found.createdAt || '');
+          setScale(found.scale || 'Внутреннее');
         }
       }
     }
@@ -985,7 +988,8 @@ function CreateEventPageContent() {
           lang,
           registrationType,
           status,
-          createdAt: createdAt || ev.createdAt || new Date().toISOString()
+          createdAt: createdAt || ev.createdAt || new Date().toISOString(),
+          scale
         } : ev);
       } else {
         // Create new
@@ -1010,7 +1014,8 @@ function CreateEventPageContent() {
           blocks,
           lang,
           registrationType,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          scale
         };
         eventsList = [newEvent, ...eventsList];
       }
@@ -1097,13 +1102,29 @@ function CreateEventPageContent() {
           {settingsOpen && (
             <div className="p-6 space-y-6 bg-white">
               
-              {/* Type, Language and Format */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Type and Scale */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">Тип мероприятия</label>
                   <Dropdown value={type} options={typeOpts} onChange={setType} />
                 </div>
 
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">Масштаб мероприятия</label>
+                  <Dropdown
+                    value={scale}
+                    options={[
+                      { id: 'Внутреннее', label: 'Внутреннее' },
+                      { id: 'Локальное', label: 'Локальное' },
+                      { id: 'Международное', label: 'Международное' },
+                    ]}
+                    onChange={(id) => setScale(id as 'Внутреннее' | 'Локальное' | 'Международное')}
+                  />
+                </div>
+              </div>
+
+              {/* Language and Format */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">Язык</label>
                   <Dropdown 

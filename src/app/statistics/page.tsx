@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
-import { Filter, Download, MoreHorizontal, ChevronDown, ChevronLeft, ChevronRight, Users, User, ArrowUpRight, BarChart2, Calendar, Eraser, Info } from 'lucide-react';
+import { Filter, Download, MoreHorizontal, ChevronDown, ChevronLeft, ChevronRight, Users, User, ArrowUpRight, BarChart2, Calendar, Eraser, Info, Search, Check, ArrowDownAZ, ArrowUpZA, ArrowUpDown, X, MapPin, Video, CalendarDays, ChevronRight as ChevronRightIcon, Unlock, Clock } from 'lucide-react';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Brush } from 'recharts';
+
 
 // ── Deterministic mock-data generator for full timeline ──
 export interface DataPoint {
@@ -80,6 +82,168 @@ function generateFullHistory(): {
 }
 
 export const { registrations: allRegData, visits: allVisitsData, activeUsers: allActiveData } = generateFullHistory();
+
+export interface User {
+  id: number;
+  initials: string;
+  name: string;
+  email: string;
+  phone: string;
+  branch: string;
+  dept: string;
+  div: string;
+  role: string;
+  status: string;
+  visit: string | null;
+  activity: string;
+  reg: string;
+  regDateStr: string;
+  regionId: string;
+  gender: 'Мужской' | 'Женский';
+  activityMs: number;
+  regMs: number;
+}
+
+export function MarqueeText({ text, className }: { text: string; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      textRef.current.style.width = 'max-content';
+      const diff = textRef.current.offsetWidth - containerRef.current.clientWidth;
+      textRef.current.style.width = '';
+      if (diff > 0) {
+        setOffset(diff + 2);
+      }
+    } else {
+      setOffset(0);
+    }
+  }, [isHovered, text]);
+
+  const active = isHovered || isAnimating;
+
+  return (
+    <div 
+      ref={containerRef}
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => { setIsHovered(true); setIsAnimating(true); }}
+      onMouseLeave={() => { 
+        setIsHovered(false);
+        if (offset === 0) setIsAnimating(false);
+      }}
+      title={text}
+    >
+      <div 
+        ref={textRef}
+        onTransitionEnd={() => { if (!isHovered) setIsAnimating(false); }}
+        className={`transition-transform ease-linear origin-left ${active ? 'w-max pr-1' : 'w-full truncate'}`}
+        style={{ 
+          transform: `translateX(-${offset}px)`,
+          transitionDuration: isHovered && offset > 0 ? `${offset / 25}s` : '0.4s',
+          transitionDelay: isHovered ? '0.3s' : '0s'
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+export function generateMockUsersList(): User[] {
+  const rand = mulberry32(777);
+  const firstNamesM = ['Алексей', 'Дмитрий', 'Тимур', 'Рустам', 'Алишер', 'Сергей', 'Андрей', 'Иван', 'Павел', 'Максим', 'Сардор', 'Жахонгир', 'Бобур', 'Анвар', 'Дониёр'];
+  const lastNamesM = ['Смирнов', 'Тарасов', 'Ибрагимов', 'Каримов', 'Махмудов', 'Петров', 'Иванов', 'Васильев', 'Алиев', 'Усманов', 'Абдуллаев', 'Рахимов', 'Хасанов', 'Кадыров', 'Юсупов'];
+  const patroM = ['Иванович', 'Андреевич', 'Бахтиярович', 'Маратович', 'Рустамович', 'Сергеевич', 'Петрович', 'Александрович', 'Дмитриевич', 'Владимирович', 'Шокирович', 'Фаррухович'];
+
+  const firstNamesF = ['Мария', 'Елена', 'Ольга', 'Ирина', 'Светлана', 'Анна', 'Наталья', 'Татьяна', 'Екатерина', 'Юлия', 'Лола', 'Дильноза', 'Шахноза', 'Мадина', 'Нигора'];
+  const lastNamesF = ['Волкова', 'Кузнецова', 'Сидорова', 'Новикова', 'Лебедева', 'Морозова', 'Попова', 'Соколова', 'Васильева', 'Алиева', 'Каримова', 'Абдуллаева', 'Рахимова'];
+  const patroF = ['Сергеевна', 'Александровна', 'Петровна', 'Владимировна', 'Ивановна', 'Дмитриевна', 'Николаевна', 'Бахтияровна', 'Рустамовна', 'Анваровна', 'Фархадовна'];
+
+  const branches = ["Ташкентский филиал", "Самаркандский филиал", "Бухарский филиал"];
+  const depts = ["Разработка", "Маркетинг", "Продажи", "Поддержка"];
+  const divs = ["Frontend", "Backend", "UI/UX", "SEO"];
+  const roles = ["Junior Developer", "Middle Developer", "Senior Developer", "Team Lead"];
+  const statuses = ["Работает", "Отпуск", "Уволен"];
+  const regions = ['UZQR', 'UZXO', 'UZNW', 'UZBU', 'UZQA', 'UZSU', 'UZSA', 'UZJI', 'UZSI', 'UZTK', 'UZTO', 'UZNG', 'UZAN', 'UZFA'];
+
+  const list: User[] = [];
+  for (let i = 1; i <= 250; i++) {
+    const isMale = rand() > 0.45;
+    const gender = isMale ? 'Мужской' : 'Женский';
+    const firstName = isMale ? firstNamesM[Math.floor(rand() * firstNamesM.length)] : firstNamesF[Math.floor(rand() * firstNamesF.length)];
+    const lastName = isMale ? lastNamesM[Math.floor(rand() * lastNamesM.length)] : lastNamesF[Math.floor(rand() * lastNamesF.length)];
+    const patronymic = isMale ? patroM[Math.floor(rand() * patroM.length)] : patroF[Math.floor(rand() * patroF.length)];
+    const name = `${lastName} ${firstName} ${patronymic}`;
+    const initials = `${lastName[0]}${firstName[0]}`;
+    
+    const emailName = name.split(' ').map(n => n.toLowerCase()).join('.');
+    const email = `${emailName}@osnova.uz`;
+    const phone = `+998 9${Math.floor(rand() * 10)} ${Math.floor(rand() * 900 + 100)}-${Math.floor(rand() * 90 + 10)}-${Math.floor(rand() * 90 + 10)}`;
+    const branch = branches[Math.floor(rand() * branches.length)];
+    const dept = depts[Math.floor(rand() * depts.length)];
+    const div = divs[Math.floor(rand() * divs.length)];
+    const role = roles[Math.floor(rand() * roles.length)];
+    const status = statuses[Math.floor(rand() * statuses.length)];
+    
+    const regStartTimestamp = new Date(2024, 0, 1).getTime();
+    const regEndTimestamp = new Date(2026, 5, 1).getTime();
+    const regTime = regStartTimestamp + rand() * (regEndTimestamp - regStartTimestamp);
+    const regDate = new Date(regTime);
+    const regDateStr = `${regDate.getFullYear()}-${String(regDate.getMonth() + 1).padStart(2, '0')}-${String(regDate.getDate()).padStart(2, '0')}`;
+    const regDisplay = `${String(regDate.getDate()).padStart(2, '0')}/${String(regDate.getMonth() + 1).padStart(2, '0')}/${regDate.getFullYear()} ${String(regDate.getHours()).padStart(2, '0')}:${String(regDate.getMinutes()).padStart(2, '0')}`;
+
+    const visitTime = regTime + rand() * (new Date(2026, 5, 2).getTime() - regTime);
+    const visitDate = new Date(visitTime);
+    const visitDisplay = rand() > 0.08 ? `${String(visitDate.getDate()).padStart(2, '0')}/${String(visitDate.getMonth() + 1).padStart(2, '0')}/${visitDate.getFullYear()} ${String(visitDate.getHours()).padStart(2, '0')}:${String(visitDate.getMinutes()).padStart(2, '0')}` : null;
+
+    const activityDate = new Date(visitDisplay ? visitTime : regTime);
+    const activityDisplay = `${String(activityDate.getDate()).padStart(2, '0')}/${String(activityDate.getMonth() + 1).padStart(2, '0')}/${activityDate.getFullYear()} ${String(activityDate.getHours()).padStart(2, '0')}:${String(activityDate.getMinutes()).padStart(2, '0')}`;
+
+    let regionId = 'UZTK';
+    const rVal = rand();
+    if (rVal < 0.38) regionId = 'UZTK';
+    else if (rVal < 0.55) regionId = 'UZSA';
+    else if (rVal < 0.67) regionId = 'UZBU';
+    else if (rVal < 0.73) regionId = 'UZTO';
+    else if (rVal < 0.78) regionId = 'UZFA';
+    else if (rVal < 0.83) regionId = 'UZAN';
+    else if (rVal < 0.88) regionId = 'UZNG';
+    else if (rVal < 0.91) regionId = 'UZQA';
+    else if (rVal < 0.94) regionId = 'UZQR';
+    else if (rVal < 0.96) regionId = 'UZNW';
+    else if (rVal < 0.98) regionId = 'UZXO';
+    else regionId = regions[Math.floor(rand() * regions.length)];
+
+    list.push({
+      id: i,
+      initials,
+      name,
+      email,
+      phone,
+      branch,
+      dept,
+      div,
+      role,
+      status,
+      visit: visitDisplay,
+      activity: activityDisplay,
+      reg: regDisplay,
+      regDateStr,
+      regionId,
+      gender,
+      activityMs: visitDisplay ? visitTime : regTime,
+      regMs: regTime
+    });
+  }
+  return list;
+}
+
+export const staticUsersList = generateMockUsersList();
+
 
 // Hourly breakdown generator for zoom-to-date
 export interface HourlyPoint {
@@ -247,24 +411,228 @@ const UZ_REGIONS: RegionData[] = [
   }
 ];
 
-// Data mocks for Courses Tab
-const coursesRatingData = [
-  { date: 'Jan 1', rating: 4.8 },
-  { date: 'Jan 15', rating: 4.5 },
-  { date: 'Feb 1', rating: 4.2 },
-  { date: 'Feb 15', rating: 4.9 },
-  { date: 'Mar 1', rating: 4.6 },
-  { date: 'Mar 15', rating: 4.7 },
-  { date: 'Apr 1', rating: 4.85 },
+// ── Enhanced Courses Tab Data ──
+
+interface CourseDetail {
+  id: string;
+  title: string;
+  language: 'RUS' | 'UZB';
+  createdAt: string;
+  assigned: number;
+  inProgress: number;
+  completed: number;
+  certificates: number;
+  avgTime: string;
+}
+
+interface LessonDetail {
+  id: string;
+  courseId: string;
+  title: string;
+  language: 'RUS' | 'UZB';
+  createdAt: string;
+  started: number;
+  inProgress: number;
+  completed: number;
+  avgTime: string;
+  csi: number;
+}
+
+interface TestDetail {
+  id: string;
+  courseId: string;
+  title: string;
+  language: 'RUS' | 'UZB';
+  createdAt: string;
+  started: number;
+  inProgress: number;
+  completed: number;
+  avgTime: string;
+  passed: number;
+  failed: number;
+}
+
+interface CourseEnrollment {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userInitials: string;
+  courseId: string;
+  courseName: string;
+  assignedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  avgTime: string;
+  progress: number;
+}
+
+interface LessonEnrollment {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userInitials: string;
+  lessonId: string;
+  lessonName: string;
+  courseName: string;
+  assignedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  avgTime: string;
+  rating: number | null;
+}
+
+interface TestEnrollment {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userInitials: string;
+  testId: string;
+  testName: string;
+  courseName: string;
+  assignedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  avgTime: string;
+  status: 'Успешно' | 'Провалено' | null;
+  correctAnswers: string | null;
+}
+
+const COURSES_DATA: CourseDetail[] = [
+  { id: 'c1', title: 'Введение в безопасность', language: 'RUS', createdAt: '15/01/2025 09:00', assigned: 1842, inProgress: 312, completed: 1204, certificates: 1180, avgTime: '4ч 25м' },
+  { id: 'c2', title: 'Time Management', language: 'RUS', createdAt: '02/03/2025 10:30', assigned: 1356, inProgress: 248, completed: 876, certificates: 850, avgTime: '3ч 10м' },
+  { id: 'c3', title: 'B2B Sales Pro', language: 'RUS', createdAt: '18/04/2025 14:00', assigned: 986, inProgress: 156, completed: 642, certificates: 620, avgTime: '5ч 40м' },
+  { id: 'c4', title: 'Основы Excel', language: 'RUS', createdAt: '05/06/2025 08:15', assigned: 2104, inProgress: 398, completed: 1512, certificates: 1490, avgTime: '2ч 55м' },
+  { id: 'c5', title: 'Generative AI', language: 'UZB', createdAt: '22/08/2025 11:45', assigned: 756, inProgress: 204, completed: 418, certificates: 400, avgTime: '3ч 50м' },
 ];
 
-const courseProgressMock = [
-  { title: 'Введение в безопасность', active: 4848, completed: 12048, rate: 85 },
-  { title: 'Time Management', active: 3141, completed: 11042, rate: 92 },
-  { title: 'B2B Sales Pro', active: 2066, completed: 9837, rate: 76 },
-  { title: 'Основы Excel', active: 1832, completed: 5419, rate: 88 },
-  { title: 'Generative AI', active: 1417, completed: 4312, rate: 90 },
+const LESSONS_DATA: LessonDetail[] = [
+  { id: 'l1', courseId: 'c1', title: 'Введение в корпоративную безопасность', language: 'RUS', createdAt: '15/01/2025 09:00', started: 1680, inProgress: 124, completed: 1520, avgTime: '32м', csi: 4.7 },
+  { id: 'l2', courseId: 'c1', title: 'Информационная безопасность и пароли', language: 'RUS', createdAt: '15/01/2025 09:00', started: 1540, inProgress: 98, completed: 1380, avgTime: '28м', csi: 4.5 },
+  { id: 'l3', courseId: 'c1', title: 'Физическая безопасность в офисе', language: 'RUS', createdAt: '15/01/2025 09:00', started: 1420, inProgress: 86, completed: 1290, avgTime: '25м', csi: 4.3 },
+  { id: 'l4', courseId: 'c2', title: 'Матрица Эйзенхауэра', language: 'RUS', createdAt: '02/03/2025 10:30', started: 1210, inProgress: 112, completed: 1050, avgTime: '35м', csi: 4.8 },
+  { id: 'l5', courseId: 'c2', title: 'Правило помодоро и концентрация', language: 'RUS', createdAt: '02/03/2025 10:30', started: 1080, inProgress: 96, completed: 940, avgTime: '22м', csi: 4.6 },
+  { id: 'l6', courseId: 'c3', title: 'Холодные звонки и выход на ЛПР', language: 'RUS', createdAt: '18/04/2025 14:00', started: 820, inProgress: 78, completed: 710, avgTime: '42м', csi: 4.2 },
+  { id: 'l7', courseId: 'c3', title: 'Работа с возражениями клиентов', language: 'RUS', createdAt: '18/04/2025 14:00', started: 780, inProgress: 64, completed: 680, avgTime: '38м', csi: 4.4 },
+  { id: 'l8', courseId: 'c4', title: 'Формулы и базовые вычисления', language: 'RUS', createdAt: '05/06/2025 08:15', started: 1920, inProgress: 186, completed: 1680, avgTime: '30м', csi: 4.9 },
+  { id: 'l9', courseId: 'c4', title: 'Сводные таблицы и визуализация', language: 'RUS', createdAt: '05/06/2025 08:15', started: 1750, inProgress: 172, completed: 1520, avgTime: '35м', csi: 4.7 },
+  { id: 'l10', courseId: 'c5', title: 'Основы Prompt Engineering', language: 'UZB', createdAt: '22/08/2025 11:45', started: 640, inProgress: 102, completed: 498, avgTime: '40м', csi: 4.6 },
+  { id: 'l11', courseId: 'c5', title: 'Использование AI в повседневной рутине', language: 'UZB', createdAt: '22/08/2025 11:45', started: 580, inProgress: 94, completed: 446, avgTime: '45м', csi: 4.5 },
 ];
+
+const TESTS_DATA: TestDetail[] = [
+  { id: 't1', courseId: 'c1', title: 'Тест: Стандарты безопасности', language: 'RUS', createdAt: '15/01/2025 09:00', started: 1380, inProgress: 42, completed: 1290, avgTime: '18м', passed: 1086, failed: 204 },
+  { id: 't2', courseId: 'c1', title: 'Тест: Защита личных данных', language: 'RUS', createdAt: '15/01/2025 09:00', started: 1260, inProgress: 36, completed: 1180, avgTime: '22м', passed: 1010, failed: 170 },
+  { id: 't3', courseId: 'c2', title: 'Тест: Оценка навыков планирования', language: 'RUS', createdAt: '02/03/2025 10:30', started: 1020, inProgress: 28, completed: 960, avgTime: '15м', passed: 864, failed: 96 },
+  { id: 't4', courseId: 'c3', title: 'Тест: Продажи по этапам сделки', language: 'RUS', createdAt: '18/04/2025 14:00', started: 710, inProgress: 24, completed: 660, avgTime: '25м', passed: 496, failed: 164 },
+  { id: 't5', courseId: 'c4', title: 'Тест: Формулы и функции', language: 'RUS', createdAt: '05/06/2025 08:15', started: 1680, inProgress: 52, completed: 1580, avgTime: '20м', passed: 1440, failed: 140 },
+  { id: 't6', courseId: 'c5', title: 'Тест: Этика использования AI', language: 'UZB', createdAt: '22/08/2025 11:45', started: 498, inProgress: 18, completed: 450, avgTime: '16м', passed: 396, failed: 54 },
+];
+
+// ── Generate Enrollment Records ──
+function generateEnrollments() {
+  const r = mulberry32(42);
+  const fmt = (d: Date) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const users = staticUsersList;
+  const courseEnrollments: CourseEnrollment[] = [];
+  const lessonEnrollments: LessonEnrollment[] = [];
+  const testEnrollments: TestEnrollment[] = [];
+
+  for (const user of users) {
+    // Each user is assigned to 1-3 courses
+    const courseCount = Math.floor(r() * 3) + 1;
+    const shuffled = [...COURSES_DATA].sort(() => r() - 0.5);
+    const assignedCourses = shuffled.slice(0, courseCount);
+
+    for (const course of assignedCourses) {
+      const assignTs = user.regMs + r() * 30 * 86400000;
+      const assignDate = new Date(assignTs);
+      const hasStarted = r() > 0.1;
+      const startTs = hasStarted ? assignTs + r() * 5 * 86400000 : 0;
+      const startDate = hasStarted ? new Date(startTs) : null;
+      const progress = hasStarted ? (r() > 0.3 ? Math.floor(r() * 60 + 40) : Math.floor(r() * 40)) : 0;
+      const isCompleted = progress === 100 || (hasStarted && r() > 0.45);
+      const finalProgress = isCompleted ? 100 : progress;
+      const completeTs = isCompleted ? startTs + r() * 15 * 86400000 : 0;
+      const completeDate = isCompleted ? new Date(completeTs) : null;
+
+      courseEnrollments.push({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userInitials: user.initials,
+        courseId: course.id,
+        courseName: course.title,
+        assignedAt: fmt(assignDate),
+        startedAt: startDate ? fmt(startDate) : null,
+        completedAt: completeDate ? fmt(completeDate) : null,
+        avgTime: isCompleted ? `${Math.floor(r() * 5 + 1)}ч ${Math.floor(r() * 50 + 10)}м` : '—',
+        progress: finalProgress,
+      });
+
+      // Lessons for this course
+      const courseLessons = LESSONS_DATA.filter(l => l.courseId === course.id);
+      for (const lesson of courseLessons) {
+        const lAssignTs = assignTs + r() * 2 * 86400000;
+        const lStarted = hasStarted && r() > 0.15;
+        const lStartTs = lStarted ? lAssignTs + r() * 3 * 86400000 : 0;
+        const lCompleted = lStarted && r() > 0.3;
+        const lCompleteTs = lCompleted ? lStartTs + r() * 86400000 : 0;
+
+        lessonEnrollments.push({
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          userInitials: user.initials,
+          lessonId: lesson.id,
+          lessonName: lesson.title,
+          courseName: course.title,
+          assignedAt: fmt(new Date(lAssignTs)),
+          startedAt: lStarted ? fmt(new Date(lStartTs)) : null,
+          completedAt: lCompleted ? fmt(new Date(lCompleteTs)) : null,
+          avgTime: lCompleted ? `${Math.floor(r() * 40 + 10)}м` : '—',
+          rating: lCompleted && r() > 0.35 ? Math.floor(r() * 5) + 1 : null,
+        });
+      }
+
+      // Tests for this course
+      const courseTests = TESTS_DATA.filter(t => t.courseId === course.id);
+      for (const test of courseTests) {
+        const tAssignTs = assignTs + r() * 5 * 86400000;
+        const tStarted = hasStarted && r() > 0.2;
+        const tStartTs = tStarted ? tAssignTs + r() * 4 * 86400000 : 0;
+        const tCompleted = tStarted && r() > 0.25;
+        const tCompleteTs = tCompleted ? tStartTs + r() * 2 * 86400000 : 0;
+        const totalQ = Math.floor(r() * 6) + 8;
+        const correctQ = tCompleted ? Math.floor(r() * (totalQ - 3)) + 3 : 0;
+        const passThreshold = Math.floor(totalQ * 0.6);
+
+        testEnrollments.push({
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          userInitials: user.initials,
+          testId: test.id,
+          testName: test.title,
+          courseName: test.title.replace('Тест: ', ''),
+          assignedAt: fmt(new Date(tAssignTs)),
+          startedAt: tStarted ? fmt(new Date(tStartTs)) : null,
+          completedAt: tCompleted ? fmt(new Date(tCompleteTs)) : null,
+          avgTime: tCompleted ? `${Math.floor(r() * 20 + 8)}м` : '—',
+          status: tCompleted ? (correctQ >= passThreshold ? 'Успешно' : 'Провалено') : null,
+          correctAnswers: tCompleted ? `${correctQ}/${totalQ}` : null,
+        });
+      }
+    }
+  }
+  return { courseEnrollments, lessonEnrollments, testEnrollments };
+}
+
+// Lazy-init enrollments after staticUsersList is ready
+let _enrollmentsCache: ReturnType<typeof generateEnrollments> | null = null;
+function getEnrollments() {
+  if (!_enrollmentsCache) _enrollmentsCache = generateEnrollments();
+  return _enrollmentsCache;
+}
 
 // Data mocks for Tests Tab
 const testsScoreTrendData = [
@@ -285,52 +653,262 @@ const testsProgressMock = [
   { title: 'Тест: Generative AI в работе', active: 310, completed: 1890, rate: 84 },
 ];
 
-// Dynamic relations for Courses filters
-const COURSES_DATA = [
-  { id: 'c1', title: 'Введение в безопасность' },
-  { id: 'c2', title: 'Time Management' },
-  { id: 'c3', title: 'B2B Sales Pro' },
-  { id: 'c4', title: 'Основы Excel' },
-  { id: 'c5', title: 'Generative AI' },
-];
-
-const LESSONS_DATA = [
-  { id: 'l1', courseId: 'c1', title: 'Введение в корпоративную безопасность' },
-  { id: 'l2', courseId: 'c1', title: 'Информационная безопасность и пароли' },
-  { id: 'l3', courseId: 'c1', title: 'Физическая безопасность в офисе' },
-  { id: 'l4', courseId: 'c2', title: 'Матрица Эйзенхауэра' },
-  { id: 'l5', courseId: 'c2', title: 'Правило помодоро и концентрация' },
-  { id: 'l6', courseId: 'c3', title: 'Холодные звонки и выход на ЛПР' },
-  { id: 'l7', courseId: 'c3', title: 'Работа с возражениями клиентов' },
-  { id: 'l8', courseId: 'c4', title: 'Формулы и базовые вычисления' },
-  { id: 'l9', courseId: 'c4', title: 'Сводные таблицы и визуализация' },
-  { id: 'l10', courseId: 'c5', title: 'Основы Prompt Engineering' },
-  { id: 'l11', courseId: 'c5', title: 'Использование AI в повседневной рутине' },
-];
-
-const TESTS_DATA = [
-  { id: 't1', courseId: 'c1', title: 'Тест: Стандарты безопасности' },
-  { id: 't2', courseId: 'c1', title: 'Тест: Защита личных данных' },
-  { id: 't3', courseId: 'c2', title: 'Тест: Оценка навыков планирования' },
-  { id: 't4', courseId: 'c3', title: 'Тест: Продажи по этапам сделки' },
-  { id: 't5', courseId: 'c4', title: 'Тест: Формулы и функции' },
-  { id: 't6', courseId: 'c5', title: 'Тест: Этика использования AI' },
-];
-
 // Data mocks for Events Tab
-const eventAttendanceData = [
-  { name: 'Основы искусственного интеллекта', registered: 111, present: 32, absent: 79 },
-  { name: 'Воркшоп по Figma UI/UX', registered: 85, present: 64, absent: 21 },
-  { name: 'Безопасность корпоративной сети', registered: 150, present: 142, absent: 8 },
-  { name: 'Методы криптозащиты', registered: 90, present: 52, absent: 38 },
+export interface MOCK_EventItem {
+  id: string;
+  title: string;
+  type: string;
+  format: 'online' | 'offline';
+  date: string;
+  timeStart: string;
+  timeEnd: string;
+  speakers: string;
+  location: string;
+  status: 'draft' | 'registration' | 'in_progress' | 'completed';
+  registrationOpen: boolean;
+  participants: number;
+  participantLimit: number;
+  parentId: string | null;
+  lang: 'RUS' | 'UZB' | 'ENG';
+  registrationType: 'open' | 'private';
+  createdAt: string;
+}
+
+export const STATS_MOCK_EVENTS: MOCK_EventItem[] = [
+  { id: 'EVT-001', title: 'Основы искусственного интеллекта', type: 'Воркшоп', format: 'offline', date: '2026-03-28', timeStart: '10:00', timeEnd: '13:00', speakers: 'Азиз Каримов', location: 'Главный офис, Зал A', status: 'completed', registrationOpen: true, participants: 47, participantLimit: 60, parentId: 'f2', lang: 'RUS', registrationType: 'open', createdAt: '2026-05-10T10:00:00.000Z' },
+  { id: 'EVT-002', title: 'Эффективные переговоры', type: 'Тренинг', format: 'offline', date: '2026-04-02', timeStart: '09:00', timeEnd: '17:00', speakers: 'Бизнес-тренеры OCA', location: 'Учебный центр, комната 3', status: 'completed', registrationOpen: true, participants: 30, participantLimit: 30, parentId: 'f1', lang: 'UZB', registrationType: 'private', createdAt: '2026-05-12T14:30:00.000Z' },
+  { id: 'EVT-003', title: 'Финансовый риск-менеджмент', type: 'Вебинар', format: 'online', date: '2026-04-10', timeStart: '14:00', timeEnd: '16:00', speakers: 'Фаррух Юсупов, Елена Смирнова', location: 'Zoom трансляция', status: 'completed', registrationOpen: true, participants: 18, participantLimit: 100, parentId: 'f2', lang: 'ENG', registrationType: 'open', createdAt: '2026-05-15T09:15:00.000Z' },
+  { id: 'EVT-004', title: 'Digital Banking Summit', type: 'Конференция', format: 'offline', date: '2026-03-15', timeStart: '09:00', timeEnd: '18:00', speakers: 'Приглашенные спикеры', location: 'Hyatt Regency Tashkent', status: 'completed', registrationOpen: false, participants: 87, participantLimit: 120, parentId: null, lang: 'RUS', registrationType: 'open', createdAt: '2026-05-18T18:00:00.000Z' },
+  { id: 'EVT-005', title: 'Excel продвинутый уровень', type: 'Мастер-класс', format: 'offline', date: '2026-05-20', timeStart: '10:00', timeEnd: '12:00', speakers: 'Мадина Рахимова', location: 'Главный офис, Зал B', status: 'completed', registrationOpen: false, participants: 22, participantLimit: 25, parentId: 'f1', lang: 'RUS', registrationType: 'private', createdAt: '2026-05-20T11:45:00.000Z' },
+  { id: 'EVT-006', title: 'Летний тимбилдинг', type: 'Тимбилдинг', format: 'offline', date: '2026-06-12', timeStart: '12:00', timeEnd: '18:00', speakers: 'HR-департамент', location: 'Зона отдыха "Чарвак"', status: 'completed', registrationOpen: true, participants: 12, participantLimit: 50, parentId: 'f3', lang: 'UZB', registrationType: 'open', createdAt: '2026-05-22T08:00:00.000Z' },
 ];
+
+export interface EventUserRecord {
+  id: string;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userInitials: string;
+  eventId: string;
+  eventTitle: string;
+  registeredAt: string;
+  status: 'Присутствует' | 'Ожидание' | 'Отсутствует';
+  checkedInAt: string | null;
+  daysAttended: string;
+  branch: string;
+  dept: string;
+  div: string;
+  role: string;
+  userStatus: string;
+}
+
+export function generateEventUserRecords(): EventUserRecord[] {
+  const rand = mulberry32(12345);
+  const records: EventUserRecord[] = [];
+  
+  STATS_MOCK_EVENTS.forEach(ev => {
+    const numRegs = ev.participants || Math.floor(rand() * 40 + 15);
+    const shuffledUsers = [...staticUsersList].sort(() => rand() - 0.5);
+    const chosenUsers = shuffledUsers.slice(0, numRegs);
+    
+    chosenUsers.forEach((user) => {
+      const r = rand();
+      let status: 'Присутствует' | 'Ожидание' | 'Отсутствует' = 'Присутствует';
+      if (r < 0.15) status = 'Отсутствует';
+      else if (r < 0.25) status = 'Ожидание';
+      
+      const eventDate = new Date(ev.date);
+      const regDaysBefore = 1 + Math.floor(rand() * 10);
+      const regTime = new Date(eventDate.getTime() - regDaysBefore * 24 * 60 * 60 * 1000 + Math.floor(rand() * 12 * 3600 * 1000));
+      const registeredAt = `${String(regTime.getDate()).padStart(2, '0')}/${String(regTime.getMonth() + 1).padStart(2, '0')}/${regTime.getFullYear()} ${String(regTime.getHours()).padStart(2, '0')}:${String(regTime.getMinutes()).padStart(2, '0')}`;
+      
+      let checkedInAt: string | null = null;
+      let daysAttended = 'Не посещал';
+      
+      if (status === 'Присутствует') {
+        const checkInTime = new Date(eventDate.getTime() - Math.floor(rand() * 30 * 60 * 1000));
+        checkedInAt = `${String(checkInTime.getDate()).padStart(2, '0')}/${String(checkInTime.getMonth() + 1).padStart(2, '0')}/${checkInTime.getFullYear()} ${String(checkInTime.getHours()).padStart(2, '0')}:${String(checkInTime.getMinutes()).padStart(2, '0')}`;
+        
+        if (ev.id === 'EVT-002') {
+          const daysOption = rand();
+          daysAttended = daysOption > 0.4 ? 'День 1, День 2' : 'День 1';
+        } else if (ev.id === 'EVT-004') {
+          const daysOption = rand();
+          daysAttended = daysOption > 0.6 ? 'День 1, День 2, День 3' : daysOption > 0.2 ? 'День 1, День 2' : 'День 1';
+        } else {
+          daysAttended = 'День 1';
+        }
+      }
+      
+      records.push({
+        id: `${ev.id}-${user.id}`,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userInitials: user.initials,
+        eventId: ev.id,
+        eventTitle: ev.title,
+        registeredAt,
+        status,
+        checkedInAt,
+        daysAttended,
+        branch: user.branch,
+        dept: user.dept,
+        div: user.div,
+        role: user.role,
+        userStatus: user.status
+      });
+    });
+  });
+  
+  return records;
+}
 
 // Data mocks for Surveys Tab
-const surveyCompletionData = [
-  { name: 'Опрос удовлетворенности', total: 142, completed: 118, rate: 83 },
-  { name: 'Опрос по адаптации', total: 95, completed: 88, rate: 92 },
-  { name: 'Оценка условий офиса', total: 320, completed: 150, rate: 47 },
+export interface MOCK_SurveyItem {
+  id: string;
+  title: string;
+  lang: string;
+  status: 'Active' | 'Draft' | 'Closed';
+  type: 'Открытый' | 'По расписанию' | 'Ограниченное время';
+  users: number;
+  parentId: string | null;
+  createdAt: string;
+}
+
+export const STATS_MOCK_SURVEYS: MOCK_SurveyItem[] = [
+  { id: 'SRV-821', title: 'Опрос удовлетворенности сотрудников', lang: 'RUS', status: 'Active', type: 'Открытый', users: 142, parentId: null, createdAt: '2026-05-10T10:00:00.000Z' },
+  { id: 'SRV-724', title: 'Регистрация на вебинар', lang: 'UZB', status: 'Draft', type: 'Открытый', users: 0, parentId: null, createdAt: '2026-05-12T14:30:00.000Z' },
+  { id: 'SRV-612', title: 'Оценка качества обучения', lang: 'RUS', status: 'Active', type: 'По расписанию', users: 89, parentId: null, createdAt: '2026-05-15T09:15:00.000Z' },
+  { id: 'SRV-509', title: 'Сбор заявок на парковку', lang: 'RUS', status: 'Closed', type: 'Ограниченное время', users: 512, parentId: null, createdAt: '2026-05-18T18:00:00.000Z' },
+  { id: 'SRV-990', title: 'Анкета предзаписи на новый курс', lang: 'RUS', status: 'Active', type: 'Открытый', users: 1240, parentId: 'f1', createdAt: '2026-05-20T11:45:00.000Z' },
 ];
+
+export interface SurveyUserRecord {
+  id: string;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userInitials: string;
+  surveyId: string;
+  surveyTitle: string;
+  registeredAt: string;
+  status: 'Заполнил' | 'Ожидание' | 'Не заполнил';
+  completedAt: string | null;
+  partsCompleted: string;
+  branch: string;
+  dept: string;
+  div: string;
+  role: string;
+  userStatus: string;
+  duration?: string;
+}
+
+export function generateSurveyUserRecords(): SurveyUserRecord[] {
+  const rand = mulberry32(54321);
+  const records: SurveyUserRecord[] = [];
+
+  STATS_MOCK_SURVEYS.forEach(srv => {
+    if (srv.id === 'SRV-724') return;
+    const numRegs = srv.users || Math.floor(rand() * 40 + 15);
+    const shuffledUsers = [...staticUsersList].sort(() => rand() - 0.5);
+    const chosenUsers = shuffledUsers.slice(0, numRegs);
+
+    chosenUsers.forEach((user) => {
+      const r = rand();
+      let status: 'Заполнил' | 'Ожидание' | 'Не заполнил' = 'Заполнил';
+      if (r < 0.15) status = 'Не заполнил';
+      else if (r < 0.25) status = 'Ожидание';
+
+      const srvDate = new Date(srv.createdAt);
+      const regDaysBefore = 1 + Math.floor(rand() * 10);
+      const regTime = new Date(srvDate.getTime() + regDaysBefore * 24 * 60 * 60 * 1000 + Math.floor(rand() * 12 * 3600 * 1000));
+      const registeredAt = `${String(regTime.getDate()).padStart(2, '0')}/${String(regTime.getMonth() + 1).padStart(2, '0')}/${regTime.getFullYear()} ${String(regTime.getHours()).padStart(2, '0')}:${String(regTime.getMinutes()).padStart(2, '0')}`;
+
+      let completedAt: string | null = null;
+      let partsCompleted = 'Не заполнено';
+      let duration = '—';
+
+      if (status === 'Заполнил') {
+        const compTime = new Date(regTime.getTime() + Math.floor(rand() * 4 * 3600 * 1000 + 30 * 60 * 1000));
+        completedAt = `${String(compTime.getDate()).padStart(2, '0')}/${String(compTime.getMonth() + 1).padStart(2, '0')}/${compTime.getFullYear()} ${String(compTime.getHours()).padStart(2, '0')}:${String(compTime.getMinutes()).padStart(2, '0')}`;
+
+        if (srv.id === 'SRV-821') {
+          const partsOption = rand();
+          partsCompleted = partsOption > 0.4 ? '1 часть, 2 часть' : '1 часть';
+        } else if (srv.id === 'SRV-990') {
+          const partsOption = rand();
+          partsCompleted = partsOption > 0.6 ? '1 часть, 2 часть, 3 часть' : partsOption > 0.2 ? '1 часть, 2 часть' : '1 часть';
+        } else {
+          partsCompleted = '1 часть';
+        }
+
+        const hours = Math.floor(rand() * 2);
+        const minutes = Math.floor(rand() * 60) + 1;
+        duration = hours > 0 ? `${hours}ч ${minutes}м` : `${minutes}м`;
+      }
+
+      records.push({
+        id: `${srv.id}-${user.id}`,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userInitials: user.initials,
+        surveyId: srv.id,
+        surveyTitle: srv.title,
+        registeredAt,
+        status,
+        completedAt,
+        partsCompleted,
+        branch: user.branch,
+        dept: user.dept,
+        div: user.div,
+        role: user.role,
+        userStatus: user.status,
+        duration
+      });
+    });
+  });
+
+
+  return records;
+}
+
+function getPartCompletionDetails(record: SurveyUserRecord, partNumber: number) {
+  const partStr = `${partNumber} часть`;
+  const isCompleted = record.status === 'Заполнил' && record.partsCompleted.includes(partStr);
+
+  if (isCompleted && record.completedAt) {
+    const timePart = record.completedAt.split(' ')[1] || '09:00';
+    let displayTime = timePart;
+    if (partNumber > 1) {
+      const [h, m] = timePart.split(':').map(Number);
+      const offset = ((record.userId * partNumber) % 15) - 7;
+      let newM = m + offset;
+      let newH = h;
+      if (newM < 0) { newM += 60; newH -= 1; }
+      else if (newM >= 60) { newM -= 60; newH += 1; }
+      displayTime = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+    }
+    return {
+      status: 'Заполнил',
+      text: `Заполнено (отметка в ${displayTime})`,
+      style: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    };
+  } else if (record.status === 'Ожидание') {
+    return {
+      status: 'Ожидание',
+      text: 'В ожидании',
+      style: 'bg-amber-50 text-amber-700 border-amber-100',
+    };
+  } else {
+    return {
+      status: 'Не заполнил',
+      text: 'Не заполнено',
+      style: 'bg-rose-50 text-rose-700 border-rose-100',
+    };
+  }
+}
 
 const exportToExcel = (data: any[], title: string, isHourly: boolean) => {
   const headers = isHourly ? ['Время', 'Количество'] : ['Дата', 'Количество'];
@@ -828,6 +1406,20 @@ function MultiSelectFilterDropdownWithSearch({ label, options, selectedValues, o
   );
 }
 
+// Helper: render date/time string "DD/MM/YYYY HH:MM" as two lines
+function DateCell({ value, className }: { value: string | null; className?: string }) {
+  if (!value) return <span className={`text-neutral-300 ${className || ''}`}>—</span>;
+  const parts = value.split(' ');
+  const datePart = parts[0] || value;
+  const timePart = parts[1] || '';
+  return (
+    <div className={`flex flex-col items-end ${className || ''}`}>
+      <span className="text-[11px] font-medium text-neutral-700">{datePart}</span>
+      {timePart && <span className="text-[10px] text-neutral-400">{timePart}</span>}
+    </div>
+  );
+}
+
 function StatCard({ title, value, subtitle }: { title: string, value: string | number, subtitle?: React.ReactNode }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
@@ -840,10 +1432,149 @@ function StatCard({ title, value, subtitle }: { title: string, value: string | n
   );
 }
 
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '—';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+    return new Date(dateStr).toLocaleDateString('ru-RU');
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatDateTime = (dateTimeStr?: string) => {
+  if (!dateTimeStr) return '—';
+  try {
+    const date = new Date(dateTimeStr);
+    if (isNaN(date.getTime())) return dateTimeStr;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  } catch {
+    return dateTimeStr;
+  }
+};
+
+function getDayAttendanceDetails(record: EventUserRecord, dayNumber: number) {
+  const dayStr = `День ${dayNumber}`;
+  const isAttended = record.status === 'Присутствует' && record.daysAttended.includes(dayStr);
+  
+  if (isAttended && record.checkedInAt) {
+    const timePart = record.checkedInAt.split(' ')[1] || '09:00';
+    let displayTime = timePart;
+    if (dayNumber > 1) {
+      const [h, m] = timePart.split(':').map(Number);
+      const offset = ((record.userId * dayNumber) % 15) - 7;
+      let newM = m + offset;
+      let newH = h;
+      if (newM < 0) { newM += 60; newH -= 1; }
+      else if (newM >= 60) { newM -= 60; newH += 1; }
+      displayTime = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+    }
+    return {
+      status: 'Присутствует',
+      text: `Присутствовал (отметка в ${displayTime})`,
+      style: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    };
+  } else if (record.status === 'Ожидание') {
+    return {
+      status: 'Ожидание',
+      text: 'Ожидание регистрации',
+      style: 'bg-amber-50 text-amber-700 border-amber-100',
+    };
+  } else {
+    return {
+      status: 'Отсутствовал',
+      text: 'Отсутствовал',
+      style: 'bg-rose-50 text-rose-700 border-rose-100',
+    };
+  }
+}
+
 export default function StatisticsPage() {
-  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'tests' | 'events' | 'surveys'>('users');
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'tests' | 'events' | 'surveys' | 'operations'>('users');
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Region filter on Uzbek map (multi-select)
+  const [selectedMapRegions, setSelectedMapRegions] = useState<string[]>([]);
+
+  // Users table states
+  const [tableSearch, setTableSearch] = useState('');
+  const [tablePageSize, setTablePageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [tableCurrentPage, setTableCurrentPage] = useState(1);
+  const [tableActivitySort, setTableActivitySort] = useState<'asc' | 'desc' | null>(null);
+  const [tableLastActiveSort, setTableLastActiveSort] = useState<'asc' | 'desc' | null>(null);
+  const [tableRegSort, setTableRegSort] = useState<'asc' | 'desc' | null>('desc');
+  const [selectedGender, setSelectedGender] = useState<'Мужской' | 'Женский' | null>(null);
+
+  // Operations tab states
+  const [operationsSearch, setOperationsSearch] = useState('');
+  const [operationsSubTab, setOperationsSubTab] = useState<'operations' | 'purchases'>('operations');
+  const [operationsPage, setOperationsPage] = useState(1);
+  const [operationsPageSize, setOperationsPageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [operationsSortDir, setOperationsSortDir] = useState<'asc' | 'desc'>('desc');
+  const [operationsSelectedCourses, setOperationsSelectedCourses] = useState<string[]>([]);
+  const [operationsSelectedEvents, setOperationsSelectedEvents] = useState<string[]>([]);
+  const [operationsSelectedSurveys, setOperationsSelectedSurveys] = useState<string[]>([]);
+
+  // Solid list of mock operations/purchases data linking to staticUsersList
+  const mockOperations = useMemo(() => {
+    const users = staticUsersList;
+    if (users.length === 0) return [];
+    
+    const items = [
+      { type: 'Назначение' as const, name: 'Основы искусственного интеллекта', date: '20/05/2026 14:30', userIdx: 0 },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '20/05/2026 10:15', userIdx: 1 },
+      { type: 'Покупка' as const, name: 'Введение в безопасность', date: '19/05/2026 17:45', userIdx: 2, sum: '25,000 сум', promoCode: 'WELCOME' },
+      { type: 'Назначение' as const, name: 'Управление проектами', date: '18/05/2026 11:20', userIdx: 3 },
+      { type: 'Покупка' as const, name: 'Профессиональные навыки', date: '17/05/2026 16:30', userIdx: 4, sum: '12,900 сум', promoCode: 'AI2026' },
+      { type: 'Регистрация' as const, name: 'Основы безопасности', date: '15/05/2026 09:15', userIdx: 5 },
+      { type: 'Назначение' as const, name: 'Анализ данных на Python', date: '14/05/2026 14:00', userIdx: 6 },
+      { type: 'Покупка' as const, name: 'Основы маркетинга', date: '12/05/2026 12:10', userIdx: 7, sum: '35,000 сум', promoCode: '—' },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '10/05/2026 16:45', userIdx: 8 },
+      { type: 'Назначение' as const, name: 'Эффективные коммуникации', date: '08/05/2026 15:30', userIdx: 9 },
+      { type: 'Покупка' as const, name: 'Лидерство и менеджмент', date: '05/05/2026 13:00', userIdx: 10, sum: '45,000 сум', promoCode: 'LEADER' },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '02/05/2026 10:10', userIdx: 11 },
+      { type: 'Назначение' as const, name: 'Основы искусственного интеллекта', date: '28/04/2026 17:30', userIdx: 12 },
+      { type: 'Покупка' as const, name: 'Python для начинающих', date: '25/04/2026 15:40', userIdx: 13, sum: '12,900 сум', promoCode: 'AI2026' },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '22/04/2026 09:50', userIdx: 14 },
+      { type: 'Назначение' as const, name: 'Управление рисками', date: '20/04/2026 12:15', userIdx: 15 },
+      { type: 'Покупка' as const, name: 'Финансовая грамотность', date: '18/04/2026 14:20', userIdx: 16, sum: '25,000 сум', promoCode: '—' },
+      { type: 'Назначение' as const, name: 'Excel продвинутый уровень', date: '15/04/2026 09:00', userIdx: 17 },
+      { type: 'Назначение' as const, name: 'Введение в базы данных', date: '12/04/2026 16:15', userIdx: 18 },
+      { type: 'Покупка' as const, name: 'UX/UI Дизайн', date: '10/04/2026 11:10', userIdx: 19, sum: '50,000 сум', promoCode: 'DESIGN26' },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '07/04/2026 10:30', userIdx: 20 },
+      { type: 'Назначение' as const, name: 'Разработка веб-приложений', date: '05/04/2026 14:25', userIdx: 21 },
+      { type: 'Покупка' as const, name: 'Безопасность веб-приложений', date: '03/04/2026 15:50', userIdx: 22, sum: '30,000 сум', promoCode: 'WELCOME' },
+      { type: 'Назначение' as const, name: 'Анкета предзаписи', date: '01/04/2026 08:45', userIdx: 23 },
+      { type: 'Назначение' as const, name: 'Введение в безопасность', date: '30/03/2026 11:00', userIdx: 24 }
+    ];
+
+    return items.map((item, idx) => {
+      const user = users[item.userIdx % users.length];
+      return {
+        id: idx + 1,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userInitials: user.initials,
+        type: item.type,
+        itemName: item.name,
+        dateStr: item.date,
+        sum: item.sum || '',
+        promoCode: item.promoCode || ''
+      };
+    });
+  }, [staticUsersList]);
+
 
   // Load settings
   const [settings, setSettings] = useState<any>(null);
@@ -918,32 +1649,577 @@ export default function StatisticsPage() {
   const [selectedLessons, setSelectedLessons] = useState<string[]>([]);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
 
+  // Courses tab sub-tab states
+  const [coursesSubTab, setCoursesSubTab] = useState<'courses' | 'lessons' | 'tests'>('courses');
+  const [coursesUserSubTab, setCoursesUserSubTab] = useState<'courses' | 'lessons' | 'tests'>('courses');
+  const [courseListPage, setCourseListPage] = useState(1);
+  const [courseListPageSize, setCourseListPageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [courseListSearch, setCourseListSearch] = useState('');
+  const [courseUserPage, setCourseUserPage] = useState(1);
+  const [courseUserPageSize, setCourseUserPageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [courseUserSearch, setCourseUserSearch] = useState('');
+
+  // Sort state for enrollment user table
+  const [courseUserSort, setCourseUserSort] = useState<{ field: string; dir: 'asc' | 'desc' } | null>(null);
+  const toggleCourseUserSort = (field: string) => {
+    setCourseUserSort(prev => {
+      if (!prev || prev.field !== field) return { field, dir: 'desc' };
+      if (prev.dir === 'desc') return { field, dir: 'asc' };
+      return null;
+    });
+  };
+
+  // Derive effective course selection: auto-detect from lesson/test selections
+  const effectiveCourseIds = useMemo(() => {
+    const ids = new Set<string>(selectedCourse);
+    for (const lid of selectedLessons) {
+      const l = LESSONS_DATA.find(x => x.id === lid);
+      if (l) ids.add(l.courseId);
+    }
+    for (const tid of selectedTests) {
+      const t = TESTS_DATA.find(x => x.id === tid);
+      if (t) ids.add(t.courseId);
+    }
+    return ids.size > 0 ? Array.from(ids) : [];
+  }, [selectedCourse, selectedLessons, selectedTests]);
+
   const filteredLessonsOptions = useMemo(() => {
-    if (selectedCourse.length === 0) return LESSONS_DATA;
-    return LESSONS_DATA.filter(l => selectedCourse.includes(l.courseId));
-  }, [selectedCourse]);
+    if (effectiveCourseIds.length === 0) return LESSONS_DATA;
+    return LESSONS_DATA.filter(l => effectiveCourseIds.includes(l.courseId));
+  }, [effectiveCourseIds]);
 
   const filteredTestsOptions = useMemo(() => {
-    if (selectedCourse.length === 0) return TESTS_DATA;
-    return TESTS_DATA.filter(t => selectedCourse.includes(t.courseId));
-  }, [selectedCourse]);
+    if (effectiveCourseIds.length === 0) return TESTS_DATA;
+    return TESTS_DATA.filter(t => effectiveCourseIds.includes(t.courseId));
+  }, [effectiveCourseIds]);
 
   const handleCourseChange = (courseIds: string[]) => {
     setSelectedCourse(courseIds);
     setSelectedLessons([]);
     setSelectedTests([]);
+    setCourseListPage(1);
+    setCourseUserPage(1);
   };
 
-  const currentCoursesProgress = useMemo(() => {
-    let list = courseProgressMock;
-    if (selectedCourse.length > 0) {
-      const courseTitles = COURSES_DATA.filter(c => selectedCourse.includes(c.id)).map(c => c.title.toLowerCase());
-      list = list.filter(item => 
-        courseTitles.some(title => item.title.toLowerCase().includes(title) || title.includes(item.title.toLowerCase()))
+  // ── Courses Tab Computed Data ──
+  const filteredCoursesList = useMemo(() => {
+    let list = [...COURSES_DATA];
+    if (effectiveCourseIds.length > 0) list = list.filter(c => effectiveCourseIds.includes(c.id));
+    if (courseListSearch && coursesSubTab === 'courses') list = list.filter(c => c.title.toLowerCase().includes(courseListSearch.toLowerCase()));
+    return list;
+  }, [effectiveCourseIds, courseListSearch, coursesSubTab]);
+
+  const filteredLessonsList = useMemo(() => {
+    let list = [...LESSONS_DATA];
+    if (effectiveCourseIds.length > 0) list = list.filter(l => effectiveCourseIds.includes(l.courseId));
+    if (selectedLessons.length > 0) list = list.filter(l => selectedLessons.includes(l.id));
+    if (courseListSearch && coursesSubTab === 'lessons') list = list.filter(l => l.title.toLowerCase().includes(courseListSearch.toLowerCase()));
+    return list;
+  }, [effectiveCourseIds, selectedLessons, courseListSearch, coursesSubTab]);
+
+  const filteredTestsList = useMemo(() => {
+    let list = [...TESTS_DATA];
+    if (effectiveCourseIds.length > 0) list = list.filter(t => effectiveCourseIds.includes(t.courseId));
+    if (selectedTests.length > 0) list = list.filter(t => selectedTests.includes(t.id));
+    if (courseListSearch && coursesSubTab === 'tests') list = list.filter(t => t.title.toLowerCase().includes(courseListSearch.toLowerCase()));
+    return list;
+  }, [effectiveCourseIds, selectedTests, courseListSearch, coursesSubTab]);
+
+  // Stat card totals from filtered content
+  const coursesStatTotals = useMemo(() => {
+    const courses = effectiveCourseIds.length > 0 ? COURSES_DATA.filter(c => effectiveCourseIds.includes(c.id)) : COURSES_DATA;
+    let lessons = effectiveCourseIds.length > 0 ? LESSONS_DATA.filter(l => effectiveCourseIds.includes(l.courseId)) : LESSONS_DATA;
+    let tests = effectiveCourseIds.length > 0 ? TESTS_DATA.filter(t => effectiveCourseIds.includes(t.courseId)) : TESTS_DATA;
+    if (selectedLessons.length > 0) lessons = lessons.filter(l => selectedLessons.includes(l.id));
+    if (selectedTests.length > 0) tests = tests.filter(t => selectedTests.includes(t.id));
+
+    return {
+      totalCourses: courses.length,
+      coursesAssigned: courses.reduce((s, c) => s + c.assigned, 0),
+      coursesInProgress: courses.reduce((s, c) => s + c.inProgress, 0),
+      coursesCompleted: courses.reduce((s, c) => s + c.completed, 0),
+      coursesCertificates: courses.reduce((s, c) => s + c.certificates, 0),
+      coursesAvgTime: courses.length > 0 ? courses[0].avgTime : '—',
+      totalLessons: lessons.length,
+      lessonsStarted: lessons.reduce((s, l) => s + l.started, 0),
+      lessonsInProgress: lessons.reduce((s, l) => s + l.inProgress, 0),
+      lessonsCompleted: lessons.reduce((s, l) => s + l.completed, 0),
+      lessonsAvgTime: lessons.length > 0 ? lessons[0].avgTime : '—',
+      lessonsCsi: lessons.length > 0 ? (lessons.reduce((s, l) => s + l.csi, 0) / lessons.length).toFixed(1) : '—',
+      totalTests: tests.length,
+      testsStarted: tests.reduce((s, t) => s + t.started, 0),
+      testsInProgress: tests.reduce((s, t) => s + t.inProgress, 0),
+      testsCompleted: tests.reduce((s, t) => s + t.completed, 0),
+      testsAvgTime: tests.length > 0 ? tests[0].avgTime : '—',
+      testsPassed: tests.reduce((s, t) => s + t.passed, 0),
+      testsFailed: tests.reduce((s, t) => s + t.failed, 0),
+    };
+  }, [effectiveCourseIds, selectedLessons, selectedTests]);
+
+  // Enrollment data
+  const enrollments = useMemo(() => getEnrollments(), []);
+
+  // Parse dd/mm/yyyy hh:mm to timestamp for date range filtering
+  const parseDateStr = (s: string) => {
+    const [d, t] = s.split(' ');
+    const [dd, mm, yyyy] = d.split('/');
+    return new Date(`${yyyy}-${mm}-${dd}T${t || '00:00'}`).getTime();
+  };
+  const gStartTs = globalStartStr ? new Date(globalStartStr).getTime() : 0;
+  const gEndTs = globalEndStr ? new Date(globalEndStr).getTime() + 86400000 : Infinity;
+
+  // Reset operations page when filters change
+  useEffect(() => {
+    setOperationsPage(1);
+  }, [
+    operationsSearch, 
+    operationsSubTab, 
+    globalStartStr, 
+    globalEndStr, 
+    operationsPageSize,
+    operationsSelectedCourses,
+    operationsSelectedEvents,
+    operationsSelectedSurveys
+  ]);
+
+  const filteredOperations = useMemo(() => {
+    let list = mockOperations;
+    
+    // Date range filter
+    if (gStartTs || gEndTs < Infinity) {
+      list = list.filter(op => {
+        const ts = parseDateStr(op.dateStr);
+        return ts >= gStartTs && ts <= gEndTs;
+      });
+    }
+
+    // Apply entity filters
+    if (operationsSelectedCourses.length > 0) {
+      list = list.filter(op => 
+        operationsSelectedCourses.some(course => 
+          op.itemName === course ||
+          op.itemName === `Курс: ${course}` ||
+          op.itemName === `Тест: ${course}` ||
+          op.itemName.includes(course)
+        )
       );
     }
+    if (operationsSelectedEvents.length > 0) {
+      list = list.filter(op => 
+        operationsSelectedEvents.some(event => 
+          op.itemName === event ||
+          op.itemName.includes(event) ||
+          (event === 'Регистрация на вебинар' && op.type === 'Регистрация' && !op.itemName.includes('Опрос'))
+        )
+      );
+    }
+    if (operationsSelectedSurveys.length > 0) {
+      list = list.filter(op => 
+        operationsSelectedSurveys.some(survey => 
+          op.itemName === survey ||
+          op.itemName.includes(survey)
+        )
+      );
+    }
+
+    // Search filter (matches username, email, item name, or promo code)
+    if (operationsSearch) {
+      const q = operationsSearch.toLowerCase();
+      list = list.filter(op => 
+        op.userName.toLowerCase().includes(q) ||
+        op.userEmail.toLowerCase().includes(q) ||
+        op.itemName.toLowerCase().includes(q) ||
+        op.promoCode.toLowerCase().includes(q)
+      );
+    }
+
+    // Switch between operations log and purchases list
+    if (operationsSubTab === 'purchases') {
+      list = list.filter(op => op.type === 'Покупка');
+    }
+
+    // Sorting: date ascending or descending (default date descending)
+    list = [...list].sort((a, b) => {
+      const tsA = parseDateStr(a.dateStr);
+      const tsB = parseDateStr(b.dateStr);
+      return operationsSortDir === 'asc' ? tsA - tsB : tsB - tsA;
+    });
+
     return list;
-  }, [selectedCourse]);
+  }, [
+    mockOperations, 
+    gStartTs, 
+    gEndTs, 
+    operationsSearch, 
+    operationsSubTab, 
+    operationsSortDir,
+    operationsSelectedCourses,
+    operationsSelectedEvents,
+    operationsSelectedSurveys
+  ]);
+
+  const paginatedOperations = useMemo(() => {
+    const startIdx = (operationsPage - 1) * Number(operationsPageSize);
+    return filteredOperations.slice(startIdx, startIdx + Number(operationsPageSize));
+  }, [filteredOperations, operationsPage, operationsPageSize]);
+
+  const operationsTotalPages = Math.ceil(filteredOperations.length / Number(operationsPageSize));
+
+  const filteredCourseEnrollments = useMemo(() => {
+    let list = enrollments.courseEnrollments;
+    // Apply organizational filters
+    list = list.filter(e => {
+      const user = staticUsersList.find(u => u.id === e.userId);
+      if (!user) return false;
+      if (selectedBranch.length > 0 && !selectedBranch.includes(user.branch)) return false;
+      if (selectedDept.length > 0 && !selectedDept.includes(user.dept)) return false;
+      if (selectedDivision.length > 0 && !selectedDivision.includes(user.div)) return false;
+      if (selectedRole.length > 0 && !selectedRole.includes(user.role)) return false;
+      if (selectedStatus.length > 0 && !selectedStatus.includes(user.status)) return false;
+      return true;
+    });
+    if (effectiveCourseIds.length > 0) list = list.filter(e => effectiveCourseIds.includes(e.courseId));
+    if (gStartTs || gEndTs < Infinity) list = list.filter(e => { const ts = parseDateStr(e.assignedAt); return ts >= gStartTs && ts <= gEndTs; });
+    if (courseUserSearch && coursesUserSubTab === 'courses') list = list.filter(e => e.userName.toLowerCase().includes(courseUserSearch.toLowerCase()) || e.courseName.toLowerCase().includes(courseUserSearch.toLowerCase()));
+    // Sorting
+    if (courseUserSort && coursesUserSubTab === 'courses') {
+      const dir = courseUserSort.dir === 'asc' ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        if (courseUserSort.field === 'assignedAt') return dir * (parseDateStr(a.assignedAt) - parseDateStr(b.assignedAt));
+        if (courseUserSort.field === 'startedAt') return dir * ((a.startedAt ? parseDateStr(a.startedAt) : 0) - (b.startedAt ? parseDateStr(b.startedAt) : 0));
+        if (courseUserSort.field === 'completedAt') return dir * ((a.completedAt ? parseDateStr(a.completedAt) : 0) - (b.completedAt ? parseDateStr(b.completedAt) : 0));
+        if (courseUserSort.field === 'progress') return dir * (a.progress - b.progress);
+        return 0;
+      });
+    }
+    return list;
+  }, [enrollments, effectiveCourseIds, courseUserSearch, coursesUserSubTab, courseUserSort, gStartTs, gEndTs, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus]);
+
+  const filteredLessonEnrollments = useMemo(() => {
+    let list = enrollments.lessonEnrollments;
+    // Apply organizational filters
+    list = list.filter(e => {
+      const user = staticUsersList.find(u => u.id === e.userId);
+      if (!user) return false;
+      if (selectedBranch.length > 0 && !selectedBranch.includes(user.branch)) return false;
+      if (selectedDept.length > 0 && !selectedDept.includes(user.dept)) return false;
+      if (selectedDivision.length > 0 && !selectedDivision.includes(user.div)) return false;
+      if (selectedRole.length > 0 && !selectedRole.includes(user.role)) return false;
+      if (selectedStatus.length > 0 && !selectedStatus.includes(user.status)) return false;
+      return true;
+    });
+    if (effectiveCourseIds.length > 0) list = list.filter(e => LESSONS_DATA.some(l => l.id === e.lessonId && effectiveCourseIds.includes(l.courseId)));
+    if (selectedLessons.length > 0) list = list.filter(e => selectedLessons.includes(e.lessonId));
+    if (gStartTs || gEndTs < Infinity) list = list.filter(e => { const ts = parseDateStr(e.assignedAt); return ts >= gStartTs && ts <= gEndTs; });
+    if (courseUserSearch && coursesUserSubTab === 'lessons') list = list.filter(e => e.userName.toLowerCase().includes(courseUserSearch.toLowerCase()) || e.lessonName.toLowerCase().includes(courseUserSearch.toLowerCase()));
+    if (courseUserSort && coursesUserSubTab === 'lessons') {
+      const dir = courseUserSort.dir === 'asc' ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        if (courseUserSort.field === 'assignedAt') return dir * (parseDateStr(a.assignedAt) - parseDateStr(b.assignedAt));
+        if (courseUserSort.field === 'startedAt') return dir * ((a.startedAt ? parseDateStr(a.startedAt) : 0) - (b.startedAt ? parseDateStr(b.startedAt) : 0));
+        if (courseUserSort.field === 'completedAt') return dir * ((a.completedAt ? parseDateStr(a.completedAt) : 0) - (b.completedAt ? parseDateStr(b.completedAt) : 0));
+        if (courseUserSort.field === 'rating') return dir * ((a.rating || 0) - (b.rating || 0));
+        return 0;
+      });
+    }
+    return list;
+  }, [enrollments, effectiveCourseIds, selectedLessons, courseUserSearch, coursesUserSubTab, courseUserSort, gStartTs, gEndTs, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus]);
+
+  const filteredTestEnrollments = useMemo(() => {
+    let list = enrollments.testEnrollments;
+    // Apply organizational filters
+    list = list.filter(e => {
+      const user = staticUsersList.find(u => u.id === e.userId);
+      if (!user) return false;
+      if (selectedBranch.length > 0 && !selectedBranch.includes(user.branch)) return false;
+      if (selectedDept.length > 0 && !selectedDept.includes(user.dept)) return false;
+      if (selectedDivision.length > 0 && !selectedDivision.includes(user.div)) return false;
+      if (selectedRole.length > 0 && !selectedRole.includes(user.role)) return false;
+      if (selectedStatus.length > 0 && !selectedStatus.includes(user.status)) return false;
+      return true;
+    });
+    if (effectiveCourseIds.length > 0) list = list.filter(e => TESTS_DATA.some(t => t.id === e.testId && effectiveCourseIds.includes(t.courseId)));
+    if (selectedTests.length > 0) list = list.filter(e => selectedTests.includes(e.testId));
+    if (gStartTs || gEndTs < Infinity) list = list.filter(e => { const ts = parseDateStr(e.assignedAt); return ts >= gStartTs && ts <= gEndTs; });
+    if (courseUserSearch && coursesUserSubTab === 'tests') list = list.filter(e => e.userName.toLowerCase().includes(courseUserSearch.toLowerCase()) || e.testName.toLowerCase().includes(courseUserSearch.toLowerCase()));
+    if (courseUserSort && coursesUserSubTab === 'tests') {
+      const dir = courseUserSort.dir === 'asc' ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        if (courseUserSort.field === 'assignedAt') return dir * (parseDateStr(a.assignedAt) - parseDateStr(b.assignedAt));
+        if (courseUserSort.field === 'startedAt') return dir * ((a.startedAt ? parseDateStr(a.startedAt) : 0) - (b.startedAt ? parseDateStr(b.startedAt) : 0));
+        if (courseUserSort.field === 'completedAt') return dir * ((a.completedAt ? parseDateStr(a.completedAt) : 0) - (b.completedAt ? parseDateStr(b.completedAt) : 0));
+        if (courseUserSort.field === 'status') return dir * ((a.status || '').localeCompare(b.status || ''));
+        if (courseUserSort.field === 'correctAnswers') return dir * (parseInt(a.correctAnswers || '0') - parseInt(b.correctAnswers || '0'));
+        return 0;
+      });
+    }
+    return list;
+  }, [enrollments, effectiveCourseIds, selectedTests, courseUserSearch, coursesUserSubTab, courseUserSort, gStartTs, gEndTs, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus]);
+
+  // ── Event Tab States & Logic ──
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [eventSearch, setEventSearch] = useState('');
+  const [eventCurrentPage, setEventCurrentPage] = useState(1);
+  const [eventPageSize, setEventPageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [eventSort, setEventSort] = useState<{ field: string; dir: 'asc' | 'desc' } | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  // ── Survey Tab States & Logic ──
+  const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
+  const [surveySearch, setSurveySearch] = useState('');
+  const [surveyCurrentPage, setSurveyCurrentPage] = useState(1);
+  const [surveyPageSize, setSurveyPageSize] = useState<'10' | '20' | '50' | '100'>('10');
+  const [surveySort, setSurveySort] = useState<{ field: string; dir: 'asc' | 'desc' } | null>(null);
+
+  const eventUserRecords = useMemo(() => generateEventUserRecords(), []);
+
+  const filteredEventUserRecords = useMemo(() => {
+    const duplicatedList: any[] = [];
+    eventUserRecords.forEach(record => {
+      let numDays = 1;
+      if (record.eventId === 'EVT-004') {
+        numDays = 3;
+      } else if (record.eventId === 'EVT-002') {
+        numDays = 2;
+      }
+      
+      for (let dayNum = 1; dayNum <= numDays; dayNum++) {
+        const dayDetail = getDayAttendanceDetails(record, dayNum);
+        let dayCheckedInAt: string | null = null;
+        if (dayDetail.status === 'Присутствует' && record.checkedInAt) {
+          const datePart = record.checkedInAt.split(' ')[0];
+          const timePart = record.checkedInAt.split(' ')[1] || '09:00';
+          let displayTime = timePart;
+          if (dayNum > 1) {
+            const [h, m] = timePart.split(':').map(Number);
+            const offset = ((record.userId * dayNum) % 15) - 7;
+            let newM = m + offset;
+            let newH = h;
+            if (newM < 0) { newM += 60; newH -= 1; }
+            else if (newM >= 60) { newM -= 60; newH += 1; }
+            displayTime = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+          }
+          const [dd, mm, yyyy] = datePart.split('/').map(Number);
+          const date = new Date(yyyy, mm - 1, dd + (dayNum - 1));
+          const newDatePart = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+          dayCheckedInAt = `${newDatePart} ${displayTime}`;
+        }
+
+        duplicatedList.push({
+          ...record,
+          dayLabel: `${dayNum} день`,
+          dayNum,
+          dayStatus: dayDetail.status,
+          dayCheckedInAt
+        });
+      }
+    });
+
+    let list = duplicatedList;
+    
+    // 1. Filter by selected events
+    if (selectedEvents.length > 0) {
+      list = list.filter(r => selectedEvents.includes(r.eventId));
+    }
+    
+    // 2. Filter by global date range
+    if (globalStartStr || globalEndStr) {
+      list = list.filter(r => {
+        const ts = parseDateStr(r.registeredAt);
+        return ts >= gStartTs && ts <= gEndTs;
+      });
+    }
+
+    // 3. Filter by inside-tab organizational filters
+    if (selectedBranch.length > 0 || selectedDept.length > 0 || selectedDivision.length > 0 || selectedRole.length > 0 || selectedStatus.length > 0) {
+      list = list.filter(r => {
+        if (selectedBranch.length > 0 && !selectedBranch.includes(r.branch)) return false;
+        if (selectedDept.length > 0 && !selectedDept.includes(r.dept)) return false;
+        if (selectedDivision.length > 0 && !selectedDivision.includes(r.div)) return false;
+        if (selectedRole.length > 0 && !selectedRole.includes(r.role)) return false;
+        if (selectedStatus.length > 0 && !selectedStatus.includes(r.userStatus)) return false;
+        return true;
+      });
+    }
+
+    // 4. Search
+    if (eventSearch) {
+      const q = eventSearch.toLowerCase();
+      list = list.filter(r => 
+        r.userName.toLowerCase().includes(q) || 
+        r.userEmail.toLowerCase().includes(q) || 
+        r.eventTitle.toLowerCase().includes(q)
+      );
+    }
+
+    // 5. Sorting
+    if (eventSort) {
+      const dir = eventSort.dir === 'asc' ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        if (eventSort.field === 'userName') return dir * a.userName.localeCompare(b.userName);
+        if (eventSort.field === 'eventTitle') return dir * a.eventTitle.localeCompare(b.eventTitle);
+        if (eventSort.field === 'registeredAt') return dir * (parseDateStr(a.registeredAt) - parseDateStr(b.registeredAt));
+        if (eventSort.field === 'status') return dir * a.dayStatus.localeCompare(b.dayStatus);
+        if (eventSort.field === 'checkedInAt') {
+          const aVal = a.dayCheckedInAt ? parseDateStr(a.dayCheckedInAt) : 0;
+          const bVal = b.dayCheckedInAt ? parseDateStr(b.dayCheckedInAt) : 0;
+          return dir * (aVal - bVal);
+        }
+        if (eventSort.field === 'daysAttended') return dir * a.dayLabel.localeCompare(b.dayLabel);
+        return 0;
+      });
+    }
+
+    return list;
+  }, [eventUserRecords, selectedEvents, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus, eventSearch, eventSort, globalStartStr, globalEndStr, gStartTs, gEndTs]);
+
+  const eventStats = useMemo(() => {
+    const activeEvents = selectedEvents.length > 0 
+      ? STATS_MOCK_EVENTS.filter(e => selectedEvents.includes(e.id))
+      : STATS_MOCK_EVENTS;
+      
+    const matchingRecords = eventUserRecords.filter(r => activeEvents.some(e => e.id === r.eventId));
+    const totalRegs = matchingRecords.length;
+    const presentCount = matchingRecords.filter(r => r.status === 'Присутствует').length;
+    const avgAttendance = totalRegs > 0 ? Math.round((presentCount / totalRegs) * 100) : 0;
+    
+    return {
+      totalEvents: activeEvents.length,
+      totalRegistrations: totalRegs,
+      avgAttendance: `${avgAttendance}%`
+    };
+  }, [selectedEvents, eventUserRecords]);
+
+  const surveyUserRecords = useMemo(() => generateSurveyUserRecords(), []);
+
+  const filteredSurveyUserRecords = useMemo(() => {
+    const duplicatedList: any[] = [];
+    surveyUserRecords.forEach(record => {
+      let numParts = 1;
+      if (record.surveyId === 'SRV-990') {
+        numParts = 3;
+      } else if (record.surveyId === 'SRV-821') {
+        numParts = 2;
+      }
+
+      for (let partNum = 1; partNum <= numParts; partNum++) {
+        const partDetail = getPartCompletionDetails(record, partNum);
+        let partCompletedAt: string | null = null;
+        if (partDetail.status === 'Заполнил' && record.completedAt) {
+          const datePart = record.completedAt.split(' ')[0];
+          const timePart = record.completedAt.split(' ')[1] || '09:00';
+          let displayTime = timePart;
+          if (partNum > 1) {
+            const [h, m] = timePart.split(':').map(Number);
+            const offset = ((record.userId * partNum) % 15) - 7;
+            let newM = m + offset;
+            let newH = h;
+            if (newM < 0) { newM += 60; newH -= 1; }
+            else if (newM >= 60) { newM -= 60; newH += 1; }
+            displayTime = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+          }
+          const [dd, mm, yyyy] = datePart.split('/').map(Number);
+          const date = new Date(yyyy, mm - 1, dd + (partNum - 1));
+          const newDatePart = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+          partCompletedAt = `${newDatePart} ${displayTime}`;
+        }
+
+        duplicatedList.push({
+          ...record,
+          partLabel: `${partNum} часть`,
+          partNum,
+          partStatus: partDetail.status,
+          partCompletedAt,
+          duration: partDetail.status === 'Заполнил' ? record.duration : '—'
+        });
+      }
+    });
+
+    let list = duplicatedList;
+
+    // 1. Filter by selected surveys
+    if (selectedSurveys.length > 0) {
+      list = list.filter(r => selectedSurveys.includes(r.surveyId));
+    }
+
+    // 2. Filter by global date range
+    if (globalStartStr || globalEndStr) {
+      list = list.filter(r => {
+        const ts = parseDateStr(r.registeredAt);
+        return ts >= gStartTs && ts <= gEndTs;
+      });
+    }
+
+    // 3. Filter by inside-tab organizational filters
+    if (selectedBranch.length > 0 || selectedDept.length > 0 || selectedDivision.length > 0 || selectedRole.length > 0 || selectedStatus.length > 0) {
+      list = list.filter(r => {
+        if (selectedBranch.length > 0 && !selectedBranch.includes(r.branch)) return false;
+        if (selectedDept.length > 0 && !selectedDept.includes(r.dept)) return false;
+        if (selectedDivision.length > 0 && !selectedDivision.includes(r.div)) return false;
+        if (selectedRole.length > 0 && !selectedRole.includes(r.role)) return false;
+        if (selectedStatus.length > 0 && !selectedStatus.includes(r.userStatus)) return false;
+        return true;
+      });
+    }
+
+    // 4. Search
+    if (surveySearch) {
+      const q = surveySearch.toLowerCase();
+      list = list.filter(r => 
+        r.userName.toLowerCase().includes(q) || 
+        r.userEmail.toLowerCase().includes(q) || 
+        r.surveyTitle.toLowerCase().includes(q)
+      );
+    }
+
+    // 5. Sorting
+    if (surveySort) {
+      const dir = surveySort.dir === 'asc' ? 1 : -1;
+      list = [...list].sort((a, b) => {
+        if (surveySort.field === 'userName') return dir * a.userName.localeCompare(b.userName);
+        if (surveySort.field === 'surveyTitle') return dir * a.surveyTitle.localeCompare(b.surveyTitle);
+        if (surveySort.field === 'registeredAt') return dir * (parseDateStr(a.registeredAt) - parseDateStr(b.registeredAt));
+        if (surveySort.field === 'status') return dir * a.partStatus.localeCompare(b.partStatus);
+        if (surveySort.field === 'completedAt') {
+          const aVal = a.partCompletedAt ? parseDateStr(a.partCompletedAt) : 0;
+          const bVal = b.partCompletedAt ? parseDateStr(b.partCompletedAt) : 0;
+          return dir * (aVal - bVal);
+        }
+        if (surveySort.field === 'partsCompleted') return dir * a.partLabel.localeCompare(b.partLabel);
+        return 0;
+      });
+    }
+
+    return list;
+  }, [surveyUserRecords, selectedSurveys, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus, surveySearch, surveySort, globalStartStr, globalEndStr, gStartTs, gEndTs]);
+
+  const surveyStats = useMemo(() => {
+    const activeSurveys = selectedSurveys.length > 0
+      ? STATS_MOCK_SURVEYS.filter(s => selectedSurveys.includes(s.id))
+      : STATS_MOCK_SURVEYS;
+
+    const matchingRecords = surveyUserRecords.filter(r => activeSurveys.some(s => s.id === r.surveyId));
+    const totalAnswers = matchingRecords.filter(r => r.status === 'Заполнил').length;
+    const totalAssigned = matchingRecords.length;
+    const avgResponse = totalAssigned > 0 ? Math.round((totalAnswers / totalAssigned) * 100) : 0;
+
+    const totalInProgress = matchingRecords.filter(r => r.status === 'Ожидание').length;
+    const totalCompleted = matchingRecords.filter(r => r.status === 'Заполнил').length;
+
+    const totalHours = activeSurveys.reduce((acc, _, idx) => acc + (3 + (idx % 3)), 0);
+    const avgHours = activeSurveys.length > 0 ? Math.round(totalHours / activeSurveys.length) : 0;
+    const avgTimeStr = activeSurveys.length > 0 ? `${avgHours}ч 00м` : '—';
+
+    return {
+      totalSurveys: activeSurveys.length,
+      totalAnswers,
+      avgResponse: `${avgResponse}%`,
+      totalAssigned,
+      totalInProgress,
+      totalCompleted,
+      avgTimeStr
+    };
+  }, [selectedSurveys, surveyUserRecords]);
 
   // ── Chart 1: Registrations States ──
   const [regStart, setRegStart] = useState<number>(Math.max(0, allRegData.length - 30));
@@ -963,10 +2239,112 @@ export default function StatisticsPage() {
     }
   };
 
+  // ── User Filtering and dynamic statistics calculations ──
+  const filteredUsers = useMemo(() => {
+    return staticUsersList.filter(u => {
+      // 1. Global Date Range (based on registration date YYYY-MM-DD)
+      if (globalStartStr && u.regDateStr < globalStartStr) return false;
+      if (globalEndStr && u.regDateStr > globalEndStr) return false;
+
+      // 2. Map Region Filter
+      if (selectedMapRegions.length > 0 && !selectedMapRegions.includes(u.regionId)) return false;
+
+      // 3. Organizational Filters
+      if (selectedBranch.length > 0 && !selectedBranch.includes(u.branch)) return false;
+      if (selectedDept.length > 0 && !selectedDept.includes(u.dept)) return false;
+      if (selectedDivision.length > 0 && !selectedDivision.includes(u.div)) return false;
+      if (selectedRole.length > 0 && !selectedRole.includes(u.role)) return false;
+      if (selectedStatus.length > 0 && !selectedStatus.includes(u.status)) return false;
+
+      // 4. Gender Filter
+      if (selectedGender && u.gender !== selectedGender) return false;
+
+      return true;
+    });
+  }, [globalStartStr, globalEndStr, selectedMapRegions, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus, selectedGender]);
+
+  // Search-filtered users specifically for the table at the bottom
+  const tableFilteredUsers = useMemo(() => {
+    let result = [...filteredUsers];
+    if (tableSearch) {
+      const q = tableSearch.toLowerCase();
+      result = result.filter(u => 
+        u.name.toLowerCase().includes(q) || 
+        u.email.toLowerCase().includes(q) || 
+        u.phone.includes(q)
+      );
+    }
+
+    if (tableActivitySort === 'desc') {
+      result.sort((a, b) => {
+        const valA = a.visit ? a.activityMs : 0;
+        const valB = b.visit ? b.activityMs : 0;
+        return valB - valA;
+      });
+    } else if (tableActivitySort === 'asc') {
+      result.sort((a, b) => {
+        const valA = a.visit ? a.activityMs : 0;
+        const valB = b.visit ? b.activityMs : 0;
+        return valA - valB;
+      });
+    } else if (tableLastActiveSort === 'desc') {
+      result.sort((a, b) => b.activityMs - a.activityMs);
+    } else if (tableLastActiveSort === 'asc') {
+      result.sort((a, b) => a.activityMs - b.activityMs);
+    } else if (tableRegSort === 'desc') {
+      result.sort((a, b) => b.regMs - a.regMs);
+    } else if (tableRegSort === 'asc') {
+      result.sort((a, b) => a.regMs - b.regMs);
+    }
+
+    return result;
+  }, [filteredUsers, tableSearch, tableActivitySort, tableLastActiveSort, tableRegSort]);
+
+  // Reset page when filters or search change
+  useEffect(() => {
+    setTableCurrentPage(1);
+  }, [tableSearch, selectedMapRegions, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus, selectedGender, globalStartStr, globalEndStr]);
+
+  const tableTotalPages = useMemo(() => {
+    return Math.ceil(tableFilteredUsers.length / Number(tablePageSize));
+  }, [tableFilteredUsers.length, tablePageSize]);
+
+  const tablePagedUsers = useMemo(() => {
+    const start = (tableCurrentPage - 1) * Number(tablePageSize);
+    return tableFilteredUsers.slice(start, start + Number(tablePageSize));
+  }, [tableFilteredUsers, tableCurrentPage, tablePageSize]);
+
+  const toggleTableSort = (type: 'activity' | 'lastActive' | 'reg') => {
+    if (type === 'activity') {
+      setTableLastActiveSort(null);
+      setTableRegSort(null);
+      if (tableActivitySort === null) setTableActivitySort('desc');
+      else if (tableActivitySort === 'desc') setTableActivitySort('asc');
+      else setTableActivitySort(null);
+    } else if (type === 'lastActive') {
+      setTableActivitySort(null);
+      setTableRegSort(null);
+      if (tableLastActiveSort === null) setTableLastActiveSort('desc');
+      else if (tableLastActiveSort === 'desc') setTableLastActiveSort('asc');
+      else setTableLastActiveSort(null);
+    } else {
+      setTableActivitySort(null);
+      setTableLastActiveSort(null);
+      if (tableRegSort === null) setTableRegSort('desc');
+      else if (tableRegSort === 'desc') setTableRegSort('asc');
+      else setTableRegSort(null);
+    }
+  };
+
+  const filterScale = staticUsersList.length > 0 ? filteredUsers.length / staticUsersList.length : 1;
+
   const regHourlyIdx = regHourlyDate ? allRegData.findIndex(d => d.date === regHourlyDate) : -1;
-  const currentRegData = regHourlyDate && regHourlyIdx !== -1 
-    ? getHourlyData(regHourlyDate, allRegData[regHourlyIdx].value, 42)
-    : allRegData.slice(regStart, regEnd + 1);
+  const currentRegData = useMemo(() => {
+    const raw = regHourlyDate && regHourlyIdx !== -1 
+      ? getHourlyData(regHourlyDate, allRegData[regHourlyIdx].value, 42)
+      : allRegData.slice(regStart, regEnd + 1);
+    return raw.map(d => ({ ...d, value: Math.round(d.value * filterScale) }));
+  }, [regHourlyDate, regHourlyIdx, regStart, regEnd, filterScale]);
 
 
   // ── Chart 2: Visits States ──
@@ -988,9 +2366,12 @@ export default function StatisticsPage() {
   };
 
   const visitsHourlyIdx = visitsHourlyDate ? allVisitsData.findIndex(d => d.date === visitsHourlyDate) : -1;
-  const currentVisitsData = visitsHourlyDate && visitsHourlyIdx !== -1
-    ? getHourlyData(visitsHourlyDate, allVisitsData[visitsHourlyIdx].value, 88)
-    : allVisitsData.slice(visitsStart, visitsEnd + 1);
+  const currentVisitsData = useMemo(() => {
+    const raw = visitsHourlyDate && visitsHourlyIdx !== -1
+      ? getHourlyData(visitsHourlyDate, allVisitsData[visitsHourlyIdx].value, 88)
+      : allVisitsData.slice(visitsStart, visitsEnd + 1);
+    return raw.map(d => ({ ...d, value: Math.round(d.value * filterScale) }));
+  }, [visitsHourlyDate, visitsHourlyIdx, visitsStart, visitsEnd, filterScale]);
 
 
   // ── Chart 3: Active Users States ──
@@ -1012,9 +2393,12 @@ export default function StatisticsPage() {
   };
 
   const activeHourlyIdx = activeHourlyDate ? allActiveData.findIndex(d => d.date === activeHourlyDate) : -1;
-  const currentActiveData = activeHourlyDate && activeHourlyIdx !== -1
-    ? getHourlyData(activeHourlyDate, allActiveData[activeHourlyIdx].value, 99)
-    : allActiveData.slice(activeStart, activeEnd + 1);
+  const currentActiveData = useMemo(() => {
+    const raw = activeHourlyDate && activeHourlyIdx !== -1
+      ? getHourlyData(activeHourlyDate, allActiveData[activeHourlyIdx].value, 99)
+      : allActiveData.slice(activeStart, activeEnd + 1);
+    return raw.map(d => ({ ...d, value: Math.round(d.value * filterScale) }));
+  }, [activeHourlyDate, activeHourlyIdx, activeStart, activeEnd, filterScale]);
 
   const handleMouseMove = (e: React.MouseEvent, region: RegionData) => {
     const container = e.currentTarget.closest('.map-container');
@@ -1029,30 +2413,46 @@ export default function StatisticsPage() {
   };
 
   // ── Global dynamic stats calculation ──
-  let totalRegSum = 0;
-  for (let i = 0; i <= regEnd; i++) {
-    totalRegSum += allRegData[i].value;
-  }
-  const totalStudents = 10000 + totalRegSum;
-  const initialTotal = 14302;
-  const scaleFactor = totalStudents / initialTotal;
+  const totalUsers = filteredUsers.length;
 
-  const malePct = 50 + Math.round(8 * Math.sin(regEnd / 12));
-  const femalePct = 100 - malePct;
+  const genderBaseUsers = useMemo(() => {
+    return staticUsersList.filter(u => {
+      // 1. Global Date Range (based on registration date YYYY-MM-DD)
+      if (globalStartStr && u.regDateStr < globalStartStr) return false;
+      if (globalEndStr && u.regDateStr > globalEndStr) return false;
 
-  const visitsTodayVal = allVisitsData[visitsEnd]?.value ?? 0;
-  const activeTodayVal = allActiveData[activeEnd]?.value ?? 0;
+      // 2. Map Region Filter
+      if (selectedMapRegions.length > 0 && !selectedMapRegions.includes(u.regionId)) return false;
+
+      // 3. Organizational Filters
+      if (selectedBranch.length > 0 && !selectedBranch.includes(u.branch)) return false;
+      if (selectedDept.length > 0 && !selectedDept.includes(u.dept)) return false;
+      if (selectedDivision.length > 0 && !selectedDivision.includes(u.div)) return false;
+      if (selectedRole.length > 0 && !selectedRole.includes(u.role)) return false;
+      if (selectedStatus.length > 0 && !selectedStatus.includes(u.status)) return false;
+
+      return true;
+    });
+  }, [globalStartStr, globalEndStr, selectedMapRegions, selectedBranch, selectedDept, selectedDivision, selectedRole, selectedStatus]);
+
+  const maleCount = genderBaseUsers.filter(u => u.gender === 'Мужской').length;
+  const malePct = genderBaseUsers.length > 0 ? Math.round((maleCount / genderBaseUsers.length) * 100) : 0;
+  const femalePct = genderBaseUsers.length > 0 ? 100 - malePct : 0;
+
+  const visitsTodayVal = Math.round((allVisitsData[visitsEnd]?.value ?? 0) * filterScale);
+  const activeTodayVal = Math.round((allActiveData[activeEnd]?.value ?? 0) * filterScale);
 
   const dynamicRegions = UZ_REGIONS.map(reg => {
-    const users = Math.round(reg.users * scaleFactor);
+    const usersCount = filteredUsers.filter(u => u.regionId === reg.id).length;
     return {
       ...reg,
-      users,
-      pct: Math.max(0.1, Math.round((users / totalStudents) * 1000) / 10)
+      users: usersCount,
+      pct: filteredUsers.length > 0 ? Math.round((usersCount / filteredUsers.length) * 1000) / 10 : 0
     };
   });
 
   const sortedRegions = [...dynamicRegions].sort((a, b) => b.users - a.users);
+
 
   return (
     <div className="flex flex-col h-full w-full bg-[var(--bg-app)] overflow-y-auto pb-32">
@@ -1127,12 +2527,7 @@ export default function StatisticsPage() {
           >
             Курсы
           </button>
-          <button 
-            onClick={() => setActiveTab('tests')}
-            className={`pb-4 text-[14px] font-semibold transition-all border-b-2 ${activeTab === 'tests' ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-300'}`}
-          >
-            Тестирование
-          </button>
+
           <button 
             onClick={() => setActiveTab('events')}
             className={`pb-4 text-[14px] font-semibold transition-all border-b-2 ${activeTab === 'events' ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-300'}`}
@@ -1145,43 +2540,51 @@ export default function StatisticsPage() {
           >
             Опросы
           </button>
+          <button 
+            onClick={() => setActiveTab('operations')}
+            className={`pb-4 text-[14px] font-semibold transition-all border-b-2 ${activeTab === 'operations' ? 'border-[var(--color-admin-primary-500)] text-[var(--color-admin-primary-600)]' : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-300'}`}
+          >
+            История операций
+          </button>
         </div>
 
         {/* Organizational Filters */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
-          <div className="relative group">
-            <button 
-              onClick={() => {
-                setSelectedBranch([]);
-                setSelectedDept([]);
-                setSelectedDivision([]);
-                setSelectedRole([]);
-                setSelectedStatus([]);
-              }}
-              className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
-              title="Очистить организационные фильтры"
-              type="button"
-            >
-              <Eraser className="w-4 h-4" />
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
-              Очистить фильтры
+        {activeTab !== 'courses' && activeTab !== 'events' && activeTab !== 'surveys' && activeTab !== 'operations' && (
+          <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
+            <div className="relative group">
+              <button 
+                onClick={() => {
+                  setSelectedBranch([]);
+                  setSelectedDept([]);
+                  setSelectedDivision([]);
+                  setSelectedRole([]);
+                  setSelectedStatus([]);
+                }}
+                className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
+                title="Очистить организационные фильтры"
+                type="button"
+              >
+                <Eraser className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
+                Очистить фильтры
+              </div>
             </div>
+            
+            {activePriorityFields.map((field: any, idx: number) => {
+              const data = getFilterData(field.id, idx);
+              return (
+                <MultiSelectFilterDropdownWithSearch 
+                  key={field.id}
+                  label={data.label} 
+                  options={data.options.map(o => ({ id: o, title: o }))}
+                  selectedValues={data.selectedValues}
+                  onChange={data.onChange}
+                />
+              );
+            })}
           </div>
-          
-          {activePriorityFields.map((field: any, idx: number) => {
-            const data = getFilterData(field.id, idx);
-            return (
-              <MultiSelectFilterDropdownWithSearch 
-                key={field.id}
-                label={data.label} 
-                options={data.options.map(o => ({ id: o, title: o }))}
-                selectedValues={data.selectedValues}
-                onChange={data.onChange}
-              />
-            );
-          })}
-        </div>
+        )}
 
         {/* Course-Specific Filters (Second island/box) */}
         {activeTab === 'courses' && (
@@ -1234,24 +2637,44 @@ export default function StatisticsPage() {
             {/* Top Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <StatCard 
-                title="Всего студентов" 
-                value={totalStudents.toLocaleString()} 
+                title="Всего пользователей" 
+                value={totalUsers.toLocaleString()} 
               />
               
               {/* Gender Split Card */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Разделение по полу</h3>
-                <div className="flex flex-col gap-2.5 mt-1">
-                  <div className="flex items-center gap-2.5">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="14" r="5"/><path d="M13.5 10.5L19 5"/><path d="M15 5H19V9"/></svg>
-                    <span className="text-[14px] font-semibold text-neutral-700">Мужчины</span>
-                    <span className="text-[18px] font-bold text-neutral-900 ml-auto">{malePct}%</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="9" r="5"/><path d="M12 14V21"/><path d="M9 18H15"/></svg>
-                    <span className="text-[14px] font-semibold text-neutral-700">Женщины</span>
-                    <span className="text-[18px] font-bold text-neutral-900 ml-auto">{femalePct}%</span>
-                  </div>
+              <div className="bg-white border border-neutral-200 rounded-2xl py-4 px-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 whitespace-nowrap truncate">Разделение по полу</h3>
+                <div className="flex flex-col gap-1 mt-0.5">
+                  <button
+                    onClick={() => setSelectedGender(prev => prev === 'Мужской' ? null : 'Мужской')}
+                    className={`flex items-center gap-2 px-2 py-0.5 rounded-lg transition-all text-left w-full cursor-pointer border ${
+                      selectedGender === 'Мужской'
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
+                        : selectedGender === 'Женский'
+                          ? 'opacity-40 hover:opacity-75 border-transparent'
+                          : 'hover:bg-neutral-50 border-transparent'
+                    }`}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="10" cy="14" r="5"/><path d="M13.5 10.5L19 5"/><path d="M15 5H19V9"/></svg>
+                    <span className="text-[13px] font-semibold text-neutral-700">Мужчины</span>
+                    <span className="text-[16px] font-bold text-neutral-900 ml-auto tabular-nums">{malePct}%</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedGender(prev => prev === 'Женский' ? null : 'Женский')}
+                    className={`flex items-center gap-2 px-2 py-0.5 rounded-lg transition-all text-left w-full cursor-pointer border ${
+                      selectedGender === 'Женский'
+                        ? 'bg-pink-50 border-pink-200 text-pink-700 shadow-sm'
+                        : selectedGender === 'Мужской'
+                          ? 'opacity-40 hover:opacity-75 border-transparent'
+                          : 'hover:bg-neutral-50 border-transparent'
+                    }`}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="9" r="5"/><path d="M12 14V21"/><path d="M9 18H15"/></svg>
+                    <span className="text-[13px] font-semibold text-neutral-700">Женщины</span>
+                    <span className="text-[16px] font-bold text-neutral-900 ml-auto tabular-nums">{femalePct}%</span>
+                  </button>
                 </div>
               </div>
 
@@ -1278,26 +2701,34 @@ export default function StatisticsPage() {
                     {/* SVG Map Regions */}
                     {dynamicRegions.map((region) => {
                       const isHovered = hoveredRegion?.id === region.id;
+                      const isSelected = selectedMapRegions.includes(region.id);
                       return (
                         <g key={region.id}>
                           {/* Map path block */}
                           <path 
                             d={region.path} 
-                            fill={isHovered ? "var(--color-admin-primary-300, #B2B2B2)" : "var(--color-admin-primary-100, #E8E8E8)"} 
-                            stroke={isHovered ? "var(--color-neutral-800, #4B4B4B)" : "var(--color-white, #FFFFFF)"} 
-                            strokeWidth={isHovered ? "2.5" : "1.5"} 
+                            fill={isSelected ? "var(--color-admin-primary-500, #4b5563)" : (isHovered ? "var(--color-admin-primary-300, #B2B2B2)" : "var(--color-admin-primary-100, #E8E8E8)")} 
+                            stroke={isSelected ? "var(--color-neutral-950, #111111)" : (isHovered ? "var(--color-neutral-800, #4B4B4B)" : "var(--color-white, #FFFFFF)")} 
+                            strokeWidth={isSelected ? "3" : (isHovered ? "2.5" : "1.5")} 
                             strokeLinejoin="round"
                             className="transition-all duration-150 cursor-pointer"
                             onMouseMove={(e) => handleMouseMove(e, region)}
                             onMouseLeave={() => setHoveredRegion(null)}
+                            onClick={() => {
+                              setSelectedMapRegions(prev => 
+                                prev.includes(region.id) 
+                                  ? prev.filter(id => id !== region.id) 
+                                  : [...prev, region.id]
+                              );
+                            }}
                           />
                           
                           {/* Region indicator dot */}
                           <circle 
                             cx={region.labelX} 
                             cy={region.labelY} 
-                            r={isHovered ? "6.5" : "4.5"} 
-                            fill={isHovered ? "var(--color-neutral-950, #1E1E1E)" : "var(--color-admin-primary-600, #626262)"}
+                            r={isSelected ? "7.5" : (isHovered ? "6.5" : "4.5")} 
+                            fill={isSelected ? "var(--color-neutral-950, #000000)" : (isHovered ? "var(--color-neutral-950, #1E1E1E)" : "var(--color-admin-primary-600, #626262)")}
                             stroke="var(--color-white, #FFFFFF)"
                             strokeWidth="1.5"
                             className="pointer-events-none transition-all duration-150"
@@ -1330,22 +2761,52 @@ export default function StatisticsPage() {
               {/* Right Column: Top Regions List (all 14) */}
               <div className="lg:col-span-4 flex flex-col justify-start pt-1">
                 <div>
-                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Студенты на карте</h3>
-                  <div className="flex flex-col gap-3">
-                    {sortedRegions.map((region, i) => (
-                      <div key={region.id} className="flex flex-col gap-1.5 py-0.5">
-                        <div className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-neutral-800 flex items-center gap-1.5">
-                            <span className="w-4 h-4 bg-neutral-100 text-neutral-400 rounded-md flex items-center justify-center font-bold text-[9px]">{i + 1}</span>
-                            {region.name}
-                          </span>
-                          <span className="text-neutral-500">{region.users.toLocaleString()} ({region.pct}%)</span>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Студенты на карте</h3>
+                    {selectedMapRegions.length > 0 && (
+                      <button 
+                        onClick={() => setSelectedMapRegions([])}
+                        className="text-[10px] font-bold text-neutral-400 hover:text-neutral-700 transition-colors bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded-md"
+                      >
+                        Сбросить ({selectedMapRegions.length})
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto pr-1">
+                    {sortedRegions.map((region, i) => {
+                      const isSelected = selectedMapRegions.includes(region.id);
+                      return (
+                        <div 
+                          key={region.id} 
+                          className={`flex flex-col gap-1 py-1 px-2 rounded-xl transition-all cursor-pointer ${isSelected ? 'bg-neutral-100/80 border border-neutral-200' : 'hover:bg-neutral-50/50 border border-transparent'}`}
+                          onClick={() => {
+                            setSelectedMapRegions(prev => 
+                              prev.includes(region.id) 
+                                ? prev.filter(id => id !== region.id) 
+                                : [...prev, region.id]
+                            );
+                          }}
+                        >
+                          <div className="flex justify-between items-center text-xs font-semibold">
+                            <span className={`flex items-center gap-1.5 ${isSelected ? 'text-neutral-900 font-bold' : 'text-neutral-800'}`}>
+                              <span className={`w-4 h-4 rounded-md flex items-center justify-center font-bold text-[9px] ${isSelected ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-400'}`}>
+                                {i + 1}
+                              </span>
+                              {region.name}
+                            </span>
+                            <span className={`text-[11px] ${isSelected ? 'text-neutral-900 font-bold' : 'text-neutral-500'}`}>
+                              {region.users.toLocaleString()} ({region.pct}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all ${isSelected ? 'bg-neutral-800' : 'bg-neutral-400'}`} 
+                              style={{ width: `${Math.min(100, (region.users / (sortedRegions[0].users || 1)) * 100)}%` }} 
+                            />
+                          </div>
                         </div>
-                        <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-neutral-400 rounded-full transition-all" style={{ width: `${Math.min(100, (region.users / sortedRegions[0].users) * 100)}%` }} />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1750,6 +3211,224 @@ export default function StatisticsPage() {
               </div>
             </div>
 
+            {/* Users list table island */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col mt-4">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-base font-bold text-neutral-900">Список пользователей</h3>
+                  <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                    {tableFilteredUsers.length}
+                  </span>
+                </div>
+                <div className="relative w-full sm:w-80">
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени, email или телефону..."
+                    value={tableSearch}
+                    onChange={(e) => setTableSearch(e.target.value)}
+                    className="w-full pl-9 pr-9 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  {tableSearch && (
+                    <button 
+                      onClick={() => setTableSearch('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                      type="button"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                    <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                      <th style={{ width: '50px' }} className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Пользователь</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors text-right" onClick={() => toggleTableSort('activity')}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Посл. визит
+                          {tableActivitySort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
+                           tableActivitySort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
+                           <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors text-right" onClick={() => toggleTableSort('lastActive')}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Последняя активность
+                          {tableLastActiveSort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
+                           tableLastActiveSort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
+                           <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors text-right" onClick={() => toggleTableSort('reg')}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Регистрация
+                          {tableRegSort === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : 
+                           tableRegSort === 'asc' ? <ArrowUpZA className="w-3.5 h-3.5 shrink-0" /> : 
+                           <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {tablePagedUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-16 text-center text-neutral-400 text-sm font-medium">Пользователи не найдены</td>
+                      </tr>
+                    ) : (
+                      tablePagedUsers.map((user, index) => {
+                        const globalIdx = (tableCurrentPage - 1) * Number(tablePageSize) + index + 1;
+                        return (
+                          <tr 
+                            key={user.id} 
+                            onClick={() => router.push(`/users/${user.id}`)}
+                            className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors cursor-pointer"
+                          >
+                            <td className="px-4 py-3.5 text-center">
+                              <span className="text-[11px] text-neutral-300 font-bold tabular-nums">
+                                {String(globalIdx).padStart(2, '0')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                  {user.initials}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-neutral-800 text-[13px] truncate max-w-[350px]" title={user.name}>{user.name}</span>
+                                  <span className="text-[11px] text-neutral-400 font-medium truncate max-w-[350px]" title={user.email}>{user.email}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <DateCell value={user.visit} />
+                            </td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <DateCell value={user.activity} />
+                            </td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <DateCell value={user.reg} />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination block */}
+              <div className="border-t border-neutral-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-neutral-50/20 rounded-b-2xl">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 font-semibold">Показывать по:</span>
+                    <select
+                      value={tablePageSize}
+                      onChange={(e) => {
+                        setTablePageSize(e.target.value as any);
+                        setTableCurrentPage(1);
+                      }}
+                      className="text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-300 shadow-sm cursor-pointer"
+                    >
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                  </div>
+                  <span className="text-xs text-neutral-400 font-semibold">
+                    Показано <span className="text-neutral-700 font-bold">{tableFilteredUsers.length === 0 ? 0 : (tableCurrentPage - 1) * Number(tablePageSize) + 1}–{Math.min(tableCurrentPage * Number(tablePageSize), tableFilteredUsers.length)}</span> из <span className="text-neutral-700 font-bold">{tableFilteredUsers.length}</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto sm:ml-auto">
+                  {tableTotalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setTableCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={tableCurrentPage === 1}
+                        className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                        type="button"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      
+                      {(() => {
+                        const buttons = [];
+                        const start = Math.max(1, tableCurrentPage - 2);
+                        const end = Math.min(tableTotalPages, start + 4);
+                        const adjustedStart = Math.max(1, end - 4);
+                        
+                        if (adjustedStart > 1) {
+                          buttons.push(
+                            <button
+                              key={1}
+                              onClick={() => setTableCurrentPage(1)}
+                              className="w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                              type="button"
+                            >
+                              1
+                            </button>
+                          );
+                          if (adjustedStart > 2) {
+                            buttons.push(<span key="dots-start" className="text-neutral-400 text-xs px-1 font-bold">...</span>);
+                          }
+                        }
+
+                        for (let page = adjustedStart; page <= end; page++) {
+                          const isActive = page === tableCurrentPage;
+                          buttons.push(
+                            <button
+                              key={page}
+                              onClick={() => setTableCurrentPage(page)}
+                              className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center ${
+                                isActive
+                                  ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+                                  : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                              }`}
+                              type="button"
+                            >
+                              {page}
+                            </button>
+                          );
+                        }
+
+                        if (end < tableTotalPages) {
+                          if (end < tableTotalPages - 1) {
+                            buttons.push(<span key="dots-end" className="text-neutral-400 text-xs px-1 font-bold">...</span>);
+                          }
+                          buttons.push(
+                            <button
+                              key={tableTotalPages}
+                              onClick={() => setTableCurrentPage(tableTotalPages)}
+                              className="w-8 h-8 rounded-lg text-xs font-bold transition-all border flex items-center justify-center bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
+                              type="button"
+                            >
+                              {tableTotalPages}
+                            </button>
+                          );
+                        }
+
+                        return buttons;
+                      })()}
+
+                      <button
+                        onClick={() => setTableCurrentPage(prev => Math.min(prev + 1, tableTotalPages))}
+                        disabled={tableCurrentPage === tableTotalPages}
+                        className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                        type="button"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -1758,251 +3437,817 @@ export default function StatisticsPage() {
         {/* ========================================================================= */}
         {activeTab === 'courses' && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-            {/* Top Stats */}
+            {/* ── 3 Stat Cards ── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard title="Назначено курсов" value="125,483" />
-              <StatCard title="В процессе обучения" value="18,048" />
-              <StatCard title="Кол-во завершенных" value="85,266" />
+              {/* Card 1: Courses */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Всего курсов</h3>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight">{coursesStatTotals.totalCourses}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Назначено</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.coursesAssigned.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">В процессе</span><span className="text-[12px] font-bold text-amber-600">{coursesStatTotals.coursesInProgress.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Завершено</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.coursesCompleted.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Сертификатов</span><span className="text-[12px] font-bold text-indigo-600">{coursesStatTotals.coursesCertificates.toLocaleString()}</span></div>
+                  <div className="flex justify-between col-span-2"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.coursesAvgTime}</span></div>
+                </div>
+              </div>
+
+              {/* Card 2: Lessons */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Всего уроков</h3>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight">{coursesStatTotals.totalLessons}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Начато</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.lessonsStarted.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">В процессе</span><span className="text-[12px] font-bold text-amber-600">{coursesStatTotals.lessonsInProgress.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Завершено</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.lessonsCompleted.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.lessonsAvgTime}</span></div>
+                  <div className="flex justify-between col-span-2"><span className="text-[11px] text-neutral-400">CSI</span><span className="text-[12px] font-bold text-yellow-600">★ {coursesStatTotals.lessonsCsi}</span></div>
+                </div>
+              </div>
+
+              {/* Card 3: Tests */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Всего тестов</h3>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight">{coursesStatTotals.totalTests}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-4">
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Начато</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.testsStarted.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">В процессе</span><span className="text-[12px] font-bold text-amber-600">{coursesStatTotals.testsInProgress.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Завершено</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.testsCompleted.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.testsAvgTime}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Успешно</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.testsPassed.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Провалено</span><span className="text-[12px] font-bold text-red-500">{coursesStatTotals.testsFailed.toLocaleString()}</span></div>
+                </div>
+              </div>
             </div>
 
-            {/* Courses progress board */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика обучения по курсам</h3>
-              <div className="overflow-x-auto">
+            {/* ── Content List Table (switchable) ── */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between px-6 pt-5 pb-0">
+                <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+                  {(['courses', 'lessons', 'tests'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => { setCoursesSubTab(tab); setCourseListPage(1); setCourseListSearch(''); }}
+                      className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${coursesSubTab === tab ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'}`}
+                      type="button"
+                    >
+                      {tab === 'courses' ? 'Курсы' : tab === 'lessons' ? 'Уроки' : 'Тесты'}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Поиск..."
+                    value={courseListSearch}
+                    onChange={(e) => { setCourseListSearch(e.target.value); setCourseListPage(1); }}
+                    className="pl-9 pr-8 py-2 border border-neutral-200 rounded-xl text-[13px] w-[220px] focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                  />
+                  {courseListSearch && <button onClick={() => setCourseListSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer" type="button"><X className="w-3.5 h-3.5" /></button>}
+                </div>
+              </div>
+              <div className="overflow-x-auto px-6 pb-4 pt-3">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-neutral-100">
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Название курса</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">В процессе</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Завершили</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Успеваемость</th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Название</th>
+                      {coursesSubTab === 'courses' && (
+                        <>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Назначено</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">В процессе</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Завершено</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Сертификатов</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Ср. время</th>
+                        </>
+                      )}
+                      {coursesSubTab === 'lessons' && (
+                        <>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Начато</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">В процессе</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Завершено</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Ср. время</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">CSI</th>
+                        </>
+                      )}
+                      {coursesSubTab === 'tests' && (
+                        <>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Начато</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">В процессе</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Завершено</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Ср. время</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Успешно</th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Провалено</th>
+                        </>
+                      )}
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-center">Язык</th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Создан</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentCoursesProgress.map((course: any, idx: number) => (
-                      <tr key={idx} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                        <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{course.title}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{course.active.toLocaleString()}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{course.completed.toLocaleString()}</td>
-                        <td className="py-4 px-3 text-right">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${course.rate >= 90 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                            {course.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {coursesSubTab === 'courses' && (() => {
+                      const start = (courseListPage - 1) * Number(courseListPageSize);
+                      const paged = filteredCoursesList.slice(start, start + Number(courseListPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map(c => (
+                        <tr key={c.id} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-900 font-semibold max-w-[220px]"><MarqueeText text={c.title} /></td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{c.assigned.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-amber-600 text-right font-medium">{c.inProgress.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-emerald-600 text-right font-medium">{c.completed.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-indigo-600 text-right font-medium">{c.certificates.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{c.avgTime}</td>
+                          <td className="py-3.5 px-3 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${c.language === 'RUS' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>{c.language}</span></td>
+                          <td className="py-3.5 px-3 text-right"><DateCell value={c.createdAt} /></td>
+                        </tr>
+                      ));
+                    })()}
+                    {coursesSubTab === 'lessons' && (() => {
+                      const start = (courseListPage - 1) * Number(courseListPageSize);
+                      const paged = filteredLessonsList.slice(start, start + Number(courseListPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map(l => (
+                        <tr key={l.id} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-900 font-semibold max-w-[220px]"><MarqueeText text={l.title} /></td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{l.started.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-amber-600 text-right font-medium">{l.inProgress.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-emerald-600 text-right font-medium">{l.completed.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{l.avgTime}</td>
+                          <td className="py-3.5 px-3 text-right"><span className="text-[12px] font-bold text-yellow-600">★ {l.csi}</span></td>
+                          <td className="py-3.5 px-3 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${l.language === 'RUS' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>{l.language}</span></td>
+                          <td className="py-3.5 px-3 text-right"><DateCell value={l.createdAt} /></td>
+                        </tr>
+                      ));
+                    })()}
+                    {coursesSubTab === 'tests' && (() => {
+                      const start = (courseListPage - 1) * Number(courseListPageSize);
+                      const paged = filteredTestsList.slice(start, start + Number(courseListPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={9} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map(t => (
+                        <tr key={t.id} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-900 font-semibold max-w-[220px]"><MarqueeText text={t.title} /></td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{t.started.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-amber-600 text-right font-medium">{t.inProgress.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-emerald-600 text-right font-medium">{t.completed.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-neutral-600 text-right font-medium">{t.avgTime}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-emerald-600 text-right font-medium">{t.passed.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-[13px] text-red-500 text-right font-medium">{t.failed.toLocaleString()}</td>
+                          <td className="py-3.5 px-3 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${t.language === 'RUS' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>{t.language}</span></td>
+                          <td className="py-3.5 px-3 text-right"><DateCell value={t.createdAt} /></td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
+              {/* Content list pagination */}
+              {(() => {
+                const totalItems = coursesSubTab === 'courses' ? filteredCoursesList.length : coursesSubTab === 'lessons' ? filteredLessonsList.length : filteredTestsList.length;
+                const totalPages = Math.ceil(totalItems / Number(courseListPageSize));
+                if (totalItems === 0) return null;
+                return (
+                  <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-100">
+                    <div className="flex items-center gap-2">
+                      <select value={courseListPageSize} onChange={(e) => { setCourseListPageSize(e.target.value as any); setCourseListPage(1); }} className="text-[12px] border border-neutral-200 rounded-lg px-2 py-1.5 text-neutral-700 cursor-pointer focus:outline-none">
+                        <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option>
+                      </select>
+                      <span className="text-[11px] text-neutral-400">Показано {(courseListPage - 1) * Number(courseListPageSize) + 1}–{Math.min(courseListPage * Number(courseListPageSize), totalItems)} из {totalItems}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button disabled={courseListPage === 1} onClick={() => setCourseListPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronLeft className="w-4 h-4" /></button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let page: number;
+                        if (totalPages <= 5) page = i + 1;
+                        else if (courseListPage <= 3) page = i + 1;
+                        else if (courseListPage >= totalPages - 2) page = totalPages - 4 + i;
+                        else page = courseListPage - 2 + i;
+                        return (
+                          <button key={page} onClick={() => setCourseListPage(page)} className={`w-8 h-8 rounded-lg text-[12px] font-bold cursor-pointer ${page === courseListPage ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:bg-neutral-100'}`} type="button">{page}</button>
+                        );
+                      })}
+                      <button disabled={courseListPage === totalPages} onClick={() => setCourseListPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Selected Lessons statistics */}
-            {selectedLessons.length > 0 && (
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика по выбранным урокам</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-neutral-100">
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Урок</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Курс</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Изучено студентами</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Среднее время (мин)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedLessons.map(lessonId => {
-                        const lessonObj = LESSONS_DATA.find(l => l.id === lessonId);
-                        const courseObj = COURSES_DATA.find(c => c.id === lessonObj?.courseId);
-                        if (!lessonObj) return null;
-                        return (
-                          <tr key={lessonId} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                            <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{lessonObj.title}</td>
-                            <td className="py-4 px-3 text-[14px] text-neutral-500">{courseObj?.title || '—'}</td>
-                            <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{Math.floor(Math.random() * 400 + 100).toLocaleString()}</td>
-                            <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{Math.floor(Math.random() * 20 + 10)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            {/* Organizational Filters inside Courses Tab */}
+            <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
+              <div className="relative group">
+                <button 
+                  onClick={() => {
+                    setSelectedBranch([]);
+                    setSelectedDept([]);
+                    setSelectedDivision([]);
+                    setSelectedRole([]);
+                    setSelectedStatus([]);
+                  }}
+                  className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
+                  title="Очистить организационные фильтры"
+                  type="button"
+                >
+                  <Eraser className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
+                  Очистить фильтры
                 </div>
               </div>
-            )}
+              
+              {activePriorityFields.map((field: any, idx: number) => {
+                const data = getFilterData(field.id, idx);
+                return (
+                  <MultiSelectFilterDropdownWithSearch 
+                    key={field.id}
+                    label={data.label} 
+                    options={data.options.map(o => ({ id: o, title: o }))}
+                    selectedValues={data.selectedValues}
+                    onChange={data.onChange}
+                  />
+                );
+              })}
+            </div>
 
-            {/* Selected Tests statistics */}
-            {selectedTests.length > 0 && (
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика по выбранным тестам</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-neutral-100">
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Тест</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Курс</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Пройдено раз</th>
-                        <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Средний балл</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedTests.map(testId => {
-                        const testObj = TESTS_DATA.find(t => t.id === testId);
-                        const courseObj = COURSES_DATA.find(c => c.id === testObj?.courseId);
-                        if (!testObj) return null;
-                        return (
-                          <tr key={testId} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                            <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{testObj.title}</td>
-                            <td className="py-4 px-3 text-[14px] text-neutral-500">{courseObj?.title || '—'}</td>
-                            <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{Math.floor(Math.random() * 300 + 50).toLocaleString()}</td>
-                            <td className="py-4 px-3 text-right">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700">
-                                {Math.floor(Math.random() * 20 + 75)}%
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            {/* ── Users Enrollment Table (switchable) ── */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between px-6 pt-5 pb-0">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-[14px] font-bold text-neutral-900">Список пользователей</h3>
+                  <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+                    {(['courses', 'lessons', 'tests'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => { setCoursesUserSubTab(tab); setCourseUserPage(1); setCourseUserSearch(''); }}
+                        className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${coursesUserSubTab === tab ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'}`}
+                        type="button"
+                      >
+                        {tab === 'courses' ? 'Курсы' : tab === 'lessons' ? 'Уроки' : 'Тесты'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    placeholder="Поиск..."
+                    value={courseUserSearch}
+                    onChange={(e) => { setCourseUserSearch(e.target.value); setCourseUserPage(1); }}
+                    className="pl-9 pr-8 py-2 border border-neutral-200 rounded-xl text-[13px] w-[220px] focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                  />
+                  {courseUserSearch && <button onClick={() => setCourseUserSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer" type="button"><X className="w-3.5 h-3.5" /></button>}
                 </div>
               </div>
-            )}
-
-            {/* Courses Rating Trend */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[14px] font-bold text-neutral-900">Средняя оценка полезности материалов</h3>
-                <button className="text-neutral-400 hover:text-neutral-900"><MoreHorizontal className="w-5 h-5" /></button>
+              <div className="overflow-x-auto px-6 pb-4 pt-3">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-neutral-100">
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider w-8">№</th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Пользователь</th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">{coursesUserSubTab === 'courses' ? 'Курс' : coursesUserSubTab === 'lessons' ? 'Урок' : 'Тест'}</th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('assignedAt')}>
+                        <div className="flex items-center gap-1 justify-end">Назначен {courseUserSort?.field === 'assignedAt' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                      </th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('startedAt')}>
+                        <div className="flex items-center gap-1 justify-end">Начал {courseUserSort?.field === 'startedAt' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                      </th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('completedAt')}>
+                        <div className="flex items-center gap-1 justify-end">Завершил {courseUserSort?.field === 'completedAt' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                      </th>
+                      <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right">Время</th>
+                      {coursesUserSubTab === 'courses' && (
+                        <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('progress')}>
+                          <div className="flex items-center gap-1 justify-end">Прогресс {courseUserSort?.field === 'progress' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                        </th>
+                      )}
+                      {coursesUserSubTab === 'tests' && (
+                        <>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-center cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('status')}>
+                            <div className="flex items-center gap-1 justify-center">Статус {courseUserSort?.field === 'status' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                          </th>
+                          <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('correctAnswers')}>
+                            <div className="flex items-center gap-1 justify-end">Ответы {courseUserSort?.field === 'correctAnswers' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                          </th>
+                        </>
+                      )}
+                      {coursesUserSubTab === 'lessons' && (
+                        <th className="py-3 px-3 text-[10px] font-semibold text-neutral-400 uppercase text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => toggleCourseUserSort('rating')}>
+                          <div className="flex items-center gap-1 justify-end">Оценка {courseUserSort?.field === 'rating' ? (courseUserSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}</div>
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coursesUserSubTab === 'courses' && (() => {
+                      const start = (courseUserPage - 1) * Number(courseUserPageSize);
+                      const paged = filteredCourseEnrollments.slice(start, start + Number(courseUserPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map((e, idx) => (
+                        <tr key={`ce-${idx}`} onClick={() => router.push(`/users/${e.userId}`)} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors cursor-pointer">
+                          <td className="py-3 px-3 text-[12px] text-neutral-400">{start + idx + 1}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center text-[11px] font-bold text-neutral-600 shrink-0">{e.userInitials}</div>
+                              <div className="min-w-0">
+                                <div className="text-[13px] font-semibold text-neutral-900 truncate max-w-[160px]">{e.userName}</div>
+                                <div className="text-[11px] text-neutral-400 truncate max-w-[160px]">{e.userEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-700 font-medium max-w-[150px]"><MarqueeText text={e.courseName} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.assignedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.startedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.completedAt} /></td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-600 text-right font-medium">{e.avgTime}</td>
+                          <td className="py-3 px-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="w-16 h-1.5 bg-neutral-100 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${e.progress}%`, backgroundColor: e.progress === 100 ? '#10b981' : e.progress > 50 ? '#f59e0b' : '#ef4444' }} /></div>
+                              <span className="text-[11px] font-bold text-neutral-700 tabular-nums">{e.progress}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
+                    {coursesUserSubTab === 'lessons' && (() => {
+                      const start = (courseUserPage - 1) * Number(courseUserPageSize);
+                      const paged = filteredLessonEnrollments.slice(start, start + Number(courseUserPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map((e, idx) => (
+                        <tr key={`le-${idx}`} onClick={() => router.push(`/users/${e.userId}`)} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors cursor-pointer">
+                          <td className="py-3 px-3 text-[12px] text-neutral-400">{start + idx + 1}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center text-[11px] font-bold text-neutral-600 shrink-0">{e.userInitials}</div>
+                              <div className="min-w-0">
+                                <div className="text-[13px] font-semibold text-neutral-900 truncate max-w-[160px]">{e.userName}</div>
+                                <div className="text-[11px] text-neutral-400 truncate max-w-[160px]">{e.userEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-700 font-medium max-w-[150px]"><MarqueeText text={e.lessonName} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.assignedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.startedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.completedAt} /></td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-600 text-right font-medium">{e.avgTime}</td>
+                          <td className="py-3 px-3 text-right">{e.rating ? <span className="text-[12px] font-bold text-yellow-600">★ {e.rating}</span> : <span className="text-[12px] text-neutral-300">—</span>}</td>
+                        </tr>
+                      ));
+                    })()}
+                    {coursesUserSubTab === 'tests' && (() => {
+                      const start = (courseUserPage - 1) * Number(courseUserPageSize);
+                      const paged = filteredTestEnrollments.slice(start, start + Number(courseUserPageSize));
+                      return paged.length === 0 ? (
+                        <tr><td colSpan={9} className="py-8 text-center text-neutral-400 text-[13px]">Нет данных</td></tr>
+                      ) : paged.map((e, idx) => (
+                        <tr key={`te-${idx}`} onClick={() => router.push(`/users/${e.userId}`)} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors cursor-pointer">
+                          <td className="py-3 px-3 text-[12px] text-neutral-400">{start + idx + 1}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center text-[11px] font-bold text-neutral-600 shrink-0">{e.userInitials}</div>
+                              <div className="min-w-0">
+                                <div className="text-[13px] font-semibold text-neutral-900 truncate max-w-[160px]">{e.userName}</div>
+                                <div className="text-[11px] text-neutral-400 truncate max-w-[160px]">{e.userEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-700 font-medium max-w-[150px]"><MarqueeText text={e.testName} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.assignedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.startedAt} /></td>
+                          <td className="py-3 px-3 text-right"><DateCell value={e.completedAt} /></td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-600 text-right font-medium">{e.avgTime}</td>
+                          <td className="py-3 px-3 text-center">
+                            {e.status ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${e.status === 'Успешно' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{e.status}</span>
+                            ) : <span className="text-[12px] text-neutral-300">—</span>}
+                          </td>
+                          <td className="py-3 px-3 text-[12px] text-neutral-700 font-bold text-right tabular-nums">{e.correctAnswers || '—'}</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
               </div>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={coursesRatingData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FFE68B" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#FFE68B" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
-                    <YAxis domain={[3.5, 5]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dx={-10} />
-                    <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Area type="monotone" dataKey="rating" stroke="#D4AF37" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRating)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              {/* Users enrollment pagination */}
+              {(() => {
+                const totalItems = coursesUserSubTab === 'courses' ? filteredCourseEnrollments.length : coursesUserSubTab === 'lessons' ? filteredLessonEnrollments.length : filteredTestEnrollments.length;
+                const totalPages = Math.ceil(totalItems / Number(courseUserPageSize));
+                if (totalItems === 0) return null;
+                return (
+                  <div className="flex items-center justify-between px-6 py-3 border-t border-neutral-100">
+                    <div className="flex items-center gap-2">
+                      <select value={courseUserPageSize} onChange={(e) => { setCourseUserPageSize(e.target.value as any); setCourseUserPage(1); }} className="text-[12px] border border-neutral-200 rounded-lg px-2 py-1.5 text-neutral-700 cursor-pointer focus:outline-none">
+                        <option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option>
+                      </select>
+                      <span className="text-[11px] text-neutral-400">Показано {(courseUserPage - 1) * Number(courseUserPageSize) + 1}–{Math.min(courseUserPage * Number(courseUserPageSize), totalItems)} из {totalItems}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button disabled={courseUserPage === 1} onClick={() => setCourseUserPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronLeft className="w-4 h-4" /></button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let page: number;
+                        if (totalPages <= 5) page = i + 1;
+                        else if (courseUserPage <= 3) page = i + 1;
+                        else if (courseUserPage >= totalPages - 2) page = totalPages - 4 + i;
+                        else page = courseUserPage - 2 + i;
+                        return (
+                          <button key={page} onClick={() => setCourseUserPage(page)} className={`w-8 h-8 rounded-lg text-[12px] font-bold cursor-pointer ${page === courseUserPage ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:bg-neutral-100'}`} type="button">{page}</button>
+                        );
+                      })}
+                      <button disabled={courseUserPage === totalPages} onClick={() => setCourseUserPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* TESTS TAB                                                                 */}
-        {/* ========================================================================= */}
-        {activeTab === 'tests' && (
-          <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-            {/* Top Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard title="Назначено тестов" value="54,203" />
-              <StatCard title="В процессе прохождения" value="7,415" />
-              <StatCard title="Кол-во завершенных" value="38,190" />
-            </div>
 
-            {/* Tests progress board */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика прохождения тестов</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-neutral-100">
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Название теста</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">В процессе</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Завершили</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Успеваемость (Средний балл)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {testsProgressMock.map((test, idx) => (
-                      <tr key={idx} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                        <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{test.title}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{test.active.toLocaleString()}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{test.completed.toLocaleString()}</td>
-                        <td className="py-4 px-3 text-right">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${test.rate >= 80 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                            {test.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
-            {/* Tests average score trend */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[14px] font-bold text-neutral-900">Средний балл тестирования</h3>
-                <button className="text-neutral-400 hover:text-neutral-900"><MoreHorizontal className="w-5 h-5" /></button>
-              </div>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={testsScoreTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
-                    <YAxis domain={[50, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dx={-10} />
-                    <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Area type="monotone" dataKey="score" stroke="#4F46E5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorScore)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* ========================================================================= */}
-        {/* EVENTS TAB                                                                */}
-        {/* ========================================================================= */}
+
+
         {activeTab === 'events' && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             {/* Top Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard title="Проведено мероприятий" value="48" />
-              <StatCard title="Всего регистраций" value="4,850" />
-              <StatCard title="Средняя посещаемость" value="76%" />
+              <StatCard title="Проведено мероприятий" value={eventStats.totalEvents} />
+              <StatCard title="Всего регистраций" value={eventStats.totalRegistrations.toLocaleString()} />
+              <StatCard title="Средняя посещаемость" value={eventStats.avgAttendance} />
             </div>
 
-            {/* Events attendance details */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика по недавним мероприятиям</h3>
+            {/* Events List Block */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-base font-bold text-neutral-900">Список мероприятий</h3>
+                  <div className="w-[250px]">
+                    <MultiSelectFilterDropdownWithSearch
+                      label="Все мероприятия"
+                      options={STATS_MOCK_EVENTS.map(ev => ({ id: ev.id, title: ev.title }))}
+                      selectedValues={selectedEvents}
+                      onChange={(vals) => { setSelectedEvents(vals); setEventCurrentPage(1); }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Header of Table */}
+              <div 
+                className="grid gap-4 px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 text-[11px] font-bold text-neutral-400 uppercase tracking-wider items-center text-left"
+                style={{ gridTemplateColumns: '1.8fr 70px 120px 95px 115px 90px 125px 40px' }}
+              >
+                <div>Мероприятие</div>
+                <div>Язык</div>
+                <div>Статус</div>
+                <div>Формат</div>
+                <div>Регистрация</div>
+                <div>Участники</div>
+                <div>Дата создания</div>
+                <div></div>
+              </div>
+
+              {/* Rows */}
+              <div className="flex flex-col divide-y divide-neutral-100 relative min-h-[100px]">
+                {(() => {
+                  const visibleStatsEvents = selectedEvents.length > 0 ? STATS_MOCK_EVENTS.filter(e => selectedEvents.includes(e.id)) : STATS_MOCK_EVENTS;
+                  return visibleStatsEvents.map((ev, index) => {
+                    const statusConfig = {
+                      draft: { text: 'Черновик', style: 'bg-slate-100 text-slate-600 border-slate-200' },
+                      registration: { text: 'Регистрация', style: 'bg-blue-50 text-blue-700 border-blue-150' },
+                      in_progress: { text: 'В процессе', style: 'bg-emerald-50 text-emerald-700 border-emerald-150' },
+                      completed: { text: 'Завершено', style: 'bg-neutral-100 text-neutral-500 border-neutral-200' },
+                    }[ev.status] || { text: ev.status, style: 'bg-neutral-50 text-neutral-500 border-neutral-100' };
+
+                    const formatConfig = ev.format === 'offline' 
+                      ? { text: 'Офлайн', icon: <MapPin className="w-3 h-3" />, style: 'text-orange-600 bg-orange-50 border-orange-100' }
+                      : { text: 'Онлайн', icon: <Video className="w-3 h-3" />, style: 'text-violet-600 bg-violet-50 border-violet-100' };
+
+                    const regStart = new Date(new Date(ev.date).getTime() - 10 * 24 * 60 * 60 * 1000);
+                    const regStartStr = `${regStart.getFullYear()}-${String(regStart.getMonth() + 1).padStart(2, '0')}-${String(regStart.getDate()).padStart(2, '0')}T09:00:00`;
+                    const regEndStr = `${ev.date}T${ev.timeStart}:00`;
+
+                    return (
+                      <div 
+                        key={ev.id}
+                        onClick={() => router.push(`/events/${ev.id}`)}
+                        className="grid gap-4 px-6 py-4 items-center bg-white border-b border-neutral-100 transition-all group cursor-pointer relative hover:bg-[var(--color-admin-primary-50)]/20"
+                        style={{ gridTemplateColumns: '1.8fr 70px 120px 95px 115px 90px 125px 40px' }}
+                      >
+                      {/* 1. Title & Calendar Icon with Tooltip */}
+                      <div className="flex items-center gap-1.5 pr-4 min-w-0 relative">
+                        <div className="min-w-[14px] text-neutral-400 font-semibold text-[13px] text-left shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="relative group/tooltip flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-lg shrink-0 bg-neutral-50 border border-neutral-100 flex items-center justify-center text-neutral-500 group-hover:text-[var(--color-admin-primary-600)] group-hover:border-[var(--color-admin-primary-100)] transition-all cursor-pointer">
+                            <CalendarDays className="w-4.5 h-4.5 stroke-[1.8]" />
+                          </div>
+                          
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-[-16px] mb-2 opacity-0 group-hover/tooltip:opacity-100 pointer-events-none transition-all z-50 flex flex-col bg-[#1A1A1A] text-white text-[11px] rounded-lg p-3 shadow-xl border border-white/10 w-64 origin-bottom-left scale-95 group-hover/tooltip:scale-100 font-medium leading-relaxed">
+                            <div className="mb-2 pb-1.5 border-b border-white/10">
+                              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-0.5 font-bold">Регистрация</span>
+                              <div>Начало: {formatDateTime(regStartStr)}</div>
+                              <div>Конец: {formatDateTime(regEndStr)}</div>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-0.5 font-bold">Даты проведения</span>
+                              <div>День 1: {formatDate(ev.date)} ({ev.timeStart} - {ev.timeEnd})</div>
+                            </div>
+                            <div className="w-2 h-2 bg-[#1A1A1A] rotate-45 absolute top-full left-[32px] -translate-x-1/2 -translate-y-1/2 border-r border-b border-white/10" />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col min-w-0 flex-1 justify-center">
+                          <MarqueeText text={ev.title} className="font-bold text-neutral-900 text-sm leading-snug group-hover:text-[var(--color-admin-primary-600)] transition-colors" />
+                          <span className="text-xs text-neutral-400 font-semibold mt-0.5">{ev.type}</span>
+                        </div>
+                      </div>
+
+                      {/* 2. Language */}
+                      <div className="text-neutral-600 font-medium text-[13px]">
+                        {ev.lang || 'RUS'}
+                      </div>
+
+                      {/* 3. Status */}
+                      <div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border shadow-sm ${statusConfig.style}`}>
+                          {statusConfig.text}
+                        </span>
+                      </div>
+
+                      {/* 4. Format */}
+                      <div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-sm ${formatConfig.style}`}>
+                          {formatConfig.icon}
+                          {formatConfig.text}
+                        </span>
+                      </div>
+
+                      {/* 5. Registration Type */}
+                      <div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-sm ${
+                          ev.registrationType === 'private'
+                            ? 'bg-amber-50 text-amber-700 border-amber-150'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-150'
+                        }`}>
+                          {ev.registrationType === 'private' ? 'Приватная' : 'Открытая'}
+                        </span>
+                      </div>
+
+                      {/* 6. Participants count */}
+                      <div className="text-neutral-900 font-semibold text-[13px]">
+                        {ev.participantLimit ? `${ev.participants}/${ev.participantLimit}` : ev.participants}
+                      </div>
+
+                      {/* 7. Creation date */}
+                      <div>
+                        {(() => {
+                          if (!ev.createdAt) return <span className="text-neutral-400">—</span>;
+                          try {
+                            const date = new Date(ev.createdAt);
+                            if (isNaN(date.getTime())) return <span className="text-neutral-400">—</span>;
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            return (
+                              <div className="flex flex-col text-[12px] leading-tight">
+                                <span className="text-neutral-900 font-medium">{`${day}.${month}.${year}`}</span>
+                                <span className="text-neutral-400 mt-0.5">{`${hours}:${minutes}`}</span>
+                              </div>
+                            );
+                          } catch {
+                            return <span className="text-neutral-400">—</span>;
+                          }
+                        })()}
+                      </div>
+
+                      {/* 8. Action Menu / Drag Handle spacer */}
+                      <div></div>
+                    </div>
+                  );
+                });
+              })()}
+              </div>
+            </div>
+
+            {/* Custom Organizational Filters Block inside Events Tab */}
+            <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
+              <div className="relative group">
+                <button 
+                  onClick={() => {
+                    setSelectedBranch([]);
+                    setSelectedDept([]);
+                    setSelectedDivision([]);
+                    setSelectedRole([]);
+                    setSelectedStatus([]);
+                  }}
+                  className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
+                  title="Очистить организационные фильтры"
+                  type="button"
+                >
+                  <Eraser className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
+                  Очистить фильтры
+                </div>
+              </div>
+              
+              {activePriorityFields.map((field: any, idx: number) => {
+                const data = getFilterData(field.id, idx);
+                return (
+                  <MultiSelectFilterDropdownWithSearch 
+                    key={field.id}
+                    label={data.label} 
+                    options={data.options.map(o => ({ id: o, title: o }))}
+                    selectedValues={data.selectedValues}
+                    onChange={data.onChange}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Participants Registration & Attendance Records Table */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-base font-bold text-neutral-900">Участники мероприятий</h3>
+                  <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                    {filteredEventUserRecords.length}
+                  </span>
+                </div>
+                <div className="relative w-full sm:w-80">
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени, email или мероприятию..."
+                    value={eventSearch}
+                    onChange={(e) => { setEventSearch(e.target.value); setEventCurrentPage(1); }}
+                    className="w-full pl-9 pr-9 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  {eventSearch && (
+                    <button 
+                      onClick={() => setEventSearch('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                      type="button"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
-                    <tr className="border-b border-neutral-100">
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Мероприятие</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Зарегистрировано</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Присутствовало</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Отсутствовало</th>
+                    <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                      <th style={{ width: '50px' }} className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Пользователь
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Мероприятие
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => {
+                        setEventSort(prev => (!prev || prev.field !== 'registeredAt' ? { field: 'registeredAt', dir: 'desc' } : prev.dir === 'desc' ? { field: 'registeredAt', dir: 'asc' } : null));
+                        setEventCurrentPage(1);
+                      }}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Регистрация
+                          {eventSort?.field === 'registeredAt' ? (eventSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">
+                        День
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => {
+                        setEventSort(prev => (!prev || prev.field !== 'status' ? { field: 'status', dir: 'desc' } : prev.dir === 'desc' ? { field: 'status', dir: 'asc' } : null));
+                        setEventCurrentPage(1);
+                      }}>
+                        <div className="flex items-center gap-1.5 justify-center">
+                          Статус
+                          {eventSort?.field === 'status' ? (eventSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => {
+                        setEventSort(prev => (!prev || prev.field !== 'checkedInAt' ? { field: 'checkedInAt', dir: 'desc' } : prev.dir === 'desc' ? { field: 'checkedInAt', dir: 'asc' } : null));
+                        setEventCurrentPage(1);
+                      }}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Посещение
+                          {eventSort?.field === 'checkedInAt' ? (eventSort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {eventAttendanceData.map((ev, idx) => (
-                      <tr key={idx} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                        <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{ev.name}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{ev.registered}</td>
-                        <td className="py-4 px-3 text-[14px] text-emerald-600 text-right font-bold">{ev.present}</td>
-                        <td className="py-4 px-3 text-[14px] text-rose-500 text-right font-medium">{ev.absent}</td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-neutral-100">
+                    {(() => {
+                      const start = (eventCurrentPage - 1) * Number(eventPageSize);
+                      const paged = filteredEventUserRecords.slice(start, start + Number(eventPageSize));
+                      return paged.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-16 text-center text-neutral-400 text-sm font-medium">Участники не найдены</td>
+                        </tr>
+                      ) : paged.map((record, index) => {
+                        const globalIdx = start + index + 1;
+                        const rowKey = `${record.id}-${record.dayNum}`;
+                        return (
+                          <React.Fragment key={rowKey}>
+                            <tr 
+                              onClick={() => router.push(`/users/${record.userId}`)}
+                              className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors cursor-pointer"
+                            >
+                              <td className="px-4 py-3.5 text-center">
+                                <span className="text-[11px] text-neutral-300 font-bold tabular-nums">
+                                  {String(globalIdx).padStart(2, '0')}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                    {record.userInitials}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="font-semibold text-neutral-800 text-[13px] truncate max-w-[200px]" title={record.userName}>{record.userName}</span>
+                                    <span className="text-[11px] text-neutral-400 font-medium truncate max-w-[200px]" title={record.userEmail}>{record.userEmail}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-[13px] text-neutral-700 font-semibold max-w-[250px]"><MarqueeText text={record.eventTitle} /></td>
+                              <td className="px-4 py-3.5 text-right tabular-nums">
+                                <DateCell value={record.registeredAt} />
+                              </td>
+                              <td className="px-4 py-3.5 text-center">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-neutral-100 text-neutral-800 border-neutral-200 uppercase tracking-wider">{record.dayLabel}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  record.dayStatus === 'Присутствует' 
+                                    ? 'bg-emerald-50 text-emerald-700' 
+                                    : record.dayStatus === 'Ожидание' 
+                                      ? 'bg-amber-50 text-amber-700' 
+                                      : 'bg-rose-50 text-rose-700'
+                                }`}>
+                                  {record.dayStatus}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-right tabular-nums">
+                                <DateCell value={record.dayCheckedInAt} />
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {(() => {
+                const totalItems = filteredEventUserRecords.length;
+                const totalPages = Math.ceil(totalItems / Number(eventPageSize));
+                if (totalItems === 0) return null;
+                return (
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-100 bg-neutral-50/20 rounded-b-2xl">
+                    <div className="flex items-center gap-2">
+                      <select 
+                        value={eventPageSize} 
+                        onChange={(e) => { setEventPageSize(e.target.value as any); setEventCurrentPage(1); }} 
+                        className="text-[12px] border border-neutral-200 rounded-lg px-2 py-1.5 text-neutral-700 cursor-pointer focus:outline-none bg-white"
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                      <span className="text-[11px] text-neutral-400">Показано {(eventCurrentPage - 1) * Number(eventPageSize) + 1}–{Math.min(eventCurrentPage * Number(eventPageSize), totalItems)} из {totalItems}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button disabled={eventCurrentPage === 1} onClick={() => setEventCurrentPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronLeft className="w-4 h-4" /></button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let page: number;
+                        if (totalPages <= 5) page = i + 1;
+                        else if (eventCurrentPage <= 3) page = i + 1;
+                        else if (eventCurrentPage >= totalPages - 2) page = totalPages - 4 + i;
+                        else page = eventCurrentPage - 2 + i;
+                        return (
+                          <button key={page} onClick={() => setEventCurrentPage(page)} className={`w-8 h-8 rounded-lg text-[12px] font-bold cursor-pointer ${page === eventCurrentPage ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:bg-neutral-100'}`} type="button">{page}</button>
+                        );
+                      })}
+                      <button disabled={eventCurrentPage === totalPages} onClick={() => setEventCurrentPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -2013,41 +4258,670 @@ export default function StatisticsPage() {
         {activeTab === 'surveys' && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             {/* Top Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatCard title="Назначено опросов" value="12" />
-              <StatCard title="Получено ответов" value="1,490" />
-              <StatCard title="Средний отклик (CSI)" value="82%" />
+            <div className="grid grid-cols-1 gap-6">
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center sm:justify-between hover:border-neutral-300 transition-colors gap-6">
+                <div>
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Всего опросов</h3>
+                  <div className="text-[40px] font-bold text-neutral-900 leading-none tracking-tight">
+                    {surveyStats.totalSurveys}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-12 border-t sm:border-t-0 sm:border-l border-neutral-100 pt-4 sm:pt-0 sm:pl-12">
+                  <div>
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Назначено</span>
+                    <span className="text-lg font-bold text-neutral-800">{surveyStats.totalAssigned}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">В процессе</span>
+                    <span className="text-lg font-bold text-amber-600">{surveyStats.totalInProgress}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Завершено</span>
+                    <span className="text-lg font-bold text-emerald-600">{surveyStats.totalCompleted}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Среднее время</span>
+                    <span className="text-lg font-bold text-neutral-800">{surveyStats.avgTimeStr}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Surveys completion stats */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-neutral-900 mb-4">Статистика активности по опросам</h3>
+            {/* Surveys List Block */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-base font-bold text-neutral-900">Список опросов</h3>
+                  <div className="w-[250px]">
+                    <MultiSelectFilterDropdownWithSearch
+                      label="Все опросы"
+                      options={STATS_MOCK_SURVEYS.map(s => ({ id: s.id, title: s.title }))}
+                      selectedValues={selectedSurveys}
+                      onChange={(vals) => { setSelectedSurveys(vals); setSurveyCurrentPage(1); }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Header of Table */}
+              <div 
+                className="grid gap-4 px-6 py-4 border-b border-neutral-100 bg-neutral-50/50 text-[11px] font-bold text-neutral-400 uppercase tracking-wider items-center"
+                style={{ gridTemplateColumns: '2fr 90px 100px 90px 90px 70px 110px' }}
+              >
+                <div className="text-left">НАЗВАНИЕ</div>
+                <div className="text-right">НАЗНАЧЕНО</div>
+                <div className="text-right">В ПРОЦЕССЕ</div>
+                <div className="text-right">ЗАВЕРШЕНО</div>
+                <div className="text-right">СР. ВРЕМЯ</div>
+                <div className="text-center">ЯЗЫК</div>
+                <div className="text-right">СОЗДАН</div>
+              </div>
+
+              {/* Rows */}
+              <div className="flex flex-col divide-y divide-neutral-100 relative min-h-[100px]">
+                {(() => {
+                  const visibleStatsSurveys = selectedSurveys.length > 0 ? STATS_MOCK_SURVEYS.filter(s => selectedSurveys.includes(s.id)) : STATS_MOCK_SURVEYS;
+                  return visibleStatsSurveys.map((srv, index) => {
+                    const srvRecords = surveyUserRecords.filter(r => r.surveyId === srv.id);
+                    const totalCount = srvRecords.length;
+                    const answersCount = srvRecords.filter(r => r.status === 'Заполнил').length;
+                    const inProgressCount = srvRecords.filter(r => r.status === 'Ожидание').length;
+                    const avgTime = totalCount > 0 ? `${3 + (index % 3)}ч ${(index * 15) % 60}м` : '—';
+
+                    return (
+                      <div 
+                        key={srv.id}
+                        onClick={() => router.push(`/surveys/${srv.id}`)}
+                        className="grid gap-4 px-6 py-4 items-center bg-white border-b border-neutral-100 transition-all group cursor-pointer relative hover:bg-[var(--color-admin-primary-50)]/20"
+                        style={{ gridTemplateColumns: '2fr 90px 100px 90px 90px 70px 110px' }}
+                      >
+                        {/* 1. Title */}
+                        <div className="flex items-center gap-2 pr-4 min-w-0 relative text-left">
+                          <span className="text-neutral-400 font-semibold text-[13px] shrink-0">
+                            {index + 1}
+                          </span>
+                          <span className="font-bold text-neutral-900 text-sm leading-snug group-hover:text-[var(--color-admin-primary-600)] transition-colors truncate">
+                            {srv.title}
+                          </span>
+                        </div>
+
+                        {/* 2. Assigned */}
+                        <div className="text-right text-neutral-900 font-semibold text-[13px]">
+                          {totalCount}
+                        </div>
+
+                        {/* 3. In Progress */}
+                        <div className="text-right text-amber-600 font-semibold text-[13px]">
+                          {inProgressCount}
+                        </div>
+
+                        {/* 4. Completed */}
+                        <div className="text-right text-emerald-600 font-semibold text-[13px]">
+                          {answersCount}
+                        </div>
+
+                        {/* 5. Avg Time */}
+                        <div className="text-right text-neutral-900 font-semibold text-[13px]">
+                          {avgTime}
+                        </div>
+
+                        {/* 6. Language */}
+                        <div className="text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border shadow-sm bg-neutral-50 text-neutral-600 border-neutral-200">
+                            {srv.lang || 'RUS'}
+                          </span>
+                        </div>
+
+                        {/* 7. Created At */}
+                        <DateCell value={(() => {
+                          if (!srv.createdAt) return null;
+                          const date = new Date(srv.createdAt);
+                          if (isNaN(date.getTime())) return null;
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const year = date.getFullYear();
+                          const hours = String(date.getHours()).padStart(2, '0');
+                          const minutes = String(date.getMinutes()).padStart(2, '0');
+                          return `${day}.${month}.${year} ${hours}:${minutes}`;
+                        })()} />
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* Custom Organizational Filters Row */}
+            <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
+              <div className="relative group">
+                <button 
+                  onClick={() => {
+                    setSelectedBranch([]);
+                    setSelectedDept([]);
+                    setSelectedDivision([]);
+                    setSelectedRole([]);
+                    setSelectedStatus([]);
+                  }}
+                  className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
+                  title="Очистить организационные фильтры"
+                  type="button"
+                >
+                  <Eraser className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
+                  Очистить фильтры
+                </div>
+              </div>
+              
+              {activePriorityFields.map((field: any, idx: number) => {
+                const data = getFilterData(field.id, idx);
+                return (
+                  <MultiSelectFilterDropdownWithSearch 
+                    key={field.id}
+                    label={data.label} 
+                    options={data.options.map(o => ({ id: o, title: o }))}
+                    selectedValues={data.selectedValues}
+                    onChange={data.onChange}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Participants Registration & Attendance Records Table */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-base font-bold text-neutral-900">Участники опросов</h3>
+                  <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                    {filteredSurveyUserRecords.length}
+                  </span>
+                </div>
+                <div className="relative w-full sm:w-80">
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени, email или опросу..."
+                    value={surveySearch}
+                    onChange={(e) => { setSurveySearch(e.target.value); setSurveyCurrentPage(1); }}
+                    className="w-full pl-9 pr-9 py-2 border border-neutral-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  {surveySearch && (
+                    <button 
+                      onClick={() => setSurveySearch('')} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                      type="button"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
                   <thead>
-                    <tr className="border-b border-neutral-100">
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 uppercase">Опрос</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Целевая аудитория</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Завершено ответов</th>
-                      <th className="py-3 px-3 text-[12px] font-semibold text-neutral-400 text-right uppercase">Процент участия</th>
+                    <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                      <th style={{ width: '50px' }} className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-center">№</th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Пользователь
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Опрос
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => {
+                        setSurveySort(prev => (!prev || prev.field !== 'registeredAt' ? { field: 'registeredAt', dir: 'desc' } : prev.dir === 'desc' ? { field: 'registeredAt', dir: 'asc' } : null));
+                        setSurveyCurrentPage(1);
+                      }}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Назначен
+                          {surveySort?.field === 'registeredAt' ? (surveySort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right">
+                        Время
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider text-right cursor-pointer hover:bg-neutral-100 transition-colors" onClick={() => {
+                        setSurveySort(prev => (!prev || prev.field !== 'completedAt' ? { field: 'completedAt', dir: 'desc' } : prev.dir === 'desc' ? { field: 'completedAt', dir: 'asc' } : null));
+                        setSurveyCurrentPage(1);
+                      }}>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Завершил
+                          {surveySort?.field === 'completedAt' ? (surveySort.dir === 'desc' ? <ArrowDownAZ className="w-3.5 h-3.5 shrink-0" /> : <ArrowUpZA className="w-3.5 h-3.5 shrink-0" />) : <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 opacity-50 shrink-0" />}
+                        </div>
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {surveyCompletionData.map((survey, idx) => (
-                      <tr key={idx} className="border-b border-neutral-50 hover:bg-neutral-50/50 transition-colors">
-                        <td className="py-4 px-3 text-[14px] text-neutral-900 font-semibold">{survey.name}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{survey.total}</td>
-                        <td className="py-4 px-3 text-[14px] text-neutral-600 text-right font-medium">{survey.completed}</td>
-                        <td className="py-4 px-3 text-right">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${survey.rate >= 80 ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700'}`}>
-                            {survey.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-neutral-100">
+                    {(() => {
+                      const start = (surveyCurrentPage - 1) * Number(surveyPageSize);
+                      const paged = filteredSurveyUserRecords.slice(start, start + Number(surveyPageSize));
+                      return paged.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-16 text-center text-neutral-400 text-sm font-medium">Участники не найдены</td>
+                        </tr>
+                      ) : paged.map((record, index) => {
+                        const globalIdx = start + index + 1;
+                        const rowKey = `${record.id}-${record.partNum}`;
+                        return (
+                          <tr 
+                            key={rowKey}
+                            onClick={() => router.push(`/users/${record.userId}`)}
+                            className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors cursor-pointer"
+                          >
+                            <td className="px-4 py-3.5 text-center">
+                              <span className="text-[11px] text-neutral-300 font-bold tabular-nums">
+                                {String(globalIdx).padStart(2, '0')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                  {record.userInitials}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-neutral-800 text-[13px] truncate max-w-[200px]" title={record.userName}>{record.userName}</span>
+                                  <span className="text-[11px] text-neutral-400 font-medium truncate max-w-[200px]" title={record.userEmail}>{record.userEmail}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-[13px] text-neutral-700 font-semibold max-w-[250px]"><MarqueeText text={record.surveyTitle} /></td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <DateCell value={record.registeredAt} />
+                            </td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <span className="font-semibold text-neutral-800 text-[13px]">{record.duration || '—'}</span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right tabular-nums">
+                              <DateCell value={record.partCompletedAt} />
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {(() => {
+                const totalItems = filteredSurveyUserRecords.length;
+                const totalPages = Math.ceil(totalItems / Number(surveyPageSize));
+                if (totalItems === 0) return null;
+                return (
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-100 bg-neutral-50/20 rounded-b-2xl">
+                    <div className="flex items-center gap-2">
+                      <select 
+                        value={surveyPageSize} 
+                        onChange={(e) => { setSurveyPageSize(e.target.value as any); setSurveyCurrentPage(1); }} 
+                        className="text-[12px] border border-neutral-200 rounded-lg px-2 py-1.5 text-neutral-700 cursor-pointer focus:outline-none bg-white"
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                      <span className="text-[11px] text-neutral-400">Показано {(surveyCurrentPage - 1) * Number(surveyPageSize) + 1}–{Math.min(surveyCurrentPage * Number(surveyPageSize), totalItems)} из {totalItems}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button disabled={surveyCurrentPage === 1} onClick={() => setSurveyCurrentPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronLeft className="w-4 h-4" /></button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let page: number;
+                        if (totalPages <= 5) page = i + 1;
+                        else if (surveyCurrentPage <= 3) page = i + 1;
+                        else if (surveyCurrentPage >= totalPages - 2) page = totalPages - 4 + i;
+                        else page = surveyCurrentPage - 2 + i;
+                        return (
+                          <button key={page} onClick={() => setSurveyCurrentPage(page)} className={`w-8 h-8 rounded-lg text-[12px] font-bold cursor-pointer ${page === surveyCurrentPage ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:bg-neutral-100'}`} type="button">{page}</button>
+                        );
+                      })}
+                      <button disabled={surveyCurrentPage === totalPages} onClick={() => setSurveyCurrentPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 cursor-pointer" type="button"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* OPERATIONS TAB                                                           */}
+        {/* ========================================================================= */}
+        {activeTab === 'operations' && (
+          <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+            {/* Entity Filters */}
+            <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm animate-in fade-in duration-300">
+              <div className="relative group">
+                <button 
+                  onClick={() => {
+                    setOperationsSelectedCourses([]);
+                    setOperationsSelectedEvents([]);
+                    setOperationsSelectedSurveys([]);
+                  }}
+                  className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors shrink-0 cursor-pointer"
+                  title="Очистить фильтры операций"
+                  type="button"
+                >
+                  <Eraser className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-neutral-900 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap z-50">
+                  Очистить фильтры
+                </div>
+              </div>
+              
+              <MultiSelectFilterDropdownWithSearch
+                label="Все курсы"
+                options={[
+                  { id: 'Введение в безопасность', title: 'Введение в безопасность' },
+                  { id: 'Основы искусственного интеллекта', title: 'Основы искусственного интеллекта' },
+                  { id: 'Управление проектами', title: 'Управление проектами' },
+                  { id: 'Анализ данных на Python', title: 'Анализ данных на Python' },
+                  { id: 'Основы маркетинга', title: 'Основы маркетинга' },
+                  { id: 'Лидерство и менеджмент', title: 'Лидерство и менеджмент' },
+                  { id: 'Финансовая грамотность', title: 'Финансовая грамотность' },
+                  { id: 'Excel продвинутый уровень', title: 'Excel продвинутый уровень' },
+                  { id: 'Введение в базы данных', title: 'Введение в базы данных' },
+                  { id: 'UX/UI Дизайн', title: 'UX/UI Дизайн' },
+                  { id: 'Разработка веб-приложений', title: 'Разработка веб-приложений' },
+                  { id: 'Безопасность веб-приложений', title: 'Безопасность веб-приложений' },
+                  { id: 'Профессиональные навыки', title: 'Профессиональные навыки' },
+                  { id: 'Python для начинающих', title: 'Python для начинающих' }
+                ]}
+                selectedValues={operationsSelectedCourses}
+                onChange={setOperationsSelectedCourses}
+              />
+
+              <MultiSelectFilterDropdownWithSearch
+                label="Все мероприятия"
+                options={[
+                  { id: 'Основы безопасности', title: 'Основы безопасности' }
+                ]}
+                selectedValues={operationsSelectedEvents}
+                onChange={setOperationsSelectedEvents}
+              />
+
+              <MultiSelectFilterDropdownWithSearch
+                label="Все опросы"
+                options={[
+                  { id: 'Анкета предзаписи', title: 'Анкета предзаписи' }
+                ]}
+                selectedValues={operationsSelectedSurveys}
+                onChange={setOperationsSelectedSurveys}
+              />
+            </div>
+
+            {/* Table block */}
+            <div className="bg-white border border-neutral-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col">
+              <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-50/10 rounded-t-2xl">
+                {/* Switcher selector */}
+                <div className="flex bg-neutral-100 p-0.5 rounded-lg border border-neutral-200">
+                  <button
+                    onClick={() => setOperationsSubTab('operations')}
+                    className={`px-3 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${
+                      operationsSubTab === 'operations'
+                        ? 'bg-white text-neutral-800 shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-800'
+                    }`}
+                    type="button"
+                  >
+                    Операции
+                  </button>
+                  <button
+                    onClick={() => setOperationsSubTab('purchases')}
+                    className={`px-3 py-1.5 rounded-md text-[12px] font-bold transition-all cursor-pointer ${
+                      operationsSubTab === 'purchases'
+                        ? 'bg-white text-neutral-800 shadow-sm'
+                        : 'text-neutral-500 hover:text-neutral-800'
+                    }`}
+                    type="button"
+                  >
+                    Покупки
+                  </button>
+                </div>
+
+                {/* Search input */}
+                <div className="relative w-full sm:w-[320px]">
+                  <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={operationsSearch}
+                    onChange={(e) => setOperationsSearch(e.target.value)}
+                    placeholder="Поиск по ФИО, email, названию..."
+                    className="w-full pl-9 pr-8 py-2 text-xs font-semibold text-neutral-700 placeholder-neutral-400 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-300 transition-all shadow-inner"
+                  />
+                  {operationsSearch && (
+                    <button
+                      onClick={() => setOperationsSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                      <th className="px-4 py-3 text-center text-[10px] font-semibold text-neutral-400 uppercase tracking-wider w-16">
+                        №
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Пользователь
+                      </th>
+                      
+                      {operationsSubTab === 'operations' ? (
+                        <>
+                          <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Тип
+                          </th>
+                          <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Название
+                          </th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Название
+                          </th>
+                          <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Сумма
+                          </th>
+                          <th className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Промокод
+                          </th>
+                        </>
+                      )}
+
+                      <th 
+                        className="px-4 py-3 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors text-right"
+                        onClick={() => setOperationsSortDir(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      >
+                        <div className="flex items-center gap-1.5 justify-end">
+                          Дата и время
+                          {operationsSortDir === 'desc' ? (
+                            <ArrowDownAZ className="w-3.5 h-3.5 shrink-0 text-neutral-600" />
+                          ) : (
+                            <ArrowUpZA className="w-3.5 h-3.5 shrink-0 text-neutral-600" />
+                          )}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  
+                  <tbody className="divide-y divide-neutral-100">
+                    {paginatedOperations.length === 0 ? (
+                      <tr>
+                        <td 
+                          colSpan={operationsSubTab === 'operations' ? 5 : 6} 
+                          className="py-16 text-center text-neutral-400 text-sm font-medium"
+                        >
+                          Операции не найдены
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedOperations.map((op, idx) => {
+                        const globalIdx = (operationsPage - 1) * Number(operationsPageSize) + idx + 1;
+                        
+                        // Replace slashes with dots for output FIO: 20/05/2026 -> 20.05.2026
+                        const displayDate = op.dateStr.replace(/\//g, '.');
+
+                        return (
+                          <tr 
+                            key={op.id}
+                            className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors"
+                          >
+                            <td className="px-4 py-3.5 text-center">
+                              <span className="text-[11px] text-neutral-300 font-bold tabular-nums">
+                                {String(globalIdx).padStart(2, '0')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-500 font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
+                                  {op.userInitials}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-semibold text-neutral-800 text-[13px] truncate max-w-[250px]" title={op.userName}>
+                                    {op.userName}
+                                  </span>
+                                  <span className="text-[11px] text-neutral-400 font-medium truncate max-w-[250px]" title={op.userEmail}>
+                                    {op.userEmail}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {operationsSubTab === 'operations' ? (
+                              <>
+                                <td className="px-4 py-3.5">
+                                  {op.type === 'Назначение' && (
+                                    <span className="inline-flex items-center bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                                      Назначение
+                                    </span>
+                                  )}
+                                  {op.type === 'Регистрация' && (
+                                    <span className="inline-flex items-center bg-purple-50 text-purple-700 border border-purple-100 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                                      Регистрация
+                                    </span>
+                                  )}
+                                  {op.type === 'Покупка' && (
+                                    <span className="inline-flex items-center bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                                      Покупка
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3.5 text-[13px] text-neutral-700 font-semibold max-w-[300px]">
+                                  <MarqueeText text={op.itemName} />
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-3.5 text-[13px] text-neutral-700 font-semibold max-w-[300px]">
+                                  <MarqueeText text={op.itemName} />
+                                </td>
+                                <td className="px-4 py-3.5 text-[13px] text-neutral-800 font-bold tabular-nums">
+                                  {op.sum}
+                                </td>
+                                <td className="px-4 py-3.5 text-[13px]">
+                                  {op.promoCode !== '—' ? (
+                                    <span className="bg-neutral-100 text-neutral-800 border border-neutral-200 rounded px-1.5 py-0.5 text-xs font-semibold font-mono">
+                                      {op.promoCode}
+                                    </span>
+                                  ) : (
+                                    <span className="text-neutral-400 font-medium">—</span>
+                                  )}
+                                </td>
+                              </>
+                            )}
+
+                            <td className="px-4 py-3.5 text-right">
+                              <DateCell value={op.dateStr.replace(/\//g, '.')} />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {filteredOperations.length > 0 && (
+                <div className="border-t border-neutral-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-neutral-50/20 rounded-b-2xl">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-400 font-semibold">Показывать по:</span>
+                      <select
+                        value={operationsPageSize}
+                        onChange={(e) => {
+                          setOperationsPageSize(e.target.value as any);
+                          setOperationsPage(1);
+                        }}
+                        className="text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-300 shadow-sm cursor-pointer"
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                    <span className="text-xs text-neutral-400 font-semibold">
+                      Показано <span className="text-neutral-700 font-bold">{(operationsPage - 1) * Number(operationsPageSize) + 1}–{Math.min(operationsPage * Number(operationsPageSize), filteredOperations.length)}</span> из <span className="text-neutral-700 font-bold">{filteredOperations.length}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto sm:ml-auto">
+                    {operationsTotalPages > 1 && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setOperationsPage(prev => Math.max(prev - 1, 1))}
+                          disabled={operationsPage === 1}
+                          className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        
+                        {(() => {
+                          const buttons = [];
+                          const start = Math.max(1, operationsPage - 2);
+                          const end = Math.min(operationsTotalPages, start + 4);
+                          const adjustedStart = Math.max(1, end - 4);
+                          
+                          for (let i = adjustedStart; i <= end; i++) {
+                            buttons.push(
+                              <button
+                                key={i}
+                                onClick={() => setOperationsPage(i)}
+                                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                  i === operationsPage
+                                    ? 'bg-neutral-900 text-white shadow-sm'
+                                    : 'border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'
+                                }`}
+                                type="button"
+                              >
+                                {i}
+                              </button>
+                            );
+                          }
+                          return buttons;
+                        })()}
+
+                        <button
+                          onClick={() => setOperationsPage(prev => Math.min(prev + 1, operationsTotalPages))}
+                          disabled={operationsPage === operationsTotalPages}
+                          className="w-8 h-8 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-neutral-400 transition-colors shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

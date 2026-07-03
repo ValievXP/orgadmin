@@ -38,6 +38,7 @@ interface EventItem {
   lang?: 'RUS' | 'UZB' | 'ENG';
   registrationType?: 'open' | 'private';
   createdAt?: string;
+  scale?: 'Внутреннее' | 'Локальное' | 'Международное';
 }
 
 const FOLDER_COLORS = [
@@ -57,12 +58,12 @@ const INITIAL_FOLDERS: EventFolder[] = [
 ];
 
 const INITIAL_EVENTS: EventItem[] = [
-  { id: 'EVT-001', title: 'Основы искусственного интеллекта', type: 'Воркшоп', format: 'offline', date: '2026-03-28', timeStart: '10:00', timeEnd: '13:00', speakers: 'Азиз Каримов', location: 'Главный офис, Зал A', status: 'registration', registrationOpen: true, participants: 47, participantLimit: 60, parentId: 'f2', lang: 'RUS', registrationType: 'open', createdAt: '2026-05-10T10:00:00.000Z' },
-  { id: 'EVT-002', title: 'Эффективные переговоры', type: 'Тренинг', format: 'offline', date: '2026-04-02', timeStart: '09:00', timeEnd: '17:00', speakers: 'Бизнес-тренеры OCA', location: 'Учебный центр, комната 3', status: 'registration', registrationOpen: true, participants: 30, participantLimit: 30, parentId: 'f1', lang: 'UZB', registrationType: 'private', createdAt: '2026-05-12T14:30:00.000Z' },
-  { id: 'EVT-003', title: 'Финансовый риск-менеджмент', type: 'Вебинар', format: 'online', date: '2026-04-10', timeStart: '14:00', timeEnd: '16:00', speakers: 'Фаррух Юсупов, Елена Смирнова', location: 'Zoom трансляция', status: 'in_progress', registrationOpen: true, participants: 18, participantLimit: 100, parentId: 'f2', lang: 'ENG', registrationType: 'open', createdAt: '2026-05-15T09:15:00.000Z' },
-  { id: 'EVT-004', title: 'Digital Banking Summit', type: 'Конференция', format: 'offline', date: '2026-03-15', timeStart: '09:00', timeEnd: '18:00', speakers: 'Приглашенные спикеры', location: 'Hyatt Regency Tashkent', status: 'completed', registrationOpen: false, participants: 87, participantLimit: 120, parentId: null, lang: 'RUS', registrationType: 'open', createdAt: '2026-05-18T18:00:00.000Z' },
-  { id: 'EVT-005', title: 'Excel продвинутый уровень', type: 'Мастер-класс', format: 'offline', date: '2026-05-20', timeStart: '10:00', timeEnd: '12:00', speakers: 'Мадина Рахимова', location: 'Главный офис, Зал B', status: 'in_progress', registrationOpen: false, participants: 22, participantLimit: 25, parentId: 'f1', lang: 'RUS', registrationType: 'private', createdAt: '2026-05-20T11:45:00.000Z' },
-  { id: 'EVT-006', title: 'Летний тимбилдинг', type: 'Тимбилдинг', format: 'offline', date: '2026-06-12', timeStart: '12:00', timeEnd: '18:00', speakers: 'HR-департамент', location: 'Зона отдыха "Чарвак"', status: 'draft', registrationOpen: true, participants: 12, participantLimit: 50, parentId: 'f3', lang: 'UZB', registrationType: 'open', createdAt: '2026-05-22T08:00:00.000Z' },
+  { id: 'EVT-001', title: 'Основы искусственного интеллекта', type: 'Воркшоп', format: 'offline', date: '2026-03-28', timeStart: '10:00', timeEnd: '13:00', speakers: 'Азиз Каримов', location: 'Главный офис, Зал A', status: 'registration', registrationOpen: true, participants: 47, participantLimit: 60, parentId: 'f2', lang: 'RUS', registrationType: 'open', createdAt: '2026-05-10T10:00:00.000Z', scale: 'Внутреннее' },
+  { id: 'EVT-002', title: 'Эффективные переговоры', type: 'Тренинг', format: 'offline', date: '2026-04-02', timeStart: '09:00', timeEnd: '17:00', speakers: 'Бизнес-тренеры OCA', location: 'Учебный центр, комната 3', status: 'registration', registrationOpen: true, participants: 30, participantLimit: 30, parentId: 'f1', lang: 'UZB', registrationType: 'private', createdAt: '2026-05-12T14:30:00.000Z', scale: 'Локальное' },
+  { id: 'EVT-003', title: 'Финансовый риск-менеджмент', type: 'Вебинар', format: 'online', date: '2026-04-10', timeStart: '14:00', timeEnd: '16:00', speakers: 'Фаррух Юсупов, Елена Смирнова', location: 'Zoom трансляция', status: 'in_progress', registrationOpen: true, participants: 18, participantLimit: 100, parentId: 'f2', lang: 'ENG', registrationType: 'open', createdAt: '2026-05-15T09:15:00.000Z', scale: 'Международное' },
+  { id: 'EVT-004', title: 'Digital Banking Summit', type: 'Конференция', format: 'offline', date: '2026-03-15', timeStart: '09:00', timeEnd: '18:00', speakers: 'Приглашенные спикеры', location: 'Hyatt Regency Tashkent', status: 'completed', registrationOpen: false, participants: 87, participantLimit: 120, parentId: null, lang: 'RUS', registrationType: 'open', createdAt: '2026-05-18T18:00:00.000Z', scale: 'Международное' },
+  { id: 'EVT-005', title: 'Excel продвинутый уровень', type: 'Мастер-класс', format: 'offline', date: '2026-05-20', timeStart: '10:00', timeEnd: '12:00', speakers: 'Мадина Рахимова', location: 'Главный офис, Зал B', status: 'in_progress', registrationOpen: false, participants: 22, participantLimit: 25, parentId: 'f1', lang: 'RUS', registrationType: 'private', createdAt: '2026-05-20T11:45:00.000Z', scale: 'Внутреннее' },
+  { id: 'EVT-006', title: 'Летний тимбилдинг', type: 'Тимбилдинг', format: 'offline', date: '2026-06-12', timeStart: '12:00', timeEnd: '18:00', speakers: 'HR-департамент', location: 'Зона отдыха "Чарвак"', status: 'draft', registrationOpen: true, participants: 12, participantLimit: 50, parentId: 'f3', lang: 'UZB', registrationType: 'open', createdAt: '2026-05-22T08:00:00.000Z', scale: 'Локальное' },
 ];
 
 const formatDate = (dateStr?: string) => {
