@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ArrowUpRight, Flame, Ticket, AlignLeft, Image, Bell, BookOpen } from 'lucide-react';
+import { ArrowUpRight, Flame, Ticket, AlignLeft, Image, Bell, BookOpen, Send } from 'lucide-react';
 import Link from 'next/link';
 
 const TOOLS = [
@@ -52,6 +52,14 @@ const TOOLS = [
     icon: BookOpen,
     colorClass: 'text-emerald-500 bg-emerald-50',
     href: '/tools/homeworks'
+  },
+  {
+    id: 'telegram',
+    title: 'Telegram бот',
+    description: 'Свяжите Telegram бота с платформой для отправки уведомлений и запуска Mini App прямо внутри мессенджера.',
+    icon: Send,
+    colorClass: 'text-sky-500 bg-sky-50',
+    href: '/tools/telegram'
   }
 ];
 
