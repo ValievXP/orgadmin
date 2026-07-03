@@ -2635,7 +2635,7 @@ export default function StatisticsPage() {
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             
             {/* Top Cards Row 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard 
                 title="Всего пользователей" 
                 value={totalUsers.toLocaleString()} 
@@ -2678,23 +2678,18 @@ export default function StatisticsPage() {
                 </div>
               </div>
 
-              {/* Средний прогресс Card */}
-              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-1 truncate">Средний прогресс</h3>
-                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-0.5">
-                  78%
-                </div>
-                <div className="mt-auto w-full">
-                  <div className="w-full bg-neutral-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '78%' }} />
-                  </div>
-                  <span className="text-[10px] text-neutral-400 mt-1 block truncate">Завершение курсов</span>
-                </div>
-              </div>
+              <StatCard 
+                title="Визиты сегодня" 
+                value={visitsTodayVal.toLocaleString()} 
+              />
+              <StatCard 
+                title="Активные сегодня" 
+                value={activeTodayVal.toLocaleString()} 
+              />
             </div>
 
             {/* Top Cards Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* DAU Card */}
               <StatCard 
                 title="DAU" 
@@ -2715,6 +2710,20 @@ export default function StatisticsPage() {
                 value="238" 
                 subtitle={<span className="text-neutral-400">Активные за месяц</span>}
               />
+
+              {/* Средний прогресс Card */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-1 truncate">Средний прогресс</h3>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-0.5">
+                  78%
+                </div>
+                <div className="mt-auto w-full">
+                  <div className="w-full bg-neutral-100 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '78%' }} />
+                  </div>
+                  <span className="text-[10px] text-neutral-400 mt-1 block truncate">Завершение курсов</span>
+                </div>
+              </div>
             </div>
 
             {/* Geographical Distribution: Interactive Map + Top Regions */}
