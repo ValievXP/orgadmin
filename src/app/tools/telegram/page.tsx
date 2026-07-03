@@ -13,7 +13,8 @@ import {
   Bot, 
   Info, 
   AppWindow,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Copy
 } from 'lucide-react';
 
 export default function TelegramToolPage() {
@@ -24,6 +25,12 @@ export default function TelegramToolPage() {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [checkedBotName, setCheckedBotName] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+
+  const showToast = (msg: string) => {
+    setToast({ message: msg, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2000);
+  };
 
   // Persist state to/from localStorage
   useEffect(() => {
@@ -276,7 +283,7 @@ export default function TelegramToolPage() {
               <div className="border border-neutral-100 rounded-xl p-4 bg-neutral-50/50">
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold mb-3">4</span>
                 <p className="text-xs text-neutral-700 font-semibold leading-relaxed">
-                  Загрузите демонстрационную иконку (размер 640x360 px) и GIF.
+                  Загрузите демонстрационную иконку (размер 640x360 px).
                 </p>
               </div>
             </div>
@@ -285,12 +292,20 @@ export default function TelegramToolPage() {
               <div>
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-violet-100 text-violet-700 text-xs font-bold mb-2">5</span>
                 <p className="text-xs text-neutral-750 font-semibold leading-relaxed">
-                  В качестве <strong>Web App URL</strong> укажите URL платформы:
+                  В качестве <strong>Web App URL</strong> укажите URL платформы (нажмите для копирования):
                 </p>
-                <div className="mt-1.5 flex items-center gap-2 bg-white border border-neutral-200 rounded-lg p-2.5">
+                <div className="mt-1.5 flex items-center gap-2 bg-white border border-neutral-200 hover:border-violet-300 rounded-lg p-2.5 cursor-pointer select-none transition-all group/copy relative"
+                  onClick={() => {
+                    navigator.clipboard.writeText("https://[slug].osnovaedu.uz");
+                    showToast("Ссылка скопирована");
+                  }}
+                >
                   <code className="text-xs text-violet-700 font-mono font-bold break-all flex-1">
-                    https://platform.osnova.uz
+                    https://[slug].osnovaedu.uz
                   </code>
+                  <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider group-hover/copy:text-violet-600 transition-colors flex items-center gap-1">
+                    <Copy className="w-3.5 h-3.5" /> Копировать
+                  </div>
                 </div>
               </div>
 
@@ -300,17 +315,6 @@ export default function TelegramToolPage() {
                   Задайте короткое имя (short name) для ссылки запуска.
                 </p>
               </div>
-            </div>
-
-            <div className="pt-2 flex justify-start">
-              <a 
-                href="https://platform.osnova.uz" 
-                target="_blank" 
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-neutral-900 text-white hover:bg-neutral-800 transition-colors shadow-sm"
-              >
-                <LinkIcon className="w-3.5 h-3.5" /> Открыть платформу
-              </a>
             </div>
           </div>
         </div>
@@ -348,6 +352,14 @@ export default function TelegramToolPage() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Alert */}
+      {toast.visible && (
+        <div className="fixed bottom-6 right-6 z-[200] bg-neutral-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+          {toast.message}
         </div>
       )}
     </div>
