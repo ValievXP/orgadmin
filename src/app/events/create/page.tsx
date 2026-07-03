@@ -11,12 +11,13 @@ import {
   Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
   List, ListOrdered, Link, Quote, Strikethrough, Heading1, Heading2, Heading3,
   Palette, Pipette, ArrowDown, GripVertical, CalendarClock, Info,
-  Minus, Zap, AlertTriangle, HelpCircle, Lightbulb, Shield, XCircle, CheckCircle
+  Minus, Zap, AlertTriangle, HelpCircle, Lightbulb, Shield, XCircle, CheckCircle,
+  Volume2, Music, Monitor, Smartphone
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type BlockType = 'video' | 'file' | 'text' | 'image' | 'slider' | 'callout' | 'button' | 'iframe' | 'table' | 'columns';
+type BlockType = 'video' | 'audio' | 'file' | 'text' | 'image' | 'slider' | 'callout' | 'button' | 'iframe' | 'table' | 'columns';
 
 interface ContentBlock {
   id: string;
@@ -67,7 +68,8 @@ interface EventItem {
 const mkId = () => `b-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 const DEFAULT_BLOCK: Record<BlockType, () => any> = {
-  video: () => ({ fileName: '' }),
+  video: () => ({ fileName: '', orientation: 'horizontal' }),
+  audio: () => ({ fileName: '', size: '' }),
   file: () => ({ name: '', size: '' }),
   text: () => ({ html: '' }),
   image: () => ({ url: '', caption: '', width: 'full' }),
@@ -325,24 +327,90 @@ function TextBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => 
 }
 
 function VideoBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => void }) {
+  const orientation = data.orientation || 'horizontal';
   return (
     <div className="px-4 py-4">
       {data.fileName ? (
         <div className="space-y-3">
-          <div className="bg-neutral-900 rounded-xl h-44 flex items-center justify-center">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">Ориентация: {orientation === 'horizontal' ? 'Горизонтальное' : 'Вертикальное'}</span>
+            <div className="flex gap-1 bg-neutral-100 rounded-lg p-0.5">
+              <button type="button" onClick={() => onChange({ ...data, orientation: 'horizontal' })} title="Горизонтальное видео"
+                className={`p-1 rounded-md transition-all ${orientation === 'horizontal' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-600'}`}>
+                <Monitor className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={() => onChange({ ...data, orientation: 'vertical' })} title="Вертикальное видео"
+                className={`p-1 rounded-md transition-all ${orientation === 'vertical' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-600'}`}>
+                <Smartphone className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          <div className={`bg-neutral-900 rounded-xl flex items-center justify-center transition-all ${orientation === 'vertical' ? 'h-64 w-36 mx-auto' : 'h-44'}`}>
             <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center"><Play className="w-6 h-6 text-white ml-0.5" /></div>
           </div>
           <div className="flex items-center gap-3 p-2.5 bg-neutral-50 rounded-lg border border-neutral-200">
             <Video className="w-4 h-4 text-rose-500 shrink-0" />
             <span className="text-[13px] font-medium text-neutral-800 truncate flex-1">{data.fileName}</span>
-            <button type="button" onClick={() => onChange({ fileName: '' })} className="p-1 rounded text-neutral-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+            <button type="button" onClick={() => onChange({ ...data, fileName: '' })} className="p-1 rounded text-neutral-400 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
       ) : (
-        <button type="button" className="w-full h-36 border-2 border-dashed border-neutral-200 rounded-xl flex flex-col items-center justify-center gap-2 text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 hover:bg-neutral-50/50 transition-all cursor-pointer group">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center group-hover:scale-105 transition-transform"><Upload className="w-5 h-5 text-rose-400" /></div>
-          <span className="text-[12px] font-medium">Загрузить видео</span>
-          <span className="text-[11px] text-neutral-300">MP4, MOV, AVI · до 2 ГБ</span>
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <div className="flex gap-1 bg-neutral-100 rounded-lg p-0.5">
+              <button type="button" onClick={() => onChange({ ...data, orientation: 'horizontal' })} title="Горизонтальное видео"
+                className={`p-1 rounded-md transition-all ${orientation === 'horizontal' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-600'}`}>
+                <Monitor className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={() => onChange({ ...data, orientation: 'vertical' })} title="Вертикальное видео"
+                className={`p-1 rounded-md transition-all ${orientation === 'vertical' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-400 hover:text-neutral-600'}`}>
+                <Smartphone className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          <button type="button" onClick={() => onChange({ ...data, fileName: 'intro_video.mp4' })}
+            className="w-full h-36 border-2 border-dashed border-neutral-200 rounded-xl flex flex-col items-center justify-center gap-2 text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 hover:bg-neutral-50/50 transition-all cursor-pointer group">
+            <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center group-hover:scale-105 transition-transform"><Upload className="w-5 h-5 text-rose-400" /></div>
+            <span className="text-[12px] font-medium">Загрузить видео</span>
+            <span className="text-[11px] text-neutral-300">MP4, MOV, AVI · до 2 ГБ · {orientation === 'horizontal' ? '1920x1080' : '1080x1920'}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AudioBlockEditor({ data, onChange }: { data: any; onChange: (d: any) => void }) {
+  return (
+    <div className="px-4 py-4">
+      {data.fileName ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-200">
+            <Volume2 className="w-5 h-5 text-cyan-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-medium text-neutral-800 truncate">{data.fileName}</p>
+              <p className="text-[11px] text-neutral-400">{data.size || '3.4 MB'}</p>
+            </div>
+            <button type="button" onClick={() => onChange({ fileName: '', size: '' })} className="p-1 rounded text-neutral-400 hover:text-rose-500 transition-colors">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3 px-3 py-2 bg-neutral-100 rounded-lg">
+            <button type="button" className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
+              <Play className="w-3.5 h-3.5 text-neutral-800 ml-0.5" />
+            </button>
+            <div className="flex-1 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+              <div className="w-1/3 h-full bg-neutral-400" />
+            </div>
+            <span className="text-[10px] text-neutral-400 font-mono">0:00 / 3:45</span>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => onChange({ fileName: 'podcast_interview.mp3', size: '4.8 MB' })}
+          className="w-full h-24 border-2 border-dashed border-neutral-200 rounded-xl flex flex-col items-center justify-center gap-2 text-neutral-400 hover:border-neutral-300 hover:text-neutral-500 hover:bg-neutral-50/50 transition-all cursor-pointer">
+          <Upload className="w-5 h-5" />
+          <span className="text-[12px] font-medium">Загрузить аудио</span>
+          <span className="text-[11px] text-neutral-300">MP3, AAC, OGG · до 2 ГБ</span>
         </button>
       )}
     </div>
@@ -657,7 +725,7 @@ function TableBlockEditor({ data, onChange }: { data: any; onChange: (d: any) =>
 
 const COL_BLOCK_TYPES: {type:BlockType; icon:any; label:string}[] = [
   {type:'text',icon:Type,label:'Текст'},{type:'image',icon:ImageIcon,label:'Картинка'},
-  {type:'video',icon:Video,label:'Видео'},{type:'table',icon:Table,label:'Таблица'},
+  {type:'video',icon:Video,label:'Видео'},{type:'audio',icon:Volume2,label:'Аудио'},{type:'table',icon:Table,label:'Таблица'},
   {type:'file',icon:FileText,label:'Файл'},
 ];
 
@@ -749,6 +817,7 @@ function ColumnsBlockEditor({ data, onChange }: { data: any; onChange: (d: any) 
 const BLOCK_REG: { type: BlockType; label: string; desc: string; icon: any; color: string }[] = [
   {type:'text',label:'Текст',desc:'Форматируемый блок',icon:Type,color:'text-neutral-600 bg-neutral-100'},
   {type:'video',label:'Видео',desc:'Загрузить видео',icon:Video,color:'text-rose-600 bg-rose-50'},
+  {type:'audio',label:'Аудио',desc:'Загрузить аудиофайл',icon:Volume2,color:'text-cyan-600 bg-cyan-50'},
   {type:'image',label:'Картинка',desc:'Загрузить изображение',icon:ImageIcon,color:'text-blue-600 bg-blue-50'},
   {type:'slider',label:'Слайдер',desc:'Галерея изображений',icon:Layers,color:'text-violet-600 bg-violet-50'},
   {type:'file',label:'Файл',desc:'PDF, Excel и др.',icon:FileText,color:'text-amber-600 bg-amber-50'},
@@ -760,7 +829,7 @@ const BLOCK_REG: { type: BlockType; label: string; desc: string; icon: any; colo
 ];
 
 const EDITORS: Record<BlockType, React.FC<{data:any;onChange:(d:any)=>void}>> = {
-  text:TextBlockEditor,video:VideoBlockEditor,image:ImageBlockEditor,
+  text:TextBlockEditor,video:VideoBlockEditor,audio:AudioBlockEditor,image:ImageBlockEditor,
   file:FileBlockEditor,slider:SliderBlockEditor,callout:CalloutBlockEditor,
   button:ButtonBlockEditor,iframe:IframeBlockEditor,
   table:TableBlockEditor,columns:ColumnsBlockEditor,
