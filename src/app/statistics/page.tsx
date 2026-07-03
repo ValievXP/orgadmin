@@ -2634,8 +2634,8 @@ export default function StatisticsPage() {
         {activeTab === 'users' && (
           <div className="flex flex-col gap-6 animate-in fade-in duration-300">
             
-            {/* Top Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            {/* Top Cards Row 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard 
                 title="Всего пользователей" 
                 value={totalUsers.toLocaleString()} 
@@ -2691,7 +2691,10 @@ export default function StatisticsPage() {
                   <span className="text-[10px] text-neutral-400 mt-1 block truncate">Завершение курсов</span>
                 </div>
               </div>
+            </div>
 
+            {/* Top Cards Row 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* DAU Card */}
               <StatCard 
                 title="DAU" 
@@ -3237,93 +3240,7 @@ export default function StatisticsPage() {
               </div>
             </div>
 
-            {/* Рейтинг курсов */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900">Рейтинг курсов</h3>
-                <p className="text-xs text-neutral-500 mt-1">Основные показатели популярности и прохождения учебных материалов</p>
-              </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Топ 10 по популярности */}
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-neutral-800">Топ 10 курсов по популярности</h4>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">Курсы, на которых прогресс студентов больше 1%</p>
-                  </div>
-                  <div className="overflow-x-auto border border-neutral-100 rounded-xl">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-neutral-100 bg-neutral-50/50">
-                          <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">Место</th>
-                          <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
-                          <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Студенты (активные)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-100">
-                        {[
-                          { rank: 1, name: "Основы корпоративной безопасности", count: 124 },
-                          { rank: 2, name: "Введение в безопасность", count: 89 },
-                          { rank: 3, name: "Основы искусственного интеллекта", count: 76 },
-                          { rank: 4, name: "Управление проектами", count: 54 },
-                          { rank: 5, name: "Анализ данных на Python", count: 45 },
-                          { rank: 6, name: "Основы маркетинга", count: 38 },
-                          { rank: 7, name: "Лидерство и менеджмент", count: 32 },
-                          { rank: 8, name: "Финансовая грамотность", count: 28 },
-                          { rank: 9, name: "UX/UI Дизайн", count: 24 },
-                          { rank: 10, name: "Разработка веб-приложений", count: 18 }
-                        ].map((course) => (
-                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Топ 10 по завершению */}
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-neutral-800">Топ 10 курсов по завершению</h4>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">Курсы, на которых прогресс студентов равен 100%</p>
-                  </div>
-                  <div className="overflow-x-auto border border-neutral-100 rounded-xl">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-neutral-100 bg-neutral-50/50">
-                          <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">Место</th>
-                          <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
-                          <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Завершили (100%)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-100">
-                        {[
-                          { rank: 1, name: "Основы корпоративной безопасности", count: 82 },
-                          { rank: 2, name: "Введение в безопасность", count: 67 },
-                          { rank: 3, name: "Управление проектами", count: 43 },
-                          { rank: 4, name: "Основы искусственного интеллекта", count: 31 },
-                          { rank: 5, name: "Анализ данных на Python", count: 25 },
-                          { rank: 6, name: "Лидерство и менеджмент", count: 18 },
-                          { rank: 7, name: "Основы маркетинга", count: 12 },
-                          { rank: 8, name: "Финансовая грамотность", count: 8 },
-                          { rank: 9, name: "UX/UI Дизайн", count: 5 },
-                          { rank: 10, name: "Разработка веб-приложений", count: 2 }
-                        ].map((course) => (
-                          <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
-                            <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
-                            <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
-                            <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Users list table island */}
             <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm flex flex-col mt-4">
@@ -3590,6 +3507,81 @@ export default function StatisticsPage() {
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Среднее время</span><span className="text-[12px] font-bold text-neutral-700">{coursesStatTotals.testsAvgTime}</span></div>
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Успешно</span><span className="text-[12px] font-bold text-emerald-600">{coursesStatTotals.testsPassed.toLocaleString()}</span></div>
                   <div className="flex justify-between"><span className="text-[11px] text-neutral-400">Провалено</span><span className="text-[12px] font-bold text-red-500">{coursesStatTotals.testsFailed.toLocaleString()}</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tops widgets */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Card 1: Топ 10 курсов по популярности */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-neutral-900 mb-4">Топ 10 курсов по популярности</h3>
+                <div className="overflow-x-auto border border-neutral-100 rounded-xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">№</th>
+                        <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
+                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Студенты (активные)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {[
+                        { rank: 1, name: "Основы корпоративной безопасности", count: 124 },
+                        { rank: 2, name: "Введение в безопасность", count: 89 },
+                        { rank: 3, name: "Основы искусственного интеллекта", count: 76 },
+                        { rank: 4, name: "Управление проектами", count: 54 },
+                        { rank: 5, name: "Анализ данных на Python", count: 45 },
+                        { rank: 6, name: "Основы маркетинга", count: 38 },
+                        { rank: 7, name: "Лидерство и менеджмент", count: 32 },
+                        { rank: 8, name: "Финансовая грамотность", count: 28 },
+                        { rank: 9, name: "UX/UI Дизайн", count: 24 },
+                        { rank: 10, name: "Разработка веб-приложений", count: 18 }
+                      ].map((course) => (
+                        <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
+                          <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
+                          <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Card 2: Топ 10 курсов по завершению */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-sm font-bold text-neutral-900 mb-4">Топ 10 курсов по завершению</h3>
+                <div className="overflow-x-auto border border-neutral-100 rounded-xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-center w-[60px]">№</th>
+                        <th className="px-4 py-2.5 font-bold text-neutral-500">Название курса</th>
+                        <th className="px-4 py-2.5 font-bold text-neutral-500 text-right w-[140px]">Завершили (100%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {[
+                        { rank: 1, name: "Основы корпоративной безопасности", count: 82 },
+                        { rank: 2, name: "Введение в безопасность", count: 67 },
+                        { rank: 3, name: "Управление проектами", count: 43 },
+                        { rank: 4, name: "Основы искусственного интеллекта", count: 31 },
+                        { rank: 5, name: "Анализ данных на Python", count: 25 },
+                        { rank: 6, name: "Лидерство и менеджмент", count: 18 },
+                        { rank: 7, name: "Основы маркетинга", count: 12 },
+                        { rank: 8, name: "Финансовая грамотность", count: 8 },
+                        { rank: 9, name: "UX/UI Дизайн", count: 5 },
+                        { rank: 10, name: "Разработка веб-приложений", count: 2 }
+                      ].map((course) => (
+                        <tr key={course.rank} className="hover:bg-neutral-50/50 transition-colors">
+                          <td className="px-4 py-2.5 text-center font-bold text-neutral-400 tabular-nums">{course.rank}</td>
+                          <td className="px-4 py-2.5 font-semibold text-neutral-800">{course.name}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-neutral-900 tabular-nums">{course.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
