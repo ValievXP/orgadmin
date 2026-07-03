@@ -1514,6 +1514,7 @@ export default function StatisticsPage() {
   const [tableLastActiveSort, setTableLastActiveSort] = useState<'asc' | 'desc' | null>(null);
   const [tableRegSort, setTableRegSort] = useState<'asc' | 'desc' | null>('desc');
   const [selectedGender, setSelectedGender] = useState<'Мужской' | 'Женский' | null>(null);
+  const [uniqueVisitsPeriod, setUniqueVisitsPeriod] = useState<'day' | 'week' | 'month'>('day');
 
   // Operations tab states
   const [operationsSearch, setOperationsSearch] = useState('');
@@ -2446,6 +2447,11 @@ export default function StatisticsPage() {
   const dynamicWAU = Math.max(0, Math.min(totalUsers, Math.round(210 * filterScale)));
   const dynamicMAU = Math.max(0, Math.min(totalUsers, Math.round(238 * filterScale)));
 
+  const getUniqueVisitsVal = () => {
+    const baseline = uniqueVisitsPeriod === 'day' ? 184 : uniqueVisitsPeriod === 'week' ? 228 : 245;
+    return Math.max(0, Math.min(totalUsers, Math.round(baseline * filterScale)));
+  };
+
   const avgProgressSeed = 78 + Math.round((filteredUsers.length % 15) - 7);
   const dynamicAvgProgress = Math.max(10, Math.min(100, avgProgressSeed));
 
@@ -2742,7 +2748,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* Top Cards Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* DAU Card */}
               <StatCard 
                 title="DAU" 
@@ -2763,6 +2769,54 @@ export default function StatisticsPage() {
                 value={dynamicMAU.toString()} 
                 subtitle={<span className="text-neutral-400">Активные за месяц</span>}
               />
+
+              {/* Unique Visits Card */}
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col hover:border-neutral-300 transition-colors relative h-[130px]">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Уникальные визиты</h3>
+                  <div className="flex items-center gap-1 p-0.5 rounded-lg border border-neutral-200 bg-neutral-50">
+                    <button
+                      onClick={() => setUniqueVisitsPeriod('day')}
+                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        uniqueVisitsPeriod === 'day'
+                          ? 'bg-white text-neutral-800 shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      День
+                    </button>
+                    <button
+                      onClick={() => setUniqueVisitsPeriod('week')}
+                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        uniqueVisitsPeriod === 'week'
+                          ? 'bg-white text-neutral-800 shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      Нед
+                    </button>
+                    <button
+                      onClick={() => setUniqueVisitsPeriod('month')}
+                      className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all cursor-pointer ${
+                        uniqueVisitsPeriod === 'month'
+                          ? 'bg-white text-neutral-800 shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                      type="button"
+                    >
+                      Мес
+                    </button>
+                  </div>
+                </div>
+                <div className="text-[32px] font-bold text-neutral-900 leading-none tracking-tight mt-1">
+                  {getUniqueVisitsVal().toLocaleString()}
+                </div>
+                <div className="mt-2 text-xs font-semibold text-neutral-400">
+                  Уникальные пользователи за {uniqueVisitsPeriod === 'day' ? 'день' : uniqueVisitsPeriod === 'week' ? 'неделю' : 'месяц'}
+                </div>
+              </div>
             </div>
 
             {/* Geographical Distribution: Interactive Map + Top Regions */}
