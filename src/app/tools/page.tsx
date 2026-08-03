@@ -1,10 +1,26 @@
 "use client";
 import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ArrowUpRight, Flame, Ticket, AlignLeft, Image, Bell, BookOpen, Send } from 'lucide-react';
+import { ArrowUpRight, Flame, Ticket, AlignLeft, Image, Bell, BookOpen, Send, Route, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 
 const TOOLS = [
+  {
+    id: 'user-flow',
+    title: 'User Flow',
+    description: 'Конструктор маршрутов сотрудника (MVP): триггеры, назначение контента, ожидание событий, условия и уведомления на RU/UZ.',
+    icon: Route,
+    colorClass: 'text-teal-500 bg-teal-50',
+    href: '/tools/user-flow'
+  },
+  {
+    id: 'user-flow-pro',
+    title: 'User Flow Pro',
+    description: 'Апгрейд MVP: Switch-ветвления, условия по контенту, кураторы, триггеры по расписанию и симуляция прохождения.',
+    icon: GitBranch,
+    colorClass: 'text-violet-500 bg-violet-50',
+    href: '/tools/user-flow-pro'
+  },
   {
     id: 'stories',
     title: 'Stories баннер',
