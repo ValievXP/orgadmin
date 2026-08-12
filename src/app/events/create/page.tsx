@@ -28,9 +28,13 @@ interface ContentBlock {
 interface EventDate {
   id: string;
   date: string;
+  dateEnd?: string;       // заполняется только в режиме «Период»: дата окончания
   timeStart: string;
   timeEnd: string;
+  speakers?: string[];    // спикеры конкретного дня / периода
 }
+
+type DateMode = 'days' | 'period';
 
 interface RegistrationPeriod {
   id: string;
@@ -55,7 +59,9 @@ interface EventItem {
   participantLimit: number | null;
   parentId: string | null;
   description: string;
-  speakers: string;
+  speakers: string;            // строка через запятую — её показывает список мероприятий
+  speakersList?: string[];     // спикеры мероприятия в целом
+  dateMode?: DateMode;
   dates: EventDate[];
   registrationDates: RegistrationPeriod[];
   blocks: ContentBlock[];
@@ -100,6 +106,103 @@ function Toggle({ checked, onChange, label, description, icon: Icon }: {
         className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ml-3 ${checked ? 'bg-emerald-500' : 'bg-neutral-200'}`}>
         <div className={`absolute top-[2px] left-[2px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-[18px]' : ''}`} />
       </button>
+    </div>
+  );
+}
+
+// Свободный ввод спикеров: запятая или Enter превращают текст в лейбл.
+// Двойной клик по лейблу — правка, крестик при наведении — удаление.
+function SpeakerTags({ value, onChange, placeholder, compact }: {
+  value: string[]; onChange: (v: string[]) => void; placeholder?: string; compact?: boolean;
+}) {
+  const [draft, setDraft] = useState('');
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
+  const editRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editIdx !== null) {
+      editRef.current?.focus();
+      editRef.current?.select();
+    }
+  }, [editIdx]);
+
+  const commit = (raw: string) => {
+    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+    setDraft('');
+    if (!parts.length) return;
+    const next = [...value];
+    parts.forEach(p => {
+      if (!next.some(v => v.toLowerCase() === p.toLowerCase())) next.push(p);
+    });
+    onChange(next);
+  };
+
+  const applyEdit = () => {
+    if (editIdx === null) return;
+    const text = editText.trim();
+    const next = [...value];
+    if (!text) next.splice(editIdx, 1);
+    else next[editIdx] = text;
+    setEditIdx(null);
+    setEditText('');
+    onChange(next);
+  };
+
+  return (
+    <div
+      onClick={e => {
+        if (e.target === e.currentTarget) (e.currentTarget.querySelector('[data-tag-draft]') as HTMLInputElement)?.focus();
+      }}
+      className={`flex flex-wrap items-center gap-1.5 w-full bg-white border border-neutral-200 rounded-xl shadow-sm cursor-text transition-all focus-within:border-[var(--color-admin-primary-500)] focus-within:ring-4 focus-within:ring-[var(--color-admin-primary-500)]/10 ${compact ? 'min-h-[40px] px-2 py-1.5' : 'min-h-[44px] px-2.5 py-2'}`}
+    >
+      {value.map((s, i) => editIdx === i ? (
+        <input
+          key={`edit-${i}`}
+          ref={editRef}
+          value={editText}
+          onChange={e => setEditText(e.target.value)}
+          onBlur={applyEdit}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); applyEdit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); setEditIdx(null); setEditText(''); }
+          }}
+          className="h-7 px-2 rounded-lg bg-[var(--color-admin-primary-50)] border border-[var(--color-admin-primary-300)] outline-none text-[12px] font-bold text-neutral-900"
+          style={{ width: `${Math.max(6, editText.length + 2)}ch` }}
+        />
+      ) : (
+        <span
+          key={`tag-${i}`}
+          onDoubleClick={() => { setEditIdx(i); setEditText(s); }}
+          title="Двойной клик — изменить"
+          className="group inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-lg bg-neutral-100 border border-neutral-200/80 text-[12px] font-bold text-neutral-700 select-none"
+        >
+          {s}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((_, j) => j !== i))}
+            className="w-4 h-4 rounded flex items-center justify-center text-neutral-400 opacity-0 group-hover:opacity-100 hover:text-rose-500 hover:bg-rose-50 transition-all"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        data-tag-draft
+        value={draft}
+        onChange={e => {
+          const v = e.target.value;
+          if (v.includes(',')) commit(v);
+          else setDraft(v);
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
+          else if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
+        }}
+        onBlur={() => commit(draft)}
+        placeholder={value.length ? '' : placeholder}
+        className="flex-1 min-w-[140px] h-7 bg-transparent outline-none text-[13px] font-semibold placeholder:text-neutral-400 placeholder:font-medium"
+      />
     </div>
   );
 }
@@ -890,9 +993,15 @@ function CreateEventPageContent() {
   const [createdAt, setCreatedAt] = useState<string>('');
   const [scale, setScale] = useState<'Внутреннее' | 'Локальное' | 'Международное'>('Внутреннее');
   
+  // Спикеры мероприятия в целом (на весь период)
+  const [speakersList, setSpeakersList] = useState<string[]>([]);
+
+  // Режим дат: набор отдельных дней или сплошной период «с … по …»
+  const [dateMode, setDateMode] = useState<DateMode>('days');
+
   // Multiple event dates (multiple calendar days and times)
   const [dates, setDates] = useState<EventDate[]>([
-    { id: 'd-1', date: '', timeStart: '10:00', timeEnd: '12:00' }
+    { id: 'd-1', date: '', timeStart: '10:00', timeEnd: '12:00', speakers: [] }
   ]);
 
   // Multiple registration dates (multiple calendar days and start/end times)
@@ -934,6 +1043,13 @@ function CreateEventPageContent() {
           setParticipantLimit(found.participantLimit ? found.participantLimit.toString() : '');
           if (found.dates && found.dates.length > 0) setDates(found.dates);
           if (found.registrationDates && found.registrationDates.length > 0) setRegistrationDates(found.registrationDates);
+          setDateMode(found.dateMode || 'days');
+          setSpeakersList(
+            found.speakersList
+            || (found.speakers && found.speakers !== 'Спикеры не добавлены'
+                ? found.speakers.split(',').map(s => s.trim()).filter(Boolean)
+                : [])
+          );
           setBlocks(found.blocks || []);
           setLang(found.lang || 'RUS');
           setRegistrationType(found.registrationType || 'open');
@@ -946,7 +1062,7 @@ function CreateEventPageContent() {
   }, [eventId]);
 
   const addDateRow = () => {
-    setDates(prev => [...prev, { id: `d-${Date.now()}`, date: '', timeStart: '10:00', timeEnd: '12:00' }]);
+    setDates(prev => [...prev, { id: `d-${Date.now()}`, date: '', timeStart: '10:00', timeEnd: '12:00', speakers: [] }]);
   };
 
   const removeDateRow = (id: string) => {
@@ -955,9 +1071,40 @@ function CreateEventPageContent() {
     }
   };
 
-  const updateDateRow = (id: string, field: keyof EventDate, value: string) => {
+  const updateDateRow = (id: string, field: 'date' | 'dateEnd' | 'timeStart' | 'timeEnd', value: string) => {
     setDates(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
+
+  const updateDateSpeakers = (id: string, speakers: string[]) => {
+    setDates(prev => prev.map(d => d.id === id ? { ...d, speakers } : d));
+  };
+
+  // Переключение режима: дни ⇄ период. Данные не теряются — схлопываем/разворачиваем первую строку.
+  const switchDateMode = (mode: DateMode) => {
+    if (mode === dateMode) return;
+    setDates(prev => {
+      const first = prev[0] || { id: 'd-1', date: '', timeStart: '10:00', timeEnd: '12:00', speakers: [] };
+      if (mode === 'period') {
+        const last = prev[prev.length - 1];
+        // спикеры всех дней собираем в один список периода, без дублей
+        const merged: string[] = [];
+        prev.forEach(d => (d.speakers || []).forEach(s => {
+          if (!merged.some(m => m.toLowerCase() === s.toLowerCase())) merged.push(s);
+        }));
+        return [{
+          ...first,
+          dateEnd: first.dateEnd || (prev.length > 1 ? last.date : ''),
+          timeEnd: last.timeEnd || first.timeEnd,
+          speakers: merged,
+        }];
+      }
+      // обратно в дни — дата окончания периода больше не нужна
+      return prev.map(d => { const { dateEnd, ...rest } = d; return rest; });
+    });
+    setDateMode(mode);
+  };
+
+  const periodRow = dates[0] || { id: 'd-1', date: '', dateEnd: '', timeStart: '10:00', timeEnd: '12:00', speakers: [] };
 
   const regPeriod = registrationDates[0] || { id: 'r-1', dateStart: '', timeStart: '09:00', dateEnd: '', timeEnd: '18:00' };
 
@@ -1038,6 +1185,14 @@ function CreateEventPageContent() {
       const primaryTimeStart = dates[0]?.timeStart || '10:00';
       const primaryTimeEnd = dates[0]?.timeEnd || '12:00';
 
+      // В списке мероприятий спикеры показываются одной строкой:
+      // сначала спикеры мероприятия, затем уникальные спикеры отдельных дней.
+      const allSpeakers = [...speakersList];
+      dates.forEach(d => (d.speakers || []).forEach(s => {
+        if (!allSpeakers.some(v => v.toLowerCase() === s.toLowerCase())) allSpeakers.push(s);
+      }));
+      const speakersStr = allSpeakers.join(', ') || 'Спикеры не добавлены';
+
       if (eventId) {
         // Edit existing
         eventsList = eventsList.map(ev => ev.id === eventId ? {
@@ -1051,9 +1206,12 @@ function CreateEventPageContent() {
           date: primaryDate,
           timeStart: primaryTimeStart,
           timeEnd: primaryTimeEnd,
+          dateMode,
           dates,
           registrationDates,
           blocks,
+          speakers: speakersStr,
+          speakersList,
           lang,
           registrationType,
           status,
@@ -1074,10 +1232,12 @@ function CreateEventPageContent() {
           participantLimit: participantLimit ? parseInt(participantLimit) : null,
           parentId: queryFolderId || null,
           description: blocks.find(b => b.type === 'text')?.data.html.replace(/<[^>]*>/g, '').slice(0, 160) || 'Описание отсутствует',
-          speakers: 'Спикеры не добавлены',
+          speakers: speakersStr,
+          speakersList,
           date: primaryDate,
           timeStart: primaryTimeStart,
           timeEnd: primaryTimeEnd,
+          dateMode,
           dates,
           registrationDates,
           blocks,
@@ -1251,60 +1411,174 @@ function CreateEventPageContent() {
 
               {/* Multi-date Event Times */}
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">Даты проведения мероприятия</label>
-                <div className="space-y-3">
-                  {dates.map((d, index) => (
-                    <div key={d.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-neutral-50/50 border border-neutral-200/60 p-3.5 rounded-2xl w-full">
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">День {index + 1}</span>
-                          <input
-                            type="date"
-                            value={d.date}
-                            onChange={e => updateDateRow(d.id, 'date', e.target.value)}
-                            className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время начала</span>
-                          <input
-                            type="time"
-                            value={d.timeStart}
-                            onChange={e => updateDateRow(d.id, 'timeStart', e.target.value)}
-                            className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время окончания</span>
-                          <input
-                            type="time"
-                            value={d.timeEnd}
-                            onChange={e => updateDateRow(d.id, 'timeEnd', e.target.value)}
-                            className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
-                          />
-                        </div>
-                      </div>
-                      
-                      {dates.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeDateRow(d.id)}
-                          className="mt-5 sm:mt-0 p-2 rounded-xl text-neutral-400 hover:text-rose-500 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100"
-                        >
-                          <Trash2 className="w-4.5 h-4.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addDateRow}
-                    className="h-10 border-2 border-dashed border-neutral-200 hover:border-neutral-300 text-neutral-500 hover:text-neutral-700 bg-white rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all w-full shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Добавить день
-                  </button>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">Даты проведения мероприятия</label>
+
+                  {/* Режим: отдельные дни или сплошной период */}
+                  <div className="flex bg-neutral-100 p-1 rounded-xl border border-neutral-200/50 h-9 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => switchDateMode('days')}
+                      className={`px-3.5 rounded-lg text-[12px] font-bold transition-all flex items-center justify-center gap-1.5 ${dateMode === 'days' ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-neutral-200/50' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      По дням
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchDateMode('period')}
+                      className={`px-3.5 rounded-lg text-[12px] font-bold transition-all flex items-center justify-center gap-1.5 ${dateMode === 'period' ? 'bg-white text-neutral-900 shadow-sm ring-1 ring-neutral-200/50' : 'text-neutral-500 hover:text-neutral-700'}`}
+                    >
+                      <CalendarClock className="w-3.5 h-3.5" />
+                      Периодом
+                    </button>
+                  </div>
                 </div>
+
+                {dateMode === 'period' ? (
+                  /* ── Период: с даты по дату ─────────────────────────────── */
+                  <div className="bg-neutral-50/50 border border-neutral-200/60 p-3.5 rounded-2xl w-full space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Дата начала</span>
+                        <input
+                          type="date"
+                          value={periodRow.date}
+                          onChange={e => updateDateRow(periodRow.id, 'date', e.target.value)}
+                          className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Дата окончания</span>
+                        <input
+                          type="date"
+                          min={periodRow.date || undefined}
+                          value={periodRow.dateEnd || ''}
+                          onChange={e => updateDateRow(periodRow.id, 'dateEnd', e.target.value)}
+                          className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время начала</span>
+                        <input
+                          type="time"
+                          value={periodRow.timeStart}
+                          onChange={e => updateDateRow(periodRow.id, 'timeStart', e.target.value)}
+                          className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время окончания</span>
+                        <input
+                          type="time"
+                          value={periodRow.timeEnd}
+                          onChange={e => updateDateRow(periodRow.id, 'timeEnd', e.target.value)}
+                          className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {periodRow.dateEnd && periodRow.date && periodRow.dateEnd < periodRow.date && (
+                      <p className="text-[11px] font-bold text-rose-500 flex items-center gap-1.5 pl-1">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Дата окончания раньше даты начала
+                      </p>
+                    )}
+
+                    <div className="flex flex-col gap-1 pt-1">
+                      <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Спикеры периода</span>
+                      <SpeakerTags
+                        compact
+                        value={periodRow.speakers || []}
+                        onChange={v => updateDateSpeakers(periodRow.id, v)}
+                        placeholder="Иванов Иван, Петрова Мария — через запятую"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* ── По дням ────────────────────────────────────────────── */
+                  <div className="space-y-3">
+                    {dates.map((d, index) => (
+                      <div key={d.id} className="flex flex-col sm:flex-row items-start gap-3 bg-neutral-50/50 border border-neutral-200/60 p-3.5 rounded-2xl w-full">
+                        <div className="flex-1 min-w-0 space-y-3 w-full">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">День {index + 1}</span>
+                              <input
+                                type="date"
+                                value={d.date}
+                                onChange={e => updateDateRow(d.id, 'date', e.target.value)}
+                                className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--color-admin-primary-500)]/20"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время начала</span>
+                              <input
+                                type="time"
+                                value={d.timeStart}
+                                onChange={e => updateDateRow(d.id, 'timeStart', e.target.value)}
+                                className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Время окончания</span>
+                              <input
+                                type="time"
+                                value={d.timeEnd}
+                                onChange={e => updateDateRow(d.id, 'timeEnd', e.target.value)}
+                                className="h-10 px-3 bg-white border border-neutral-200 rounded-lg text-xs font-semibold outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] text-neutral-400 font-extrabold uppercase pl-1">Спикеры дня {index + 1}</span>
+                            <SpeakerTags
+                              compact
+                              value={d.speakers || []}
+                              onChange={v => updateDateSpeakers(d.id, v)}
+                              placeholder="Иванов Иван, Петрова Мария — через запятую"
+                            />
+                          </div>
+                        </div>
+
+                        {dates.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeDateRow(d.id)}
+                            className="mt-5 sm:mt-[22px] p-2 rounded-xl text-neutral-400 hover:text-rose-500 hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-100 shrink-0"
+                          >
+                            <Trash2 className="w-4.5 h-4.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addDateRow}
+                      className="h-10 border-2 border-dashed border-neutral-200 hover:border-neutral-300 text-neutral-500 hover:text-neutral-700 bg-white rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all w-full shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Добавить день
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Спикеры мероприятия целиком */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5" />
+                  Спикеры мероприятия
+                </label>
+                <SpeakerTags
+                  value={speakersList}
+                  onChange={setSpeakersList}
+                  placeholder="Введите ФИО и нажмите Enter или запятую"
+                />
+                <p className="text-[11px] text-neutral-400 font-medium pl-1">
+                  Общие спикеры на весь период. Двойной клик по лейблу — изменить, крестик — удалить.
+                </p>
               </div>
 
               {/* Registration Period */}
