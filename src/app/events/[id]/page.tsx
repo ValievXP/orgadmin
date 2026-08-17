@@ -9,7 +9,7 @@ import {
   UserCheck, Sparkles, Play, FileText, BookOpen, Layers, MousePointer, 
   Code, Table, Columns, ChevronDown, ChevronUp, Info, Zap, 
   AlertTriangle, HelpCircle, Lightbulb, Shield, XCircle, 
-  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight, ArrowUpDown, Eye, FileSpreadsheet
+  CheckCircle, Trash2, Globe, Upload, ChevronLeft, ChevronRight, ArrowUpDown, Eye, FileSpreadsheet, Mic
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -25,8 +25,10 @@ interface ContentBlock {
 interface EventDate {
   id: string;
   date: string;
+  dateEnd?: string;       // заполняется только в режиме «Период»: дата окончания
   timeStart: string;
   timeEnd: string;
+  speakers?: string[];    // спикеры конкретного дня / периода
 }
 
 interface RegistrationPeriod {
@@ -46,6 +48,8 @@ interface EventData {
   timeStart: string;
   timeEnd: string;
   speakers: string;
+  speakersList?: string[];
+  dateMode?: 'days' | 'period';
   location: string;
   status: 'draft' | 'registration' | 'in_progress' | 'completed' | 'upcoming' | 'ongoing';
   registrationOpen: boolean;
@@ -893,12 +897,16 @@ export default function EventDetailsPage() {
   const [importExportOpen, setimportExportOpen] = useState(false);
   const [activeDayId, setActiveDayId] = useState<string>('');
 
+  // Мероприятие может идти набором отдельных дней либо сплошным периодом «с … по …»
+  const isPeriod = event.dateMode === 'period';
+
   const eventDays = useMemo(() => {
     if (event.dates && event.dates.length > 0) {
       return event.dates.map((d, index) => ({
         id: d.id,
-        label: `${index + 1} день`,
+        label: isPeriod ? 'Весь период' : `${index + 1} день`,
         date: d.date,
+        dateEnd: d.dateEnd,
         timeStart: d.timeStart,
         timeEnd: d.timeEnd,
       }));
@@ -907,10 +915,20 @@ export default function EventDetailsPage() {
       id: 'default-day',
       label: '1 день',
       date: event.date || '',
+      dateEnd: undefined as string | undefined,
       timeStart: event.timeStart || '',
       timeEnd: event.timeEnd || '',
     }];
-  }, [event.dates, event.date, event.timeStart, event.timeEnd]);
+  }, [event.dates, event.date, event.timeStart, event.timeEnd, isPeriod]);
+
+  // Спикеры мероприятия целиком. Поле необязательное — блок показывается только когда они заданы.
+  const eventSpeakers = useMemo(() => {
+    if (event.speakersList && event.speakersList.length > 0) return event.speakersList;
+    if (event.speakers && event.speakers !== 'Спикеры не добавлены') {
+      return event.speakers.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  }, [event.speakersList, event.speakers]);
 
   useEffect(() => {
     if (eventDays.length > 0) {
@@ -1279,7 +1297,7 @@ export default function EventDetailsPage() {
             <div className="h-px bg-neutral-150/80 my-5" />
 
             {/* Event Parameters Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 ${eventSpeakers.length > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
               {/* 1. Location / Link */}
               <div className="flex items-start gap-3 group relative overflow-visible">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -1311,7 +1329,9 @@ export default function EventDetailsPage() {
                 <div className="min-w-0 flex-1">
                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Даты проведения</span>
                   <span className="text-xs font-bold text-neutral-800 block underline decoration-dotted underline-offset-4 cursor-help whitespace-nowrap">
-                    {eventDays.length > 1 ? (
+                    {isPeriod ? (
+                      `${formatDate(eventDays[0].date)} — ${eventDays[0].dateEnd ? formatDate(eventDays[0].dateEnd) : '…'}`
+                    ) : eventDays.length > 1 ? (
                       `${formatDate(eventDays[0].date)} — ${formatDate(eventDays[eventDays.length - 1].date)}`
                     ) : eventDays.length === 1 ? (
                       `${formatDate(eventDays[0].date)}, ${eventDays[0].timeStart}—${eventDays[0].timeEnd}`
@@ -1319,18 +1339,40 @@ export default function EventDetailsPage() {
                       `${event.date ? formatDate(event.date) : '—'}, ${event.timeStart}—${event.timeEnd}`
                     )}
                   </span>
-                  
+
                   {/* Premium Date Tooltip */}
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 hidden group-hover:block w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl p-4 z-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Расписание по дням</div>
-                    <div className="space-y-2">
-                      {eventDays.map((d, index) => (
-                        <div key={d.id} className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-neutral-500">{index + 1} день ({formatDate(d.date)})</span>
-                          <span className="text-neutral-800 dark:text-neutral-200 font-mono">{d.timeStart}—{d.timeEnd}</span>
+                    {isPeriod ? (
+                      <>
+                        <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Период проведения</div>
+                        <div className="space-y-2 text-xs font-semibold">
+                          <div className="flex justify-between items-center">
+                            <span className="text-neutral-500">С</span>
+                            <span className="text-neutral-800 dark:text-neutral-200">{formatDate(eventDays[0].date)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-neutral-500">По</span>
+                            <span className="text-neutral-800 dark:text-neutral-200">{eventDays[0].dateEnd ? formatDate(eventDays[0].dateEnd) : '—'}</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-1.5 border-t border-neutral-100 dark:border-neutral-800">
+                            <span className="text-neutral-500">Ежедневно</span>
+                            <span className="text-neutral-800 dark:text-neutral-200 font-mono">{eventDays[0].timeStart}—{eventDays[0].timeEnd}</span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Расписание по дням</div>
+                        <div className="space-y-2">
+                          {eventDays.map((d, index) => (
+                            <div key={d.id} className="flex justify-between items-center text-xs font-semibold">
+                              <span className="text-neutral-500">{index + 1} день ({formatDate(d.date)})</span>
+                              <span className="text-neutral-800 dark:text-neutral-200 font-mono">{d.timeStart}—{d.timeEnd}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white dark:border-t-neutral-900" />
                   </div>
                 </div>
@@ -1371,7 +1413,41 @@ export default function EventDetailsPage() {
                 </div>
               </div>
 
-              {/* 4. Participants */}
+              {/* 4. Speakers — необязательный блок, только если спикеры указаны */}
+              {eventSpeakers.length > 0 && (
+                <div className="flex items-start gap-3 group relative overflow-visible">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100/50 flex items-center justify-center shrink-0">
+                    <Mic className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Спикеры</span>
+                    <span className="text-xs font-bold text-neutral-800 block truncate underline decoration-dotted underline-offset-4 cursor-help">
+                      {eventSpeakers[0]}
+                      {eventSpeakers.length > 1 && (
+                        <span className="text-neutral-400 font-bold"> +{eventSpeakers.length - 1}</span>
+                      )}
+                    </span>
+
+                    {/* Speakers Tooltip */}
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 hidden group-hover:block w-64 bg-[#1A1A1A] text-white rounded-lg shadow-xl border border-white/10 p-3 z-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <div className="font-bold text-[10px] text-neutral-400 uppercase tracking-wider mb-2">
+                        Спикеры мероприятия ({eventSpeakers.length})
+                      </div>
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {eventSpeakers.map((s, i) => (
+                          <div key={i} className="flex items-start gap-2 text-[11px] font-medium leading-relaxed">
+                            <span className="text-neutral-500 shrink-0 font-mono">{i + 1}.</span>
+                            <span className="break-words">{s}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="w-2 h-2 bg-[#1A1A1A] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 border-r border-b border-white/10" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Participants */}
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100/50 flex items-center justify-center shrink-0">
                   <Users className="w-4.5 h-4.5" />
@@ -1581,7 +1657,7 @@ export default function EventDetailsPage() {
 
               {/* Day Tab Selectors */}
               <div className="flex items-center gap-1.5 border-b border-neutral-150 pb-3 mb-4 mt-2">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mr-2">Дни проведения:</span>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mr-2">{isPeriod ? 'Период проведения:' : 'Дни проведения:'}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {eventDays.map((d) => {
                     const isActive = d.id === activeDayId;

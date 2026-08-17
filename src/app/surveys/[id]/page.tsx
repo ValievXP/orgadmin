@@ -2,13 +2,15 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import * as Reports from '@/lib/reports';
 import { 
   ArrowLeft,
   ChevronRight, 
   ChevronLeft,
   ChevronDown,
   Eye, 
-  FileText, 
+  FileText,
+  MessageSquare,
   Users, 
   CheckCircle2, 
   Clock, 
@@ -319,6 +321,86 @@ const MOCK_SUBMISSIONS = [
   }
 ];
 
+// ─── Агрегаты сводки ────────────────────────────────────────────────────────
+// Единый источник для экрана и выгрузки: раньше эти числа лежали двумя копиями —
+// в разметке и в функции экспорта, и уже начали расходиться.
+
+export interface SurveyOptionResult {
+  /** Подпись варианта для отчёта — всегда текстом, без эмодзи */
+  label: string;
+  /** Как вариант показан на экране («5 баллов», «🤩») */
+  display: string;
+  count: number;
+  pct: number;
+  color: string;
+}
+
+export interface SurveyQuestionResult {
+  id: string;
+  num: number;
+  type: 'yes_no' | 'rating_5' | 'emoji' | 'single' | 'multiple' | 'open';
+  typeLabel: string;
+  /** Индекс блока в MOCK_SURVEY.content, откуда берётся текст вопроса */
+  contentIndex: number;
+  options: SurveyOptionResult[];
+  average?: number;
+}
+
+const SURVEY_RESULTS: SurveyQuestionResult[] = [
+  {
+    id: 'q1', num: 1, type: 'yes_no', typeLabel: 'Да/Нет', contentIndex: 2,
+    options: [
+      { label: 'Правда', display: 'Правда', count: 92, pct: 78, color: 'bg-emerald-500' },
+      { label: 'Ложь', display: 'Ложь', count: 26, pct: 22, color: 'bg-rose-500' },
+    ],
+  },
+  {
+    id: 'q2', num: 2, type: 'rating_5', typeLabel: 'Шкала оценки', contentIndex: 3,
+    average: 4.1,
+    options: [
+      { label: '5', display: '5 баллов', count: 53, pct: 45, color: 'bg-indigo-500' },
+      { label: '4', display: '4 баллов', count: 35, pct: 30, color: 'bg-blue-500' },
+      { label: '3', display: '3 баллов', count: 18, pct: 15, color: 'bg-emerald-500' },
+      { label: '2', display: '2 баллов', count: 8, pct: 7, color: 'bg-amber-500' },
+      { label: '1', display: '1 баллов', count: 4, pct: 3, color: 'bg-rose-500' },
+    ],
+  },
+  {
+    id: 'q3', num: 3, type: 'emoji', typeLabel: 'Смайлики', contentIndex: 4,
+    options: [
+      { label: 'Отлично', display: '🤩', count: 41, pct: 35, color: 'bg-amber-500' },
+      { label: 'Хорошо', display: '🙂', count: 47, pct: 40, color: 'bg-emerald-500' },
+      { label: 'Нейтрально', display: '😐', count: 18, pct: 15, color: 'bg-blue-500' },
+      { label: 'Плохо', display: '🙁', count: 8, pct: 7, color: 'bg-orange-500' },
+      { label: 'Очень плохо', display: '😞', count: 4, pct: 3, color: 'bg-rose-500' },
+    ],
+  },
+  {
+    id: 'q4', num: 4, type: 'single', typeLabel: 'Один выбор', contentIndex: 5,
+    options: [
+      { label: 'Каждый день', display: 'Каждый день', count: 53, pct: 45, color: 'bg-emerald-500' },
+      { label: 'Несколько раз в неделю', display: 'Несколько раз в неделю', count: 41, pct: 35, color: 'bg-blue-500' },
+      { label: 'Раз в неделю', display: 'Раз в неделю', count: 18, pct: 15, color: 'bg-amber-500' },
+      { label: 'Раз в месяц или реже', display: 'Раз в месяц или реже', count: 6, pct: 5, color: 'bg-rose-500' },
+    ],
+  },
+  {
+    id: 'q5', num: 5, type: 'multiple', typeLabel: 'Множественный выбор', contentIndex: 6,
+    options: [
+      { label: 'Слишком много созвонов', display: 'Слишком много созвонов', count: 72, pct: 61, color: 'bg-rose-500' },
+      { label: 'Нечетко поставленные задачи', display: 'Нечетко поставленные задачи', count: 48, pct: 41, color: 'bg-amber-500' },
+      { label: 'Шум в офисе', display: 'Шум в офисе', count: 35, pct: 30, color: 'bg-blue-500' },
+      { label: 'Проблемы с оборудованием', display: 'Проблемы с оборудованием', count: 18, pct: 15, color: 'bg-purple-500' },
+      { label: 'Другое', display: 'Другое', count: 8, pct: 7, color: 'bg-neutral-400' },
+    ],
+  },
+  { id: 'q6', num: 6, type: 'open', typeLabel: 'Открытый ответ', contentIndex: 7, options: [] },
+];
+
+/** Текст вопроса берётся из содержимого опроса, чтобы не дублировать формулировки. */
+const questionText = (q: SurveyQuestionResult): string =>
+  (MOCK_SURVEY.content[q.contentIndex] as any)?.text || `Вопрос ${q.num}`;
+
 const getUserFIO = (user: { firstName?: string; lastName?: string; patronymic?: string; studentName?: string }) => {
   if (user.lastName && user.firstName) {
     return user.patronymic
@@ -431,59 +513,117 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
   }, [individualSearch, individualLimit]);
 
   // Client-side Export Methods
-  const handleExportCSV = () => {
-    setIsExportOpen(false);
-    let csvContent = "\uFEFF"; // UTF-8 BOM
-    if (resultsMode === 'summary') {
-      csvContent += "Вопрос;Тип вопроса;Результаты / Доли ответов\n";
-      csvContent += `"${MOCK_SURVEY.content[2].text}";"Да/Нет";"Правда (78%), Ложь (22%)"\n`;
-      csvContent += `"${MOCK_SURVEY.content[3].text}";"Шкала оценки";"Средняя: 4.1 (5 звезд: 45%, 4 звезды: 30%, 3 звезды: 15%, 2 звезды: 7%, 1 звезда: 3%)"\n`;
-      csvContent += `"${MOCK_SURVEY.content[4].text}";"Смайлики";"🤩 (35%), 🙂 (40%), 😐 (15%), 🙁 (7%), 😞 (3%)"\n`;
-      csvContent += `"${MOCK_SURVEY.content[5].text}";"Один выбор";"Каждый день (45%), Несколько раз в неделю (35%), Раз в неделю (15%), Раз в месяц или реже (5%)"\n`;
-      csvContent += `"${MOCK_SURVEY.content[6].text}";"Множественный выбор";"Слишком много созвонов (61%), Нечетко поставленные задачи (41%), Шум в офисе (30%), Проблемы с оборудованием (15%), Другое (7%)"\n`;
-    } else {
-      csvContent += "Студент;Email;Дата ответа;1. Правда/Ложь;2. Оценка (1-5);3. Настроение;4. Тет-а-тет;5. Факторы продуктивности;6. Предложения\n";
-      MOCK_SUBMISSIONS.forEach(s => {
-        const q5Text = s.answers.q5.join(', ');
-        csvContent += `"${s.studentName}";"${s.email}";"${s.date}";"${s.answers.q1}";"${s.answers.q2}";"${s.answers.q3}";"${s.answers.q4}";"${q5Text}";"${s.answers.q6 || ''}"\n`;
-      });
+  // ─── Выгрузка отчётов ──────────────────────────────────────────────────────
+  // Три отдельных отчёта, потому что у них принципиально разный размер:
+  // сводка не растёт от числа участников, ответы растут линейно.
+
+  const reportCtx = (): Reports.ReportContext => ({
+    generatedAt: new Date().toLocaleString('ru-RU'),
+    fileStamp: (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })(),
+    filters: {
+      'Опрос': MOCK_SURVEY.title,
+      'Поиск': individualSearch || undefined,
+    },
+  });
+
+  const filePrefix = `Опрос_${MOCK_SURVEY.id}`;
+
+  /** Строки сводки: по одной на каждый вариант ответа. */
+  const summaryRows = (): Reports.SurveySummaryRow[] =>
+    SURVEY_RESULTS.filter(q => q.options.length > 0).flatMap(q =>
+      q.options.map(o => ({
+        questionNum: q.num,
+        questionText: questionText(q),
+        typeLabel: q.typeLabel,
+        optionLabel: o.label,
+        count: o.count,
+        pct: o.pct,
+        average: q.average,
+      }))
+    );
+
+  /** Мета вопросов для колонок широкой таблицы (открытые тоже нужны). */
+  const questionMeta = (): Reports.SurveyQuestionMeta[] =>
+    SURVEY_RESULTS.map(q => ({ id: q.id, num: q.num, text: questionText(q) }));
+
+  /** Ответ приводим к тексту: множественный выбор через «;», смайлик — подписью. */
+  const answerToText = (q: SurveyQuestionResult, raw: any): string => {
+    if (raw === undefined || raw === null || raw === '') return '';
+    if (Array.isArray(raw)) return raw.join('; ');
+    if (q.type === 'emoji') {
+      const opt = q.options.find(o => o.display === raw);
+      return opt ? opt.label : String(raw);
     }
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `survey_${resultsMode}_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return String(raw);
   };
 
-  const handleExportXLS = () => {
-    setIsExportOpen(false);
-    let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/></head><body><table border="1">';
-    if (resultsMode === 'summary') {
-      htmlTable += '<tr><th style="background-color:#F2F2F2">Вопрос</th><th style="background-color:#F2F2F2">Тип вопроса</th><th style="background-color:#F2F2F2">Результаты / Доли ответов</th></tr>';
-      htmlTable += `<tr><td>${MOCK_SURVEY.content[2].text}</td><td>Да/Нет</td><td>Правда (78%), Ложь (22%)</td></tr>`;
-      htmlTable += `<tr><td>${MOCK_SURVEY.content[3].text}</td><td>Шкала оценки</td><td>Средняя: 4.1 (5 звезд: 45%, 4 звезды: 30%, 3 звезды: 15%, 2 звезды: 7%, 1 звезда: 3%)</td></tr>`;
-      htmlTable += `<tr><td>${MOCK_SURVEY.content[4].text}</td><td>Смайлики</td><td>🤩 (35%), 🙂 (40%), 😐 (15%), 🙁 (7%), 😞 (3%)</td></tr>`;
-      htmlTable += `<tr><td>${MOCK_SURVEY.content[5].text}</td><td>Один выбор</td><td>Каждый день (45%), Несколько раз в неделю (35%), Раз в неделю (15%), Раз в месяц или реже (5%)</td></tr>`;
-      htmlTable += `<tr><td>${MOCK_SURVEY.content[6].text}</td><td>Множественный выбор</td><td>Слишком много созвонов (61%), Нечетко поставленные задачи (41%), Шум в офисе (30%), Проблемы с оборудованием (15%), Другое (7%)</td></tr>`;
-    } else {
-      htmlTable += '<tr><th style="background-color:#F2F2F2">Студент</th><th style="background-color:#F2F2F2">Email</th><th style="background-color:#F2F2F2">Дата ответа</th><th style="background-color:#F2F2F2">1. Правда/Ложь</th><th style="background-color:#F2F2F2">2. Оценка (1-5)</th><th style="background-color:#F2F2F2">3. Настроение</th><th style="background-color:#F2F2F2">4. Тет-а-тет</th><th style="background-color:#F2F2F2">5. Факторы продуктивности</th><th style="background-color:#F2F2F2">6. Предложения</th></tr>';
-      MOCK_SUBMISSIONS.forEach(s => {
-        const q5Text = s.answers.q5.join(', ');
-        htmlTable += `<tr><td>${s.studentName}</td><td>${s.email}</td><td>${s.date}</td><td>${s.answers.q1}</td><td>${s.answers.q2}</td><td>${s.answers.q3}</td><td>${s.answers.q4}</td><td>${q5Text}</td><td>${s.answers.q6 || ''}</td></tr>`;
+  const respondentRows = (): Reports.SurveyRespondentRow[] =>
+    filteredSubmissions.map(s => {
+      const answers: Record<string, string> = {};
+      SURVEY_RESULTS.forEach(q => {
+        answers[q.id] = answerToText(q, (s.answers as any)[q.id]);
       });
-    }
-    htmlTable += '</table></body></html>';
-    const blob = new Blob([`\uFEFF${htmlTable}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `survey_${resultsMode}_export.xls`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      return { name: getUserFIO(s), email: s.email, date: s.date, answers };
+    });
+
+  const openAnswerRows = (): Reports.SurveyOpenAnswerRow[] => {
+    const openQuestions = SURVEY_RESULTS.filter(q => q.type === 'open');
+    return openQuestions.flatMap(q =>
+      filteredSubmissions
+        .filter(s => (s.answers as any)[q.id])
+        .map(s => ({
+          questionText: questionText(q),
+          name: getUserFIO(s),
+          email: s.email,
+          date: s.date,
+          text: String((s.answers as any)[q.id]),
+        }))
+    );
+  };
+
+  // Счётчики строк показываются прямо в меню: человек заранее видит объём,
+  // а не узнаёт о нём, когда браузер уже подвис.
+  const summaryRowCount = SURVEY_RESULTS.reduce((a, q) => a + q.options.length, 0);
+  const respondentRowCount = filteredSubmissions.length;
+  const openAnswerRowCount = SURVEY_RESULTS
+    .filter(q => q.type === 'open')
+    .reduce((a, q) => a + filteredSubmissions.filter(s => (s.answers as any)[q.id]).length, 0);
+  const isHeavyExport = respondentRowCount > 5000;
+
+  const exportSummary = () => {
+    setIsExportOpen(false);
+    Reports.downloadBlock(Reports.surveySummaryTemplate, summaryRows(), reportCtx(), filePrefix);
+  };
+
+  const exportRespondents = () => {
+    setIsExportOpen(false);
+    Reports.downloadBlock(
+      Reports.surveyRespondentsTemplate(questionMeta()),
+      respondentRows(),
+      reportCtx(),
+      filePrefix
+    );
+  };
+
+  const exportOpenAnswers = () => {
+    setIsExportOpen(false);
+    Reports.downloadBlock(Reports.surveyOpenAnswersTemplate, openAnswerRows(), reportCtx(), filePrefix);
+  };
+
+  const exportEverything = () => {
+    setIsExportOpen(false);
+    Reports.downloadWorkbook(
+      [
+        { template: Reports.surveySummaryTemplate, rows: summaryRows() },
+        { template: Reports.surveyRespondentsTemplate(questionMeta()), rows: respondentRows() },
+        { template: Reports.surveyOpenAnswersTemplate, rows: openAnswerRows() },
+      ],
+      reportCtx(),
+      `Опрос_${MOCK_SURVEY.id}_полный`
+    );
   };
 
   return (
@@ -551,13 +691,64 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
               {/* Format selection popover */}
               {isExportOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-neutral-200 rounded-xl shadow-xl py-1 z-[200] animate-in fade-in slide-in-from-top-1 duration-150">
-                  <button 
-                    onClick={handleExportXLS}
-                    className="w-full text-left px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2"
+                <div className="absolute right-0 top-full mt-1.5 w-72 bg-white border border-neutral-200 rounded-xl shadow-xl py-1.5 z-[200] animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="px-4 pt-1 pb-2 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Скачать Excel
+                  </div>
+
+                  <button
+                    onClick={exportSummary}
+                    className="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-start gap-2.5"
                   >
-                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Скачать Excel (.xls)</span>
+                    <FileText className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold text-neutral-800">Сводка по вопросам</span>
+                      <span className="block text-[10px] text-neutral-400 font-medium leading-snug">
+                        Итоги по каждому варианту ответа · {summaryRowCount} строк
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={exportRespondents}
+                    className="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-start gap-2.5"
+                  >
+                    <Users className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold text-neutral-800">Ответы участников</span>
+                      <span className="block text-[10px] text-neutral-400 font-medium leading-snug">
+                        Одна строка на участника · {respondentRowCount} строк
+                        {isHeavyExport && <span className="text-amber-600"> · большой файл</span>}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={exportOpenAnswers}
+                    className="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-start gap-2.5"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-violet-600 mt-0.5 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold text-neutral-800">Открытые ответы</span>
+                      <span className="block text-[10px] text-neutral-400 font-medium leading-snug">
+                        Свободный текст отдельно · {openAnswerRowCount} строк
+                      </span>
+                    </span>
+                  </button>
+
+                  <div className="h-px bg-neutral-100 my-1" />
+
+                  <button
+                    onClick={exportEverything}
+                    className="w-full text-left px-4 py-2 hover:bg-neutral-50 flex items-start gap-2.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-neutral-500 mt-0.5 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold text-neutral-800">Всё вместе</span>
+                      <span className="block text-[10px] text-neutral-400 font-medium leading-snug">
+                        Одна книга, три листа
+                      </span>
+                    </span>
                   </button>
                 </div>
               )}
@@ -922,20 +1113,14 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
 
                   <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
                     <div className="flex flex-col items-center bg-neutral-50 border border-neutral-150 rounded-xl px-6 py-4 shrink-0 min-w-[120px]">
-                      <span className="text-4xl font-bold text-indigo-600">4.1</span>
+                      <span className="text-4xl font-bold text-indigo-600">{SURVEY_RESULTS[1].average}</span>
                       <span className="text-[10px] text-neutral-400 font-bold mt-0.5 uppercase tracking-wider">Ср. Оценка</span>
                     </div>
 
                     <div className="flex-1 w-full space-y-2">
-                      {[
-                        { val: 5, pct: 45, count: 53, color: 'bg-indigo-500' },
-                        { val: 4, pct: 30, count: 35, color: 'bg-blue-500' },
-                        { val: 3, pct: 15, count: 18, color: 'bg-emerald-500' },
-                        { val: 2, pct: 7, count: 8, color: 'bg-amber-500' },
-                        { val: 1, pct: 3, count: 4, color: 'bg-rose-500' }
-                      ].map((item) => (
-                        <div key={item.val} className="flex items-center gap-3">
-                          <span className="min-w-[64px] whitespace-nowrap text-[11px] font-semibold text-neutral-500">{item.val} баллов</span>
+                      {SURVEY_RESULTS[1].options.map((item) => (
+                        <div key={item.label} className="flex items-center gap-3">
+                          <span className="min-w-[64px] whitespace-nowrap text-[11px] font-semibold text-neutral-500">{item.display}</span>
                           <div className="flex-1 h-2 bg-neutral-100 rounded-full overflow-hidden border border-neutral-200/50">
                             <div style={{ width: `${item.pct}%` }} className={`h-full ${item.color} rounded-full`} />
                           </div>
@@ -955,15 +1140,9 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   </div>
 
                   <div className="grid grid-cols-5 gap-3 max-w-xl">
-                    {[
-                      { emoji: '🤩', pct: 35, count: 41, color: 'bg-amber-500' },
-                      { emoji: '🙂', pct: 40, count: 47, color: 'bg-emerald-500' },
-                      { emoji: '😐', pct: 15, count: 18, color: 'bg-blue-500' },
-                      { emoji: '🙁', pct: 7, count: 8, color: 'bg-orange-500' },
-                      { emoji: '😞', pct: 3, count: 4, color: 'bg-rose-500' }
-                    ].map(item => (
-                      <div key={item.emoji} className="bg-neutral-50 border border-neutral-150 rounded-xl p-3 flex flex-col items-center">
-                        <span className="text-2xl">{item.emoji}</span>
+                    {SURVEY_RESULTS[2].options.map(item => (
+                      <div key={item.label} className="bg-neutral-50 border border-neutral-150 rounded-xl p-3 flex flex-col items-center">
+                        <span className="text-2xl" title={item.label}>{item.display}</span>
                         <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden mt-3">
                           <div style={{ width: `${item.pct}%` }} className={`h-full ${item.color}`} />
                         </div>
@@ -983,15 +1162,10 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   </div>
 
                   <div className="space-y-3.5">
-                    {[
-                      { option: 'Каждый день', pct: 45, count: 53, color: 'bg-emerald-500' },
-                      { option: 'Несколько раз в неделю', pct: 35, count: 41, color: 'bg-blue-500' },
-                      { option: 'Раз в неделю', pct: 15, count: 18, color: 'bg-amber-500' },
-                      { option: 'Раз в месяц или реже', pct: 5, count: 6, color: 'bg-rose-500' }
-                    ].map((row) => (
-                      <div key={row.option} className="flex flex-col gap-1">
+                    {SURVEY_RESULTS[3].options.map((row) => (
+                      <div key={row.label} className="flex flex-col gap-1">
                         <div className="flex justify-between items-center text-[11px] font-semibold">
-                          <span className="text-neutral-800">{row.option}</span>
+                          <span className="text-neutral-800">{row.label}</span>
                           <div className="flex gap-2 items-center text-neutral-500 font-bold">
                             <span>{row.pct}%</span>
                             <span className="text-neutral-300 font-normal">|</span>
@@ -1014,16 +1188,10 @@ export default function SurveyDetailPage({ params }: { params: { id: string } })
                   </div>
 
                   <div className="space-y-3.5">
-                    {[
-                      { option: 'Слишком много созвонов', pct: 61, count: 72, color: 'bg-rose-500' },
-                      { option: 'Нечетко поставленные задачи', pct: 41, count: 48, color: 'bg-amber-500' },
-                      { option: 'Шум в офисе', pct: 30, count: 35, color: 'bg-blue-500' },
-                      { option: 'Проблемы с оборудованием', pct: 15, count: 18, color: 'bg-purple-500' },
-                      { option: 'Другое', pct: 7, count: 8, color: 'bg-neutral-400' }
-                    ].map((row) => (
-                      <div key={row.option} className="flex flex-col gap-1">
+                    {SURVEY_RESULTS[4].options.map((row) => (
+                      <div key={row.label} className="flex flex-col gap-1">
                         <div className="flex justify-between items-center text-[11px] font-semibold">
-                          <span className="text-neutral-800">{row.option}</span>
+                          <span className="text-neutral-800">{row.label}</span>
                           <div className="flex gap-2 items-center text-neutral-500 font-bold">
                             <span>{row.pct}%</span>
                             <span className="text-neutral-300 font-normal">|</span>

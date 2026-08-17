@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import * as Reports from '@/lib/reports';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TestResultsModal } from '@/components/modals/TestResultsModal';
 import { AssignCourseModal } from '@/components/modals/AssignCourseModal';
@@ -89,6 +90,45 @@ function MarqueeText({ text, className }: { text: string, className?: string }) 
   );
 }
 
+// ─── Выгрузка отчётов по профилю ────────────────────────────────────────────
+
+/** Разворачивает курсы в плоский список уроков и тестов для отчёта. */
+function flattenCourseItems(courses: any[]): Reports.ProfileItemRow[] {
+  return courses.flatMap((c: any) =>
+    (c.modules || []).flatMap((m: any) =>
+      (m.items || []).map((i: any) => ({
+        courseTitle: c.title,
+        moduleTitle: m.title,
+        itemTitle: i.title,
+        type: i.type,
+        status: i.status,
+        date: i.date,
+        score: i.score,
+        verdict: i.verdict,
+        rating: i.rating,
+        review: i.review,
+      }))
+    )
+  );
+}
+
+function toCourseRows(courses: any[]): Reports.ProfileCourseRow[] {
+  return courses.map((c: any) => {
+    const items = (c.modules || []).flatMap((m: any) => m.items || []);
+    return {
+      title: c.title,
+      status: c.status,
+      progress: c.progress,
+      assignedAt: c.date,
+      lastActivity: c.lastActivity || '',
+      completedAt: c.completedAt || '',
+      modulesCount: (c.modules || []).length,
+      itemsCount: items.length,
+      itemsDone: items.filter((i: any) => i.status === 'Пройден').length,
+    };
+  });
+}
+
 const mockUser = {
   id: 1,
   firstName: 'Алексей',
@@ -110,9 +150,51 @@ const mockUser = {
   visit: '24/04/2026 10:30',
   reg: '15/01/2025 09:00',
   courses: [
-    { id: 101, title: 'B2B Продажи: Продвинутый уровень', progress: 100, status: 'Завершен', date: '12/03/2026' },
-    { id: 102, title: 'Управление командой', progress: 45, status: 'В процессе', date: '22/04/2026' },
-    { id: 103, title: 'Корпоративная этика', progress: 0, status: 'Назначен', date: '25/04/2026' },
+    {
+      id: 101, title: 'B2B Продажи: Продвинутый уровень', progress: 100, status: 'Завершен',
+      date: '12/03/2026', lastActivity: '14.03.2026 14:30', completedAt: '15.03.2026 10:00',
+      modules: [
+        {
+          id: 'm1', title: '1. Введение в корпоративную безопасность', status: 'Пройден', date: '15.03.2026',
+          items: [
+            { id: 'l1', title: '1.1 Что такое корпоративная безопасность', type: 'lesson', status: 'Пройден', date: '14.03.2026 12:15', rating: 5, review: 'Отличное введение, всё кратко и по делу!' },
+            { id: 't1', title: '1.2 Тест: Основные понятия', type: 'test', status: 'Пройден', date: '15.03.2026 10:00', score: '5/5', verdict: 'Сдан', resultsKey: 'test-basics' },
+          ],
+        },
+        {
+          id: 'm2', title: '2. Защита информации', status: 'В процессе', date: '',
+          items: [
+            { id: 'l2', title: '2.1 Методы защиты данных', type: 'lesson', status: 'Пройден', date: '16.03.2026 11:30' },
+            { id: 'l3', title: '2.2 Шифрование и VPN', type: 'lesson', status: 'Не начат', date: '' },
+            { id: 't2', title: '2.3 Тест: Защита данных', type: 'test', status: 'Не сдан', date: '17.03.2026 14:15', score: '1/5', verdict: 'Не сдан', resultsKey: 'test-data-protection' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 102, title: 'Управление командой', progress: 45, status: 'В процессе',
+      date: '22/04/2026', lastActivity: '28.04.2026 09:40', completedAt: '',
+      modules: [
+        {
+          id: 'm1', title: '1. Роли в команде', status: 'Пройден', date: '25.04.2026',
+          items: [
+            { id: 'l1', title: '1.1 Типы командных ролей', type: 'lesson', status: 'Пройден', date: '24.04.2026 10:05', rating: 4, review: 'Полезно, но хотелось бы больше примеров.' },
+            { id: 'l2', title: '1.2 Распределение зон ответственности', type: 'lesson', status: 'Пройден', date: '25.04.2026 16:20' },
+          ],
+        },
+        {
+          id: 'm2', title: '2. Обратная связь', status: 'В процессе', date: '',
+          items: [
+            { id: 'l3', title: '2.1 Модель SBI', type: 'lesson', status: 'Пройден', date: '28.04.2026 09:40' },
+            { id: 'l4', title: '2.2 Сложные разговоры', type: 'lesson', status: 'Не начат', date: '' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 103, title: 'Корпоративная этика', progress: 0, status: 'Назначен',
+      date: '25/04/2026', lastActivity: '', completedAt: '', modules: [],
+    },
   ],
   testings: [
     { id: 201, title: 'Аттестация по продукту (1 кв. 2026)', score: 95, maxScore: 100, status: 'Сдан', date: '05/04/2026' },
@@ -223,6 +305,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
+
   const [activeSessionsModalOpen, setActiveSessionsModalOpen] = useState(false);
   const [sessions, setSessions] = useState([
     { id: 's1', os: 'Windows', date: '29.01.2026 14:15', browser: 'Mozilla Firefox', current: false, status: 'Active', deviceType: 'desktop' },
@@ -235,6 +318,79 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   // In a real app, you would fetch user data using params.id
   const [user, setUser] = useState(mockUser); 
+
+  // ─── Выгрузка отчётов ──────────────────────────────────────────────────────
+
+  const reportCtx = (): Reports.ReportContext => ({
+    generatedAt: new Date().toLocaleString('ru-RU'),
+    fileStamp: (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })(),
+    filters: {
+      'Сотрудник': `${user.lastName} ${user.firstName} ${user.patronymic}`.trim(),
+      'Email': user.email,
+    },
+  });
+
+  const profilePrefix = `Результаты_${user.lastName}_${user.firstName}`;
+
+  /** Разбор одного курса: модули, уроки, тесты, оценки и отзывы. */
+  const exportCourse = (course: any) => {
+    Reports.downloadBlock(
+      {
+        ...Reports.profileItemsTemplate,
+        // id попадает в имя файла — иначе выгрузки разных курсов перезаписывают друг друга
+        id: Reports.safeFileName(course.title),
+        title: `Прохождение курса · ${course.title}`,
+      },
+      flattenCourseItems([course]),
+      reportCtx(),
+      profilePrefix
+    );
+  };
+
+  /** Весь профиль одной книгой: сводка + курсы + элементы + тесты + сертификаты. */
+  const exportProfile = () => {
+    const courseRows = toCourseRows(user.courses);
+    const itemRows = flattenCourseItems(user.courses);
+    const done = itemRows.filter(i => i.status === 'Пройден').length;
+
+    const summary: Reports.KpiRow[] = [
+      Reports.kpiSection('Сотрудник'),
+      { label: 'ФИО', value: `${user.lastName} ${user.firstName} ${user.patronymic}`.trim() },
+      { label: 'Email', value: user.email },
+      { label: 'Телефон', value: user.phone },
+      { label: 'Роли', value: user.roles.join(', ') },
+      { label: 'Статус', value: user.status },
+      Reports.kpiGap(),
+      Reports.kpiSection('Оргструктура'),
+      ...user.customFields.map((f: any) => ({ label: f.label, value: f.value })),
+      Reports.kpiGap(),
+      Reports.kpiSection('Обучение'),
+      { label: 'Назначено курсов', value: courseRows.length },
+      { label: 'Завершено курсов', value: courseRows.filter(c => c.status === 'Завершен').length },
+      { label: 'Средний прогресс', value: courseRows.length ? `${Math.round((courseRows.reduce((a, c) => a + c.progress, 0) / courseRows.length) * 10) / 10} %` : '—' },
+      { label: 'Уроков и тестов всего', value: itemRows.length },
+      { label: 'Пройдено', value: done },
+      { label: 'Не сдано', value: itemRows.filter(i => i.status === 'Не сдан').length },
+      { label: 'Тестирований назначено', value: user.testings.length },
+      { label: 'Сертификатов получено', value: user.certificates.length },
+    ];
+
+    Reports.downloadWorkbook(
+      [
+        { template: Reports.kpiTemplate('svodka_profil', 'Сводка по сотруднику', 'Сводка'), rows: summary },
+        { template: Reports.profileCoursesTemplate, rows: courseRows },
+        { template: Reports.profileItemsTemplate, rows: itemRows },
+        { template: Reports.profileTestingsTemplate, rows: user.testings },
+        { template: Reports.profileCertificatesTemplate, rows: user.certificates },
+      ],
+      reportCtx(),
+      profilePrefix
+    );
+  };
+
 
   // Modal edit states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -388,7 +544,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <h1 className="text-lg font-semibold text-neutral-900 leading-tight">Профиль пользователя</h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Button variant="outline" className="flex items-center gap-2 font-medium shadow-sm bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50 h-9">
+            <Button
+              variant="outline"
+              onClick={exportProfile}
+              title="Скачать все результаты сотрудника одной книгой"
+              className="flex items-center gap-2 font-medium shadow-sm bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50 h-9"
+            >
               <Download className="w-4 h-4" /> Результаты
             </Button>
             <Button onClick={() => setIsEditModalOpen(true)} variant="primary" className="flex items-center gap-2 font-medium shadow-sm h-9">
@@ -680,92 +841,79 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                           <>
                             <h5 className="text-[15px] font-bold text-neutral-900 mb-5">Прохождение модулей и уроков</h5>
                             <div className="flex flex-col gap-6">
-                          {/* Module 1 */}
-                          <div className="flex flex-col relative">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                                <span className="text-[14px] font-medium text-neutral-900">1. Введение в корпоративную безопасность</span>
-                              </div>
-                              <span className="text-[13px] text-neutral-500">15.03.2026</span>
-                            </div>
-                            
-                            {/* Inner lessons */}
-                            <div className="flex flex-col gap-3 pl-[11px] ml-2.5 border-l border-emerald-200/60 pb-2">
-                              <div className="flex items-center justify-between pl-4 relative">
-                                <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-emerald-500" />
-                                <span className="text-[13px] text-neutral-700">1.1 Что такое корпоративная безопасность</span>
-                                <span className="text-[12px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">Пройден (14.03.2026 12:15)</span>
-                              </div>
-                              
-                              <div className="ml-4 p-4 bg-white border border-neutral-100 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] max-w-[400px]">
-                                <div className="flex items-center gap-1 mb-2 text-amber-400 text-[14px]">
-                                  <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                                  <span className="text-[12px] text-neutral-500 ml-2 font-medium">5/5</span>
-                                </div>
-                                <p className="text-[13px] text-neutral-500 italic">"Отличное введение, всё кратко и по делу!"</p>
-                              </div>
+                              {course.modules.map((mod: any) => {
+                                const modDone = mod.status === 'Пройден';
+                                return (
+                                  <div key={mod.id} className="flex flex-col relative">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center gap-3">
+                                        {modDone
+                                          ? <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                          : <Clock className="w-5 h-5 text-amber-500 shrink-0" />}
+                                        <span className="text-[14px] font-medium text-neutral-900">{mod.title}</span>
+                                      </div>
+                                      <span className="text-[13px] text-neutral-500">{mod.date || mod.status}</span>
+                                    </div>
 
-                              <div className="flex items-center justify-between pl-4 relative mt-1">
-                                <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-emerald-500" />
-                                <div className="flex flex-col">
-                                  <span className="text-[13px] text-neutral-700 flex items-center gap-2">
-                                    1.2 Тест: Основные понятия
-                                    <button onClick={() => setTestResultsOpen('test-basics')} title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1">
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </button>
-                                  </span>
-                                  <span className="text-[12px] text-emerald-600 font-medium mt-0.5">Оценка: 5/5 (Сдан)</span>
-                                </div>
-                                <span className="text-[12px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md self-start mt-0.5">Пройден (15.03.2026 10:00)</span>
-                              </div>
-                            </div>
-                          </div>
+                                    <div className={`flex flex-col gap-3 pl-[11px] ml-2.5 border-l pb-2 ${modDone ? 'border-emerald-200/60' : 'border-amber-200/60'}`}>
+                                      {mod.items.map((item: any) => {
+                                        const dot = item.status === 'Пройден' ? 'bg-emerald-500'
+                                          : item.status === 'Не сдан' ? 'bg-rose-500' : 'bg-neutral-300';
+                                        const badge = item.status === 'Пройден' ? 'text-emerald-700 bg-emerald-50'
+                                          : item.status === 'Не сдан' ? 'text-rose-700 bg-rose-50' : 'text-neutral-500 bg-neutral-100';
+                                        return (
+                                          <React.Fragment key={item.id}>
+                                            <div className="flex items-center justify-between pl-4 relative">
+                                              <div className={`absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full ${dot}`} />
+                                              <div className="flex flex-col">
+                                                <span className="text-[13px] text-neutral-700 flex items-center gap-2">
+                                                  {item.title}
+                                                  {item.resultsKey && (
+                                                    <button onClick={() => setTestResultsOpen(item.resultsKey)} title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1">
+                                                      <Eye className="w-3.5 h-3.5" />
+                                                    </button>
+                                                  )}
+                                                </span>
+                                                {item.score && (
+                                                  <span className={`text-[12px] font-medium mt-0.5 ${item.verdict === 'Сдан' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                    Оценка: {item.score} ({item.verdict})
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <span className={`text-[12px] font-medium px-2.5 py-1 rounded-md self-start mt-0.5 ${badge}`}>
+                                                {item.date ? `${item.status} (${item.date})` : item.status}
+                                              </span>
+                                            </div>
 
-                          {/* Module 2 */}
-                          <div className="flex flex-col relative">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <Clock className="w-5 h-5 text-amber-500 shrink-0" />
-                                <span className="text-[14px] font-medium text-neutral-900">2. Защита информации</span>
-                              </div>
-                              <span className="text-[13px] text-neutral-500">В процессе</span>
+                                            {item.review && (
+                                              <div className="ml-4 p-4 bg-white border border-neutral-100 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] max-w-[400px]">
+                                                <div className="flex items-center gap-1 mb-2 text-amber-400 text-[14px]">
+                                                  {Array.from({ length: 5 }).map((_, i) => (
+                                                    <span key={i} className={i < (item.rating || 0) ? '' : 'text-neutral-200'}>★</span>
+                                                  ))}
+                                                  <span className="text-[12px] text-neutral-500 ml-2 font-medium">{item.rating}/5</span>
+                                                </div>
+                                                <p className="text-[13px] text-neutral-500 italic">"{item.review}"</p>
+                                              </div>
+                                            )}
+                                          </React.Fragment>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            
-                            {/* Inner lessons */}
-                            <div className="flex flex-col gap-4 pl-[11px] ml-2.5 border-l border-amber-200/60">
-                              <div className="flex items-center justify-between pl-4 relative">
-                                <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-emerald-500" />
-                                <span className="text-[13px] text-neutral-700">2.1 Методы защиты данных</span>
-                                <span className="text-[12px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">Пройден (16.03.2026 11:30)</span>
-                              </div>
-                              <div className="flex items-center justify-between pl-4 relative">
-                                <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-neutral-300" />
-                                <span className="text-[13px] text-neutral-700">2.2 Шифрование и VPN</span>
-                                <span className="text-[12px] font-medium text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-md">Не начат</span>
-                              </div>
-                              <div className="flex items-center justify-between pl-4 relative">
-                                <div className="absolute left-[-4.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-rose-500" />
-                                <div className="flex flex-col">
-                                  <span className="text-[13px] text-neutral-700 flex items-center gap-2">
-                                    2.3 Тест: Защита данных
-                                    <button onClick={() => setTestResultsOpen('test-data-protection')} title="Посмотреть результаты" className="text-neutral-400 hover:text-[var(--color-admin-primary-600)] transition-colors ml-1">
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </button>
-                                  </span>
-                                  <span className="text-[12px] text-rose-600 font-medium mt-0.5">Оценка: 1/5 (Не сдан)</span>
-                                </div>
-                                <span className="text-[12px] font-medium text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md self-start mt-0.5">Не сдан (17.03.2026 14:15)</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                           </>
                         )}
 
                         <div className="flex items-center justify-between pt-6 mt-4 border-t border-neutral-200/60">
-                           <button className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors bg-white border border-neutral-200 hover:bg-neutral-50 px-3 py-1.5 rounded-lg">
-                              <Download className="w-3.5 h-3.5" /> Результаты
+                           <button
+                              onClick={() => exportCourse(course)}
+                              title="Скачать разбор прохождения этого курса"
+                              className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-500 hover:text-neutral-900 transition-colors bg-white border border-neutral-200 hover:bg-neutral-50 px-3 py-1.5 rounded-lg"
+                           >
+                              <Download className="w-3.5 h-3.5" /> Результаты по курсу
                            </button>
                            <div className="flex justify-end gap-3">
                               <Button variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50 h-9 px-4 rounded-xl text-[13px] font-medium shadow-none">Открепить курс</Button>
@@ -1123,7 +1271,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             title: `Новый курс (${id})`,
             progress: 0,
             status: 'Назначен',
-            date: new Date().toLocaleDateString('ru-RU')
+            date: new Date().toLocaleDateString('ru-RU'),
+            lastActivity: '',
+            completedAt: '',
+            modules: [] as typeof mockUser.courses[0]['modules'],
           }));
           setUser(prev => ({
             ...prev,

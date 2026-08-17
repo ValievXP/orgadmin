@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Filter, Download, MoreHorizontal, ChevronDown, ChevronLeft, ChevronRight, Users, User, ArrowUpRight, BarChart2, Calendar, Eraser, Info, Search, Check, ArrowDownAZ, ArrowUpZA, ArrowUpDown, X, MapPin, Video, CalendarDays, ChevronRight as ChevronRightIcon, Unlock, Clock } from 'lucide-react';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Brush } from 'recharts';
+import * as Reports from '@/lib/reports';
 
 
 // ── Deterministic mock-data generator for full timeline ──
@@ -910,26 +911,6 @@ function getPartCompletionDetails(record: SurveyUserRecord, partNumber: number) 
   }
 }
 
-const exportToExcel = (data: any[], title: string, isHourly: boolean) => {
-  const headers = isHourly ? ['Время', 'Количество'] : ['Дата', 'Количество'];
-  const csvRows = [
-    headers.join(';'),
-    ...data.map(row => {
-      const dateVal = isHourly ? row.time : row.date;
-      return `${dateVal};${row.value}`;
-    })
-  ];
-  const csvContent = '\uFEFF' + csvRows.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${title}_export.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
 interface DateRangePickerProps {
   startDate: string;
   endDate: string;
@@ -1461,6 +1442,38 @@ const formatDateTime = (dateTimeStr?: string) => {
   }
 };
 
+/** Кнопка выгрузки одного блока статистики в Excel. */
+function BlockExportButton({ onClick, title = 'Выгрузить этот блок в Excel' }: { onClick: () => void; title?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      title={title}
+      className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white text-neutral-500 hover:text-neutral-900 hover:border-neutral-300 hover:bg-neutral-50 transition-colors text-[12px] font-bold shrink-0"
+    >
+      <Download className="w-3.5 h-3.5" />
+      Excel
+    </button>
+  );
+}
+
+/** Разбирает «1ч 23м» / «45м» / «3ч» в минуты. Прочерк и мусор → null. */
+const parseDurationToMinutes = (value?: string | null): number | null => {
+  if (!value || value === '—') return null;
+  const h = value.match(/(\d+)\s*ч/);
+  const m = value.match(/(\d+)\s*м/);
+  if (!h && !m) return null;
+  return (h ? parseInt(h[1], 10) * 60 : 0) + (m ? parseInt(m[1], 10) : 0);
+};
+
+/** Минуты обратно в «1ч 23м» — формат, принятый в интерфейсе статистики. */
+const formatMinutes = (minutes: number): string => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m}м`;
+  return m ? `${h}ч ${String(m).padStart(2, '0')}м` : `${h}ч`;
+};
+
 function getDayAttendanceDetails(record: EventUserRecord, dayNumber: number) {
   const dayStr = `День ${dayNumber}`;
   const isAttended = record.status === 'Присутствует' && record.daysAttended.includes(dayStr);
@@ -1767,8 +1780,19 @@ export default function StatisticsPage() {
     const [dd, mm, yyyy] = d.split('/');
     return new Date(`${yyyy}-${mm}-${dd}T${t || '00:00'}`).getTime();
   };
-  const gStartTs = globalStartStr ? new Date(globalStartStr).getTime() : 0;
-  const gEndTs = globalEndStr ? new Date(globalEndStr).getTime() + 86400000 : Infinity;
+  // Границы периода считаем в локальном времени — parseDateStr тоже локальный.
+  // Иначе в UTC+5 записи первого дня до 05:00 молча выпадали из выборки.
+  const gStartTs = globalStartStr ? new Date(`${globalStartStr}T00:00:00`).getTime() : 0;
+  const gEndTs = globalEndStr ? new Date(`${globalEndStr}T23:59:59`).getTime() : Infinity;
+
+  /** Попадает ли дата (ISO или ДД/ММ/ГГГГ ЧЧ:ММ) в выбранный глобальный период. */
+  const inGlobalPeriod = (value?: string | null) => {
+    if (!value) return true;
+    if (!globalStartStr && !globalEndStr) return true;
+    const ts = value.includes('/') ? parseDateStr(value) : new Date(value).getTime();
+    if (Number.isNaN(ts)) return true;
+    return ts >= gStartTs && ts <= gEndTs;
+  };
 
   // Reset operations page when filters change
   useEffect(() => {
@@ -2080,17 +2104,19 @@ export default function StatisticsPage() {
       ? STATS_MOCK_EVENTS.filter(e => selectedEvents.includes(e.id))
       : STATS_MOCK_EVENTS;
       
-    const matchingRecords = eventUserRecords.filter(r => activeEvents.some(e => e.id === r.eventId));
+    // Считаем по отфильтрованным записям — иначе карточки расходятся
+    // с таблицей участников, которая учитывает период и оргфильтры.
+    const matchingRecords = filteredEventUserRecords;
     const totalRegs = matchingRecords.length;
-    const presentCount = matchingRecords.filter(r => r.status === 'Присутствует').length;
+    const presentCount = matchingRecords.filter((r: any) => r.dayStatus === 'Присутствует').length;
     const avgAttendance = totalRegs > 0 ? Math.round((presentCount / totalRegs) * 100) : 0;
-    
+
     return {
       totalEvents: activeEvents.length,
       totalRegistrations: totalRegs,
       avgAttendance: `${avgAttendance}%`
     };
-  }, [selectedEvents, eventUserRecords]);
+  }, [selectedEvents, filteredEventUserRecords]);
 
   const surveyUserRecords = useMemo(() => generateSurveyUserRecords(), []);
 
@@ -2200,17 +2226,22 @@ export default function StatisticsPage() {
       ? STATS_MOCK_SURVEYS.filter(s => selectedSurveys.includes(s.id))
       : STATS_MOCK_SURVEYS;
 
-    const matchingRecords = surveyUserRecords.filter(r => activeSurveys.some(s => s.id === r.surveyId));
-    const totalAnswers = matchingRecords.filter(r => r.status === 'Заполнил').length;
+    // База — отфильтрованные записи, чтобы карточки совпадали с таблицей ниже.
+    const matchingRecords = filteredSurveyUserRecords;
+    const totalAnswers = matchingRecords.filter((r: any) => r.partStatus === 'Заполнил').length;
     const totalAssigned = matchingRecords.length;
     const avgResponse = totalAssigned > 0 ? Math.round((totalAnswers / totalAssigned) * 100) : 0;
 
-    const totalInProgress = matchingRecords.filter(r => r.status === 'Ожидание').length;
-    const totalCompleted = matchingRecords.filter(r => r.status === 'Заполнил').length;
+    const totalInProgress = matchingRecords.filter((r: any) => r.partStatus === 'Ожидание').length;
+    const totalCompleted = totalAnswers;
 
-    const totalHours = activeSurveys.reduce((acc, _, idx) => acc + (3 + (idx % 3)), 0);
-    const avgHours = activeSurveys.length > 0 ? Math.round(totalHours / activeSurveys.length) : 0;
-    const avgTimeStr = activeSurveys.length > 0 ? `${avgHours}ч 00м` : '—';
+    // Среднее время берём из реальных длительностей записей, а не из индекса опроса
+    const durations = matchingRecords
+      .map((r: any) => parseDurationToMinutes(r.duration))
+      .filter((m: number | null): m is number => m !== null);
+    const avgTimeStr = durations.length
+      ? formatMinutes(Math.round(durations.reduce((a: number, b: number) => a + b, 0) / durations.length))
+      : '—';
 
     return {
       totalSurveys: activeSurveys.length,
@@ -2221,7 +2252,7 @@ export default function StatisticsPage() {
       totalCompleted,
       avgTimeStr
     };
-  }, [selectedSurveys, surveyUserRecords]);
+  }, [selectedSurveys, filteredSurveyUserRecords]);
 
   // ── Chart 1: Registrations States ──
   const [regStart, setRegStart] = useState<number>(Math.max(0, allRegData.length - 30));
@@ -2513,6 +2544,293 @@ export default function StatisticsPage() {
 
   const sortedRegions = [...dynamicRegions].sort((a, b) => b.users - a.users);
 
+  // Список мероприятий: выбор в дропдауне + глобальный период по дате проведения
+  const visibleStatsEvents = useMemo(() => {
+    const picked = selectedEvents.length > 0
+      ? STATS_MOCK_EVENTS.filter(e => selectedEvents.includes(e.id))
+      : STATS_MOCK_EVENTS;
+    return picked.filter(e => inGlobalPeriod(e.date));
+  }, [selectedEvents, globalStartStr, globalEndStr]);
+
+  // Список опросов: счётчики считаются по ОТФИЛЬТРОВАННЫМ записям участников,
+  // иначе колонки расходятся с таблицей под ними.
+  const visibleStatsSurveys = useMemo(() => {
+    const picked = selectedSurveys.length > 0
+      ? STATS_MOCK_SURVEYS.filter(s => selectedSurveys.includes(s.id))
+      : STATS_MOCK_SURVEYS;
+
+    return picked.filter(s => inGlobalPeriod(s.createdAt)).map(srv => {
+      const records = filteredSurveyUserRecords.filter((r: any) => r.surveyId === srv.id);
+      const durations = records
+        .map((r: any) => parseDurationToMinutes(r.duration))
+        .filter((m: number | null): m is number => m !== null);
+      const avgMinutes = durations.length
+        ? Math.round(durations.reduce((a: number, b: number) => a + b, 0) / durations.length)
+        : null;
+
+      return {
+        ...srv,
+        assigned: records.length,
+        inProgress: records.filter((r: any) => r.partStatus === 'Ожидание').length,
+        completed: records.filter((r: any) => r.partStatus === 'Заполнил').length,
+        avgTime: avgMinutes === null ? '—' : formatMinutes(avgMinutes),
+      };
+    });
+  }, [selectedSurveys, globalStartStr, globalEndStr, filteredSurveyUserRecords]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ВЫГРУЗКА ОТЧЁТОВ
+  // Каждый блок выгружается отдельным файлом, вкладка целиком — книгой из
+  // нескольких листов. Во все отчёты попадает ровно то, что отобрано фильтрами.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const regionNameById = useMemo(
+    () => Object.fromEntries(UZ_REGIONS.map(r => [r.id, r.name])),
+    []
+  );
+
+  const usersById = useMemo(
+    () => new Map(staticUsersList.map(u => [u.id, u])),
+    []
+  );
+
+  /** Снимок активных фильтров — попадает в шапку каждого листа. */
+  const buildReportCtx = (extra?: Record<string, string[] | string | undefined>): Reports.ReportContext => ({
+    periodStart: globalStartStr ? Reports.fmtDate(globalStartStr) : undefined,
+    periodEnd: globalEndStr ? Reports.fmtDate(globalEndStr) : undefined,
+    generatedAt: new Date().toLocaleString('ru-RU'),
+    // Локальная дата, а не UTC — иначе вечером файл получает вчерашнее число
+    fileStamp: (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })(),
+    filters: {
+      'Филиал': selectedBranch,
+      'Департамент': selectedDept,
+      'Отдел': selectedDivision,
+      'Должность': selectedRole,
+      'Статус': selectedStatus,
+      'Регионы': selectedMapRegions.map(id => regionNameById[id] || id),
+      'Пол': selectedGender || undefined,
+      ...extra,
+    },
+  });
+
+  // ─── Вкладка «Пользователи» ────────────────────────────────────────────────
+
+  const usersKpiRows = (): Reports.KpiRow[] => [
+    Reports.kpiSection('Охват'),
+    { label: 'Всего пользователей', value: totalUsers },
+    { label: 'Регионов представлено', value: sortedRegions.filter(r => r.users > 0).length },
+    { label: 'Лидирующий регион', value: sortedRegions[0] ? `${sortedRegions[0].name} (${sortedRegions[0].users})` : '—' },
+    Reports.kpiGap(),
+
+    Reports.kpiSection('Состав'),
+    { label: 'Мужчин', value: maleCount },
+    { label: 'Мужчин, %', value: malePct },
+    { label: 'Женщин', value: genderBaseUsers.length - maleCount },
+    { label: 'Женщин, %', value: femalePct },
+    Reports.kpiGap(),
+
+    Reports.kpiSection('Оценочные показатели (демо-данные, не для отчётности)'),
+    { label: 'Активные сессии', value: activeSessionsVal },
+    { label: 'Активные пользователи', value: getActiveUsersVal() },
+    { label: 'Уникальные визиты', value: getUniqueVisitsVal() },
+  ];
+
+  const usersSheets = (): Reports.ReportSheet<any>[] => [
+    { template: Reports.kpiTemplate('kpi_polzovateli', 'Ключевые показатели · Пользователи', 'Сводка'), rows: usersKpiRows() },
+    { template: Reports.usersListTemplate(regionNameById), rows: tableFilteredUsers },
+    { template: Reports.regionsTemplate, rows: sortedRegions },
+    { template: Reports.regChartTemplate(!!regHourlyDate), rows: Reports.seriesRows(currentRegData, !!regHourlyDate) },
+    { template: Reports.visitsChartTemplate(!!visitsHourlyDate), rows: Reports.seriesRows(currentVisitsData, !!visitsHourlyDate) },
+    { template: Reports.activeChartTemplate(!!activeHourlyDate), rows: Reports.seriesRows(currentActiveData, !!activeHourlyDate) },
+  ];
+
+  // ─── Вкладка «Курсы» ───────────────────────────────────────────────────────
+
+  const coursesKpiRows = (): Reports.KpiRow[] => {
+    const ce = filteredCourseEnrollments;
+    const le = filteredLessonEnrollments;
+    const te = filteredTestEnrollments;
+
+    const pct = (part: number, total: number) => (total ? `${Math.round((part / total) * 1000) / 10} %` : '—');
+    const avgProgress = ce.length
+      ? Math.round((ce.reduce((a: number, r: any) => a + r.progress, 0) / ce.length) * 10) / 10
+      : 0;
+    const rated = le.filter((r: any) => r.rating !== null);
+    const avgRating = rated.length
+      ? Math.round((rated.reduce((a: number, r: any) => a + r.rating, 0) / rated.length) * 100) / 100
+      : '—';
+    const passed = te.filter((r: any) => r.status === 'Успешно').length;
+    const failed = te.filter((r: any) => r.status === 'Провалено').length;
+
+    return [
+      Reports.kpiSection('Курсы — рассчитано по выбранным фильтрам'),
+      { label: 'Назначений курсов', value: ce.length },
+      { label: 'Приступили', value: ce.filter((r: any) => r.startedAt).length },
+      { label: 'Завершили', value: ce.filter((r: any) => r.completedAt).length },
+      { label: 'Не приступали', value: ce.filter((r: any) => !r.startedAt).length },
+      { label: 'Завершаемость', value: pct(ce.filter((r: any) => r.completedAt).length, ce.length) },
+      { label: 'Средний прогресс', value: `${avgProgress} %` },
+      Reports.kpiGap(),
+
+      Reports.kpiSection('Уроки — рассчитано по выбранным фильтрам'),
+      { label: 'Назначений уроков', value: le.length },
+      { label: 'Завершили', value: le.filter((r: any) => r.completedAt).length },
+      { label: 'Завершаемость', value: pct(le.filter((r: any) => r.completedAt).length, le.length) },
+      { label: 'Средняя оценка', value: avgRating },
+      Reports.kpiGap(),
+
+      Reports.kpiSection('Тесты — рассчитано по выбранным фильтрам'),
+      { label: 'Назначений тестов', value: te.length },
+      { label: 'Успешно', value: passed },
+      { label: 'Провалено', value: failed },
+      { label: 'Доля успешных', value: pct(passed, passed + failed) },
+      Reports.kpiGap(),
+
+      Reports.kpiSection('Каталог (справочно, без учёта фильтров)'),
+      { label: 'Всего курсов', value: coursesStatTotals.totalCourses },
+      { label: 'Всего уроков', value: coursesStatTotals.totalLessons },
+      { label: 'Всего тестов', value: coursesStatTotals.totalTests },
+      { label: 'Сертификатов выдано', value: coursesStatTotals.coursesCertificates },
+      { label: 'CSI уроков', value: coursesStatTotals.lessonsCsi },
+    ];
+  };
+
+  const coursesCtxExtra = () => ({
+    'Курсы': selectedCourse.map(id => COURSES_DATA.find(c => c.id === id)?.title || id),
+    'Уроки': selectedLessons.map(id => LESSONS_DATA.find(l => l.id === id)?.title || id),
+    'Тесты': selectedTests.map(id => TESTS_DATA.find(t => t.id === id)?.title || id),
+  });
+
+  const coursesSheets = (): Reports.ReportSheet<any>[] => [
+    { template: Reports.kpiTemplate('kpi_kursy', 'Ключевые показатели · Курсы', 'Сводка'), rows: coursesKpiRows() },
+    { template: Reports.coursesCatalogTemplate, rows: filteredCoursesList },
+    { template: Reports.lessonsCatalogTemplate, rows: filteredLessonsList },
+    { template: Reports.testsCatalogTemplate, rows: filteredTestsList },
+    { template: Reports.courseEnrollmentsTemplate, rows: filteredCourseEnrollments },
+    { template: Reports.lessonEnrollmentsTemplate, rows: filteredLessonEnrollments },
+    { template: Reports.testEnrollmentsTemplate, rows: filteredTestEnrollments },
+    { template: Reports.topPopularTemplate, rows: dynamicPopularCourses.map(c => ({ rank: c.rank, title: c.name, count: c.count })) },
+    { template: Reports.topCompletedTemplate, rows: dynamicCompletedCourses.map(c => ({ rank: c.rank, title: c.name, count: c.count })) },
+  ];
+
+  // ─── Вкладка «Мероприятия» ─────────────────────────────────────────────────
+
+  const eventsKpiRows = (): Reports.KpiRow[] => {
+    const rec = filteredEventUserRecords;
+    const present = rec.filter((r: any) => r.dayStatus === 'Присутствует').length;
+    return [
+      Reports.kpiSection('Мероприятия — рассчитано по выбранным фильтрам'),
+      { label: 'Мероприятий в срезе', value: eventStats.totalEvents },
+      { label: 'Всего регистраций', value: eventStats.totalRegistrations },
+      { label: 'Присутствовали', value: present },
+      { label: 'Ожидание', value: rec.filter((r: any) => r.dayStatus === 'Ожидание').length },
+      { label: 'Отсутствовали', value: rec.filter((r: any) => r.dayStatus === 'Отсутствовал').length },
+      { label: 'Средняя посещаемость', value: eventStats.avgAttendance },
+    ];
+  };
+
+  const eventsCtxExtra = () => ({
+    'Мероприятия': selectedEvents.map(id => STATS_MOCK_EVENTS.find(e => e.id === id)?.title || id),
+  });
+
+  const eventsSheets = (): Reports.ReportSheet<any>[] => [
+    { template: Reports.kpiTemplate('kpi_meropriyatiya', 'Ключевые показатели · Мероприятия', 'Сводка'), rows: eventsKpiRows() },
+    { template: Reports.eventsListTemplate, rows: visibleStatsEvents },
+    { template: Reports.eventParticipantsTemplate, rows: filteredEventUserRecords },
+  ];
+
+  // ─── Вкладка «Опросы» ──────────────────────────────────────────────────────
+
+  const surveysKpiRows = (): Reports.KpiRow[] => {
+    const done = surveyStats.totalCompleted;
+    const all = surveyStats.totalAssigned;
+    return [
+      Reports.kpiSection('Опросы — рассчитано по выбранным фильтрам'),
+      { label: 'Опросов в срезе', value: surveyStats.totalSurveys },
+      { label: 'Назначено', value: all },
+      { label: 'В процессе', value: surveyStats.totalInProgress },
+      { label: 'Завершено', value: done },
+      { label: 'Доля завершивших', value: all ? `${Math.round((done / all) * 1000) / 10} %` : '—' },
+      { label: 'Среднее время прохождения', value: surveyStats.avgTimeStr },
+    ];
+  };
+
+  const surveysCtxExtra = () => ({
+    'Опросы': selectedSurveys.map(id => STATS_MOCK_SURVEYS.find(s => s.id === id)?.title || id),
+  });
+
+  const surveysSheets = (): Reports.ReportSheet<any>[] => [
+    { template: Reports.kpiTemplate('kpi_oprosy', 'Ключевые показатели · Опросы', 'Сводка'), rows: surveysKpiRows() },
+    { template: Reports.surveysListTemplate, rows: visibleStatsSurveys },
+    { template: Reports.surveyParticipantsTemplate, rows: filteredSurveyUserRecords },
+  ];
+
+  // ─── Вкладка «История операций» ────────────────────────────────────────────
+
+  /** Операции дополняются оргданными владельца — они нужны в отчёте. */
+  const operationsWithOrg = () => filteredOperations.map((op: any) => {
+    const u = usersById.get(op.userId);
+    return { ...op, branch: u?.branch, dept: u?.dept, div: u?.div, role: u?.role };
+  });
+
+  const operationsCtxExtra = () => ({
+    'Курсы': operationsSelectedCourses,
+    'Мероприятия': operationsSelectedEvents,
+    'Опросы': operationsSelectedSurveys,
+    'Раздел': operationsSubTab === 'purchases' ? 'Покупки' : 'Операции',
+  });
+
+  const operationsKpiRows = (): Reports.KpiRow[] => {
+    const ops = operationsWithOrg();
+    const sumOf = (s: string) => Number((s || '').replace(/[^\d]/g, '')) || 0;
+    const purchases = ops.filter((o: any) => o.type === 'Покупка');
+    const total = purchases.reduce((a: number, o: any) => a + sumOf(o.sum), 0);
+    return [
+      Reports.kpiSection('Операции — рассчитано по выбранным фильтрам'),
+      { label: 'Всего операций', value: ops.length },
+      { label: 'Назначений', value: ops.filter((o: any) => o.type === 'Назначение').length },
+      { label: 'Регистраций', value: ops.filter((o: any) => o.type === 'Регистрация').length },
+      { label: 'Покупок', value: purchases.length },
+      Reports.kpiGap(),
+      Reports.kpiSection('Деньги'),
+      { label: 'Сумма покупок, сум', value: total },
+      { label: 'Средний чек, сум', value: purchases.length ? Math.round(total / purchases.length) : '—' },
+      { label: 'Покупок с промокодом', value: purchases.filter((o: any) => o.promoCode && o.promoCode !== '—').length },
+    ];
+  };
+
+  const operationsSheets = (): Reports.ReportSheet<any>[] => [
+    { template: Reports.kpiTemplate('kpi_operacii', 'Ключевые показатели · Операции', 'Сводка'), rows: operationsKpiRows() },
+    {
+      template: operationsSubTab === 'purchases' ? Reports.purchasesTemplate : Reports.operationsTemplate,
+      rows: operationsWithOrg(),
+    },
+  ];
+
+  /** Выгрузка одного блока текущей вкладки. */
+  const exportBlock = (
+    template: Reports.ReportTemplate<any>,
+    rows: any[],
+    extra?: Record<string, string[] | string | undefined>
+  ) => {
+    Reports.downloadBlock(template, rows, buildReportCtx(extra));
+  };
+
+  /** Выгрузка активной вкладки целиком — книга, где каждый блок отдельным листом. */
+  const exportActiveTab = () => {
+    const map: Record<string, { sheets: Reports.ReportSheet<any>[]; extra?: any; name: string }> = {
+      users: { sheets: usersSheets(), name: 'Статистика_Пользователи' },
+      courses: { sheets: coursesSheets(), extra: coursesCtxExtra(), name: 'Статистика_Курсы' },
+      events: { sheets: eventsSheets(), extra: eventsCtxExtra(), name: 'Статистика_Мероприятия' },
+      surveys: { sheets: surveysSheets(), extra: surveysCtxExtra(), name: 'Статистика_Опросы' },
+      operations: { sheets: operationsSheets(), extra: operationsCtxExtra(), name: 'Статистика_Операции' },
+    };
+    const cfg = map[activeTab] || map.users;
+    Reports.downloadWorkbook(cfg.sheets, buildReportCtx(cfg.extra), cfg.name);
+  };
 
   return (
     <div className="flex flex-col h-full w-full bg-[var(--bg-app)] overflow-y-auto pb-32">
@@ -2564,8 +2882,13 @@ export default function StatisticsPage() {
                 setActiveEnd(allActiveData.length - 1);
               }}
             />
-            <Button variant="outline" className="h-9 px-4 text-[13px] font-semibold bg-white shadow-sm flex items-center gap-2">
-              <Download className="w-4 h-4" /> Экспорт Excel
+            <Button
+              variant="outline"
+              onClick={exportActiveTab}
+              title="Выгрузить всю активную вкладку: каждый блок — отдельным листом"
+              className="h-9 px-4 text-[13px] font-semibold bg-white shadow-sm flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Выгрузить вкладку
             </Button>
           </div>
         }
@@ -2942,14 +3265,17 @@ export default function StatisticsPage() {
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Студенты на карте</h3>
-                    {selectedMapRegions.length > 0 && (
-                      <button 
-                        onClick={() => setSelectedMapRegions([])}
-                        className="text-[10px] font-bold text-neutral-400 hover:text-neutral-700 transition-colors bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded-md"
-                      >
-                        Сбросить ({selectedMapRegions.length})
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {selectedMapRegions.length > 0 && (
+                        <button
+                          onClick={() => setSelectedMapRegions([])}
+                          className="text-[10px] font-bold text-neutral-400 hover:text-neutral-700 transition-colors bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded-md"
+                        >
+                          Сбросить ({selectedMapRegions.length})
+                        </button>
+                      )}
+                      <BlockExportButton onClick={() => exportBlock(Reports.regionsTemplate, sortedRegions)} />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto pr-1">
                     {sortedRegions.map((region, i) => {
@@ -3057,7 +3383,10 @@ export default function StatisticsPage() {
                         <div className="absolute right-0 mt-1 w-40 bg-white border border-neutral-200 rounded-xl shadow-lg z-[200] py-1 animate-in fade-in slide-in-from-top-1 duration-100">
                           <button 
                             onClick={() => {
-                              exportToExcel(currentRegData, "Динамика_регистраций", !!regHourlyDate);
+                              exportBlock(
+                                Reports.regChartTemplate(!!regHourlyDate),
+                                Reports.seriesRows(currentRegData, !!regHourlyDate)
+                              );
                               setRegMenuOpen(false);
                             }} 
                             className="w-full text-left px-3.5 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors flex items-center gap-2"
@@ -3190,7 +3519,10 @@ export default function StatisticsPage() {
                         <div className="absolute right-0 mt-1 w-40 bg-white border border-neutral-200 rounded-xl shadow-lg z-[200] py-1 animate-in fade-in slide-in-from-top-1 duration-100">
                           <button 
                             onClick={() => {
-                              exportToExcel(currentVisitsData, "Визиты_пользователей", !!visitsHourlyDate);
+                              exportBlock(
+                                Reports.visitsChartTemplate(!!visitsHourlyDate),
+                                Reports.seriesRows(currentVisitsData, !!visitsHourlyDate)
+                              );
                               setVisitsMenuOpen(false);
                             }} 
                             className="w-full text-left px-3.5 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors flex items-center gap-2"
@@ -3322,7 +3654,10 @@ export default function StatisticsPage() {
                         <div className="absolute right-0 mt-1 w-40 bg-white border border-neutral-200 rounded-xl shadow-lg z-[200] py-1 animate-in fade-in slide-in-from-top-1 duration-100">
                           <button 
                             onClick={() => {
-                              exportToExcel(currentActiveData, "Активные_пользователи", !!activeHourlyDate);
+                              exportBlock(
+                                Reports.activeChartTemplate(!!activeHourlyDate),
+                                Reports.seriesRows(currentActiveData, !!activeHourlyDate)
+                              );
                               setActiveMenuOpen(false);
                             }} 
                             className="w-full text-left px-3.5 py-2 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors flex items-center gap-2"
@@ -3400,6 +3735,7 @@ export default function StatisticsPage() {
                   <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {tableFilteredUsers.length}
                   </span>
+                  <BlockExportButton onClick={() => exportBlock(Reports.usersListTemplate(regionNameById), tableFilteredUsers)} />
                 </div>
                 <div className="relative w-full sm:w-80">
                   <input
@@ -3666,7 +4002,14 @@ export default function StatisticsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card 1: Топ 10 курсов по популярности */}
               <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Топ 10 курсов по популярности</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Топ 10 курсов по популярности</h3>
+                  <BlockExportButton onClick={() => exportBlock(
+                    Reports.topPopularTemplate,
+                    dynamicPopularCourses.map(c => ({ rank: c.rank, title: c.name, count: c.count })),
+                    coursesCtxExtra()
+                  )} />
+                </div>
                 <div className="overflow-x-auto border border-neutral-100 rounded-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <tbody className="divide-y divide-neutral-100">
@@ -3692,7 +4035,14 @@ export default function StatisticsPage() {
 
               {/* Card 2: Топ 10 курсов по завершению */}
               <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-colors">
-                <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider mb-4">Топ 10 курсов по завершению</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[13px] font-bold text-neutral-400 uppercase tracking-wider">Топ 10 курсов по завершению</h3>
+                  <BlockExportButton onClick={() => exportBlock(
+                    Reports.topCompletedTemplate,
+                    dynamicCompletedCourses.map(c => ({ rank: c.rank, title: c.name, count: c.count })),
+                    coursesCtxExtra()
+                  )} />
+                </div>
                 <div className="overflow-x-auto border border-neutral-100 rounded-xl">
                   <table className="w-full text-left border-collapse text-xs">
                     <tbody className="divide-y divide-neutral-100">
@@ -3742,8 +4092,13 @@ export default function StatisticsPage() {
                     className="pl-9 pr-8 py-2 border border-neutral-200 rounded-xl text-[13px] w-[220px] focus:outline-none focus:ring-2 focus:ring-neutral-300"
                   />
                   {courseListSearch && <button onClick={() => setCourseListSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer" type="button"><X className="w-3.5 h-3.5" /></button>}
+                  </div>
+                  <BlockExportButton onClick={() => {
+                    if (coursesSubTab === 'courses') exportBlock(Reports.coursesCatalogTemplate, filteredCoursesList, coursesCtxExtra());
+                    else if (coursesSubTab === 'lessons') exportBlock(Reports.lessonsCatalogTemplate, filteredLessonsList, coursesCtxExtra());
+                    else exportBlock(Reports.testsCatalogTemplate, filteredTestsList, coursesCtxExtra());
+                  }} />
                 </div>
-              </div>
               <div className="overflow-x-auto px-6 pb-4 pt-3">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -3913,6 +4268,11 @@ export default function StatisticsPage() {
               <div className="flex items-center justify-between px-6 pt-5 pb-0">
                 <div className="flex items-center gap-3">
                   <h3 className="text-[14px] font-bold text-neutral-900">Список пользователей</h3>
+                  <BlockExportButton onClick={() => {
+                    if (coursesUserSubTab === 'courses') exportBlock(Reports.courseEnrollmentsTemplate, filteredCourseEnrollments, coursesCtxExtra());
+                    else if (coursesUserSubTab === 'lessons') exportBlock(Reports.lessonEnrollmentsTemplate, filteredLessonEnrollments, coursesCtxExtra());
+                    else exportBlock(Reports.testEnrollmentsTemplate, filteredTestEnrollments, coursesCtxExtra());
+                  }} />
                   <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
                     {(['courses', 'lessons', 'tests'] as const).map(tab => (
                       <button
@@ -4132,6 +4492,7 @@ export default function StatisticsPage() {
                     />
                   </div>
                 </div>
+                <BlockExportButton onClick={() => exportBlock(Reports.eventsListTemplate, visibleStatsEvents, eventsCtxExtra())} />
               </div>
               
               {/* Header of Table */}
@@ -4152,7 +4513,6 @@ export default function StatisticsPage() {
               {/* Rows */}
               <div className="flex flex-col divide-y divide-neutral-100 relative min-h-[100px]">
                 {(() => {
-                  const visibleStatsEvents = selectedEvents.length > 0 ? STATS_MOCK_EVENTS.filter(e => selectedEvents.includes(e.id)) : STATS_MOCK_EVENTS;
                   return visibleStatsEvents.map((ev, index) => {
                     const statusConfig = {
                       draft: { text: 'Черновик', style: 'bg-slate-100 text-slate-600 border-slate-200' },
@@ -4320,6 +4680,7 @@ export default function StatisticsPage() {
                   <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {filteredEventUserRecords.length}
                   </span>
+                  <BlockExportButton onClick={() => exportBlock(Reports.eventParticipantsTemplate, filteredEventUserRecords, eventsCtxExtra())} />
                 </div>
                 <div className="relative w-full sm:w-80">
                   <input
@@ -4538,6 +4899,7 @@ export default function StatisticsPage() {
                     />
                   </div>
                 </div>
+                <BlockExportButton onClick={() => exportBlock(Reports.surveysListTemplate, visibleStatsSurveys, surveysCtxExtra())} />
               </div>
               
               {/* Header of Table */}
@@ -4557,13 +4919,11 @@ export default function StatisticsPage() {
               {/* Rows */}
               <div className="flex flex-col divide-y divide-neutral-100 relative min-h-[100px]">
                 {(() => {
-                  const visibleStatsSurveys = selectedSurveys.length > 0 ? STATS_MOCK_SURVEYS.filter(s => selectedSurveys.includes(s.id)) : STATS_MOCK_SURVEYS;
                   return visibleStatsSurveys.map((srv, index) => {
-                    const srvRecords = surveyUserRecords.filter(r => r.surveyId === srv.id);
-                    const totalCount = srvRecords.length;
-                    const answersCount = srvRecords.filter(r => r.status === 'Заполнил').length;
-                    const inProgressCount = srvRecords.filter(r => r.status === 'Ожидание').length;
-                    const avgTime = totalCount > 0 ? `${3 + (index % 3)}ч ${(index * 15) % 60}м` : '—';
+                    const totalCount = srv.assigned;
+                    const answersCount = srv.completed;
+                    const inProgressCount = srv.inProgress;
+                    const avgTime = srv.avgTime;
 
                     return (
                       <div 
@@ -4672,6 +5032,7 @@ export default function StatisticsPage() {
                   <span className="bg-neutral-100 text-neutral-600 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {filteredSurveyUserRecords.length}
                   </span>
+                  <BlockExportButton onClick={() => exportBlock(Reports.surveyParticipantsTemplate, filteredSurveyUserRecords, surveysCtxExtra())} />
                 </div>
                 <div className="relative w-full sm:w-80">
                   <input
@@ -4913,6 +5274,11 @@ export default function StatisticsPage() {
                   >
                     Покупки
                   </button>
+                  <BlockExportButton onClick={() => exportBlock(
+                    operationsSubTab === 'purchases' ? Reports.purchasesTemplate : Reports.operationsTemplate,
+                    operationsWithOrg(),
+                    operationsCtxExtra()
+                  )} />
                 </div>
 
                 {/* Search input */}

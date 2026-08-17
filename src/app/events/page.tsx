@@ -31,7 +31,8 @@ interface EventItem {
   participants: number;
   participantLimit: number | null;
   parentId: string | null;
-  dates?: { id: string; date: string; timeStart: string; timeEnd: string }[];
+  dateMode?: 'days' | 'period';
+  dates?: { id: string; date: string; dateEnd?: string; timeStart: string; timeEnd: string; speakers?: string[] }[];
   registrationDates?: { id: string; dateStart: string; timeStart: string; dateEnd: string; timeEnd: string }[];
   description?: string;
   blocks?: any[];
@@ -364,8 +365,15 @@ function EventRow({
               <div>Конец: {formatDateTime(event.registrationDates?.[0]?.dateEnd ? `${event.registrationDates[0].dateEnd}T${event.registrationDates[0].timeEnd}` : undefined)}</div>
             </div>
             <div>
-              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-0.5 font-bold">Даты проведения</span>
-              {event.dates && event.dates.length > 0 ? (
+              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mb-0.5 font-bold">
+                {event.dateMode === 'period' ? 'Период проведения' : 'Даты проведения'}
+              </span>
+              {event.dateMode === 'period' && event.dates?.[0] ? (
+                <div className="space-y-1">
+                  <div>С {formatDate(event.dates[0].date)} по {event.dates[0].dateEnd ? formatDate(event.dates[0].dateEnd) : '—'}</div>
+                  <div className="text-neutral-400">Ежедневно {event.dates[0].timeStart} - {event.dates[0].timeEnd}</div>
+                </div>
+              ) : event.dates && event.dates.length > 0 ? (
                 <div className="max-h-24 overflow-y-auto space-y-1">
                   {event.dates.map((d, i) => (
                     <div key={d.id}>День {i + 1}: {formatDate(d.date)} ({d.timeStart} - {d.timeEnd})</div>

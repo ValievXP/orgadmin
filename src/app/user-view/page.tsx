@@ -50,6 +50,7 @@ import {
   CheckCircle,
   Code,
   QrCode,
+  Mic,
   X
 } from "lucide-react";
 
@@ -172,12 +173,31 @@ interface Connection {
   colorIndex: number;
 }
 
+// Демо-мероприятие для витрины студента. Страница статичная, поэтому параметры лежат здесь.
+// dateMode: 'period' — мероприятие идёт сплошным периодом «с … по …»;
+//           'days'   — набор отдельных дней с расписанием.
+const DEMO_EVENT = {
+  dateMode: 'period' as 'days' | 'period',
+  periodStart: '28.03.2026',
+  periodEnd: '30.03.2026',
+  periodTimeStart: '10:00',
+  periodTimeEnd: '13:00',
+  days: [
+    { id: 'd1', label: '1 день', date: '28.03.2026', timeStart: '10:00', timeEnd: '13:00' },
+    { id: 'd2', label: '2 день', date: '29.03.2026', timeStart: '10:00', timeEnd: '13:00' },
+    { id: 'd3', label: '3 день', date: '30.03.2026', timeStart: '10:00', timeEnd: '14:00' },
+  ],
+  // Спикеры необязательны: пустой массив — блок «Спикеры» не показывается
+  speakers: ['Каримов Алишер', 'Юсупова Дилноза', 'Иванов Иван Сергеевич'],
+};
+
 export default function UserViewPlayground() {
   const [currentView, setCurrentView] = useState<"dashboard" | "exercises" | "test" | "survey" | "event">("dashboard");
   const [isEventRegistered, setIsEventRegistered] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showEventDaysModal, setShowEventDaysModal] = useState(false);
   const [showDatesTooltipMobile, setShowDatesTooltipMobile] = useState(false);
+  const [showSpeakersTooltipMobile, setShowSpeakersTooltipMobile] = useState(false);
 
   // ─── Survey State ──────────────────────────────────────────────────────────
   const [surveyQ1, setSurveyQ1] = useState<string | null>(null);
@@ -2045,34 +2065,54 @@ export default function UserViewPlayground() {
                     <CalendarDays className="w-5 h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Даты проведения</span>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">
+                      {DEMO_EVENT.dateMode === 'period' ? 'Период проведения' : 'Даты проведения'}
+                    </span>
                     <span className="text-sm font-bold text-neutral-800 block underline decoration-dotted underline-offset-4 cursor-pointer">
-                      28.03.2026 — 30.03.2026
+                      {DEMO_EVENT.dateMode === 'period'
+                        ? `${DEMO_EVENT.periodStart} — ${DEMO_EVENT.periodEnd}`
+                        : `${DEMO_EVENT.days[0].date} — ${DEMO_EVENT.days[DEMO_EVENT.days.length - 1].date}`}
                     </span>
                     {/* Tooltip: visible on hover (desktop) OR when toggled clicked on mobile */}
                     <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 ${showDatesTooltipMobile ? 'block' : 'hidden'} md:group-hover:block w-72 bg-white border border-neutral-200 rounded-xl shadow-xl p-4 z-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-200`}>
-                      <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Расписание по дням</div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-neutral-500">1 день (28.03.2026)</span>
-                          <span className="text-neutral-800 font-mono">10:00—13:00</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-neutral-500">2 день (29.03.2026)</span>
-                          <span className="text-neutral-800 font-mono">10:00—13:00</span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs font-semibold">
-                          <span className="text-neutral-500">3 день (30.03.2026)</span>
-                          <span className="text-neutral-800 font-mono">10:00—14:00</span>
-                        </div>
-                      </div>
+                      {DEMO_EVENT.dateMode === 'period' ? (
+                        <>
+                          <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Период проведения</div>
+                          <div className="space-y-2 text-xs font-semibold">
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-500">С</span>
+                              <span className="text-neutral-800">{DEMO_EVENT.periodStart}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-500">По</span>
+                              <span className="text-neutral-800">{DEMO_EVENT.periodEnd}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-1.5 border-t border-neutral-100">
+                              <span className="text-neutral-500">Ежедневно</span>
+                              <span className="text-neutral-800 font-mono">{DEMO_EVENT.periodTimeStart}—{DEMO_EVENT.periodTimeEnd}</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-bold text-[11px] text-neutral-400 uppercase tracking-wider mb-2">Расписание по дням</div>
+                          <div className="space-y-2">
+                            {DEMO_EVENT.days.map(d => (
+                              <div key={d.id} className="flex justify-between items-center text-xs font-semibold">
+                                <span className="text-neutral-500">{d.label} ({d.date})</span>
+                                <span className="text-neutral-800 font-mono">{d.timeStart}—{d.timeEnd}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                       <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white" />
                     </div>
                   </div>
                 </div>
 
                 {/* Grid row for Registration and Participants */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className={`grid gap-4 ${DEMO_EVENT.speakers.length > 0 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
                   <div className="flex items-start gap-3 p-3 bg-neutral-50/50 rounded-xl border border-neutral-150">
                     <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shrink-0">
                       <Clock className="w-4.5 h-4.5" />
@@ -2082,6 +2122,42 @@ export default function UserViewPlayground() {
                       <span className="text-xs font-bold text-neutral-800 block truncate">Открытая</span>
                     </div>
                   </div>
+
+                  {/* Спикеры — показываются только если указаны */}
+                  {DEMO_EVENT.speakers.length > 0 && (
+                    <div
+                      onClick={() => setShowSpeakersTooltipMobile(!showSpeakersTooltipMobile)}
+                      className="flex items-start gap-3 p-3 bg-neutral-50/50 hover:bg-neutral-50 rounded-xl border border-neutral-150 cursor-pointer transition-colors group relative overflow-visible"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0">
+                        <Mic className="w-4.5 h-4.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Спикеры</span>
+                        <span className="text-xs font-bold text-neutral-800 block truncate underline decoration-dotted underline-offset-4">
+                          {DEMO_EVENT.speakers[0]}
+                          {DEMO_EVENT.speakers.length > 1 && (
+                            <span className="text-neutral-400 font-bold"> +{DEMO_EVENT.speakers.length - 1}</span>
+                          )}
+                        </span>
+
+                        <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 ${showSpeakersTooltipMobile ? 'block' : 'hidden'} md:group-hover:block w-64 bg-[#1A1A1A] text-white rounded-lg shadow-xl border border-white/10 p-3 z-50 text-left animate-in fade-in slide-in-from-bottom-2 duration-200`}>
+                          <div className="font-bold text-[10px] text-neutral-400 uppercase tracking-wider mb-2">
+                            Спикеры мероприятия ({DEMO_EVENT.speakers.length})
+                          </div>
+                          <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                            {DEMO_EVENT.speakers.map((s, i) => (
+                              <div key={i} className="flex items-start gap-2 text-[11px] font-medium leading-relaxed">
+                                <span className="text-neutral-500 shrink-0 font-mono">{i + 1}.</span>
+                                <span className="break-words">{s}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="w-2 h-2 bg-[#1A1A1A] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -translate-y-1/2 border-r border-b border-white/10" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-start gap-3 p-3 bg-neutral-50/50 rounded-xl border border-neutral-150">
                     <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
