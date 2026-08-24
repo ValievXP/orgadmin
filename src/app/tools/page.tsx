@@ -8,7 +8,7 @@ const TOOLS = [
   {
     id: 'user-flow',
     title: 'User Flow',
-    description: 'Конструктор маршрутов сотрудника (MVP): триггеры, назначение контента, ожидание событий, условия и уведомления на RU/UZ.',
+    description: 'Автоматические сценарии для сотрудников: кому и когда назначить обучение, что написать и как разделить людей по признакам.',
     icon: Route,
     colorClass: 'text-teal-500 bg-teal-50',
     href: '/tools/user-flow'
@@ -16,7 +16,7 @@ const TOOLS = [
   {
     id: 'user-flow-pro',
     title: 'User Flow Pro',
-    description: 'Апгрейд MVP: Switch-ветвления, условия по контенту, кураторы, триггеры по расписанию и симуляция прохождения.',
+    description: 'Расширенные сценарии: запуск по расписанию и при переводе сотрудника, проверка результатов обучения и назначение кураторов.',
     icon: GitBranch,
     colorClass: 'text-violet-500 bg-violet-50',
     href: '/tools/user-flow-pro'
